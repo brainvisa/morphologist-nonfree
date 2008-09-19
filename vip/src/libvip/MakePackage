@@ -1,0 +1,154 @@
+#****************************************************************************
+# PROJECT     : LIBNAME Library
+# MODULE NAME : MakePackage          * TYPE     : Makefile
+# AUTHOR      : POUPON C.            * CREATION : 30/01/1998
+# VERSION     : 0.1                  * REVISION :
+# LANGUAGE    : C++                  * EXAMPLE  :
+# DEVICE      : Sun SPARC Station 5
+#****************************************************************************
+#
+# DESCRIPTION : Sub-makefile.in for building each LIBNAME package objects
+#
+#****************************************************************************
+#
+# USED MODULES :
+#
+#****************************************************************************
+# REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+#--------------------|--------------|----------------------------------------
+#              / /   |              |
+#****************************************************************************
+
+################################################################################
+#
+# Architecture detection
+#
+################################################################################
+
+# for SunOS
+ARCH1   = uname -s
+# for Linux
+ARCH2   = $(shell uname -s)
+ARCH    = $(ARCH1:sh)$(ARCH2)
+
+
+################################################################################
+#
+# Include general variables
+#
+################################################################################
+
+include ../../Path.$(ARCH)
+include ../Package.List
+
+ifneq ($(mode),)
+ifeq ($(mode),fast)
+MODE = FAST
+endif
+ifeq ($(mode),debug)
+MODE = DEBUG
+endif
+ifeq ($(mode),insure)
+MODE = INSURE
+endif
+endif
+
+# defines package name
+PACKAGE = $(notdir $(shell pwd))
+
+################################################################################
+#
+# Rules to build library package ( "make" )
+#
+################################################################################
+
+# dependencies
+PATH_OBJECTS   = ./obj.$(EXTENSION)/$(ARCH)
+LOCAL_GOBJECTS = $(GENERICS($(PACKAGE)):%=$(PATH_OBJECTS)/%_gen.o)
+LOCAL_OBJECTS  = $(SOURCES($(PACKAGE)):%=$(PATH_OBJECTS)/%.o)
+
+# target
+all: create_obj_ext_dir $(LOCAL_GOBJECTS) $(LOCAL_OBJECTS)
+
+
+# rebuilds all objects
+new: rm_obj_ext_dir create_obj_ext_dir $(LOCAL_GOBJECTS) $(LOCAL_OBJECTS)
+
+# removes obj.extension directory
+rm_obj_ext_dir:
+	@if ( test -r $(PATH_OBJECTS) ) ; then  \
+	  rm -r $(PATH_OBJECTS);                \
+	fi
+
+# creates obj.extension directory
+create_obj_ext_dir:
+	@if ( test ! -r $(PATH_OBJECTS) ) ; then  \
+	  mkdir -p $(PATH_OBJECTS);             \
+	fi
+
+
+# compile *$(CEXT) --> *.o
+$(PATH_OBJECTS)/%.o: %$(CEXT)
+	@echo compiling local $(EXTENSION) $<
+	$(CC) $(CFLAGS) $(INCFLAGS) $(DFLAGS) -c $< -o $@
+
+
+################################################################################
+#
+# Rules to preprocess generic files ( "make prepro" )
+#
+################################################################################
+
+# dependencies
+LOCAL_GENERICS = $(GENERICS($(PACKAGE)):%=%_gen.c)
+
+# preprocess generic files : *.gen --> *_gen.c , *_gen.h , *_gen_static.h
+prepro:  $(LOCAL_GENERICS)
+
+# obtain *_gen.c , *_gen.h , *_gen_static.h from *.gen files
+%_gen.c: %.gen  
+	@if ( test -x $(PREFIX)/preprocessor/$(ARCH)/VipPreprocessing ); then \
+	  $(PREFIX)/preprocessor/$(ARCH)/VipPreprocessing $<;           \
+	else                                                            \
+	  $(REFERENCE)/preprocessor/$(ARCH)/VipPreprocessing $<;        \
+	fi
+	@chmod a+r *_gen.h
+	@if ( test -r $(PREFIX)/include/$(PREFIX_NAME)/$(PACKAGE) ); then \
+	  mv *_gen.h $(PREFIX)/include/$(PREFIX_NAME)/$(PACKAGE)/.;       \
+	else                                                              \
+	  mkdir -p $(PREFIX)/include/$(PREFIX_NAME)/$(PACKAGE);           \
+	  mv *_gen.h $(PREFIX)/include/$(PREFIX_NAME)/$(PACKAGE)/.;       \
+	fi
+	@if ( test -r $(PREFIX)/include_static/$(PREFIX_NAME)/$(PACKAGE) ); then  \
+	  mv *_gen_static.h $(PREFIX)/include_static/$(PREFIX_NAME)/$(PACKAGE)/.; \
+	else                                                                      \
+	  mkdir -p $(PREFIX)/include_static/$(PREFIX_NAME)/$(PACKAGE);            \
+	  mv *_gen_static.h $(PREFIX)/include_static/$(PREFIX_NAME)/$(PACKAGE)/.; \
+	fi
+
+
+################################################################################
+#
+# Rules to touch  ( "make touch" )
+#
+################################################################################
+
+touch:
+	touch *$(CEXT)
+
+
+
+################################################################################
+#
+# Rules to clear temporary files  ( "make clear" )
+#
+################################################################################
+
+clear:
+	@$(RM) *%
+	@$(RM) *~
+	@$(RM) \#*\#
+
+
+
+

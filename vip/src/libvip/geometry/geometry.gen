@@ -1,0 +1,328 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : geometry.gen           * TYPE     : Source
+ * AUTHOR      : MANGIN J.F.          * CREATION : 08/12/98
+ * VERSION     : 1.4                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Ultra
+ *****************************************************************************
+ *
+ * DESCRIPTION : jfmangin@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <errno.h>
+#include <math.h>
+
+#include <vip/util.h>
+#include <vip/alloc.h>
+#include <vip/volume.h>
+#include <vip/geometry.h>
+
+#define EPSILON 0.000000000001
+
+#NONTYPED_FUNC_BEGIN Vip3DGeometry
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume  *Vip3DGeometry(
+  Volume *vol,
+  int which)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+    Volume *result;
+
+    result = NULL;
+    if (!VipVerifyAll(vol) || !VipTestType(vol,ANY_TYPE))
+	{
+	    VipPrintfExit("(geometry.gen)Vip3DGeometry");
+	    return(PB);
+	}
+    switch( mVipVolType( vol) )
+	{
+	case GENSTRING :
+	    result = Vip3DGeometry_GENSTRING( vol, which);
+	    break;
+	}
+    return(result);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN Create2DHisto_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int    Create2DHisto_GENSTRING(Volume *vol, char *name, int threshold, Volume *new, float vmin, float vmax, int vlength, float rmin, float rmax, int rlength)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Volume *histo;
+  GENTYPE *imptr;
+  Vip_FLOAT *newptr;
+  VipOffsetStruct *vos;
+  int ix, iy, iz;
+  int xsize, ysize, zsize;
+  int imval, newval;
+  float imratio, newratio;
+  Vip_S32BIT *hfirst;
+  VipOffsetStruct *hvos;
+  int offset;
+
+  if (!new) return(PB);
+
+  histo = VipCreate3DVolume(vlength, rlength, 1, 1., 1., 1., S32BIT, "histo2D", 0);
+  if (!histo) return(PB);
+  VipSetVolumeLevel(histo,0);
+
+  imratio = vmax - vmin;
+  newratio = rmax - rmin;
+  if(imratio<0.000001 || newratio<0.0000001)
+    {
+      VipPrintfError("Bad extrema in Create2DHisto");
+      return(PB);
+    }
+  imratio = (float)(vlength-1)/imratio;
+  newratio =(float)(rlength-1)/newratio;
+
+  vos = VipGetOffsetStructure(vol);
+  imptr = VipGetDataPtr_GENSTRING(vol)+vos->oFirstPoint;
+  newptr = VipGetDataPtr_VFLOAT(new)+vos->oFirstPoint;
+
+  hvos = VipGetOffsetStructure(histo);
+  hfirst = VipGetDataPtr_S32BIT( histo ) + hvos->oFirstPoint;
+
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeY(vol);
+  zsize = mVipVolSizeZ(vol);
+
+  for ( iz = 0; iz < zsize; iz++ )                /* loop on slices */
+    {
+      for ( iy = 0; iy < ysize; iy++ )             /* loop on lines */
+	{
+	  for ( ix = 0; ix < xsize; ix++ )          /* loop on points */
+	    {
+              if(*imptr>threshold)
+                {
+                  imval = (int)((*imptr-vmin)*imratio+0.5);
+                  newval = (int)((*newptr-rmin)*newratio+0.5);
+                  if (imval<0) imval = 0;
+                  if (imval>=vlength) imval = vlength-1;
+                  if (newval<0)
+                     newval = 0;
+                  if (newval>=rlength) newval = rlength-1;
+                  offset= imval + newval * hvos->oLine;
+                  *(hfirst + offset) += 1;
+                }
+	      imptr++; 
+              newptr++;
+	    }
+	  imptr += vos->oPointBetweenLine; 
+	  newptr += vos->oPointBetweenLine; 
+	}
+      imptr += vos->oLineBetweenSlice; 
+      newptr += vos->oLineBetweenSlice; 
+    }
+
+   /*Create line 0*/
+
+  offset = rlength/2 * hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = 0;
+
+  /* Duplicate accumulate lines with values out of range for better visibility*/
+  offset = hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix);
+  offset = 2*hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix);
+  offset = 3*hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix);
+  offset = 4*hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix);
+  offset = (rlength-2)* hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix + offset+ hvos->oLine);
+  offset = (rlength-3)* hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix + offset+ hvos->oLine);
+  offset = (rlength-4)* hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix + offset+ hvos->oLine);
+  offset = (rlength-5)* hvos->oLine;
+  for (ix=0;ix<vlength;ix++) *(hfirst + offset+ ix) = *(hfirst + ix + offset+ hvos->oLine);
+  VipWriteTivoliVolume(histo,name);
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN Vip3DGeometry_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume  *Vip3DGeometry_GENSTRING(
+  Volume *vol,
+  int which)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *new;
+  GENTYPE *imptr;
+  Vip_FLOAT *newptr;
+  VipOffsetStruct *vos;
+  int i, j, k, loop;
+  int yoffset, zoffset;
+  float fx, fy, fz, norm;
+  float fxx, fxy, fyy, fyz, fzz, fxz;
+  float mc, gc;
+  float temp;
+
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+      {
+	  VipPrintfExit("(geometry.gen)Vip3DGeometry_GENSTRING");
+	  return(PB);
+      }
+
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_curvature");
+  new = VipDuplicateVolumeStructure (vol,name);
+  VipSetType(new,VFLOAT);
+  if(VipAllocateVolumeData(new)==PB)
+    {
+      VipPrintfExit("Vip3DGeometry");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  imptr = VipGetDataPtr_GENSTRING(vol)+vos->oFirstPoint;
+  newptr = VipGetDataPtr_VFLOAT(new)+vos->oFirstPoint;
+
+  yoffset = VipOffsetLine(vol);
+  zoffset = VipOffsetSlice(vol);
+
+
+  if(mVipVolSizeX(vol)<5 ||mVipVolSizeY(vol)<5||mVipVolSizeZ(vol)<5) 
+      {
+	  VipPrintfError("This volume is not sufficiently 3D for isophote curvatures...");
+	  VipPrintfExit("(geometry.gen)Vip3DGeometry");
+	  return(PB);
+      }
+  imptr+=2*zoffset;
+  for(loop=2*zoffset;loop--;) *newptr++ = 0.;
+  printf("Slice:   ");
+  for (k=mVipVolSizeZ(vol)-4; k--; imptr+=vos->oLineBetweenSlice, newptr +=vos->oLineBetweenSlice)
+      {
+	  printf("\b\b\b%3d",k);
+	  fflush(stdout);
+	  imptr+=2*yoffset;
+	  for(loop=2*yoffset;loop--;) *newptr++ = 0.;
+	  for (j=mVipVolSizeY(vol)-4; j--; imptr+=vos->oPointBetweenLine, newptr +=vos->oPointBetweenLine)
+	      {
+		  imptr += 2;
+		  *newptr++ = 0.;
+		  *newptr++ = 0.;
+		  for (i=mVipVolSizeX(vol)-4; i--; imptr++, newptr++)
+		      {
+			  
+			  fx  = ((float)*(imptr+1) - *(imptr-1))  / 2.;
+			  fy  = ((float)*(imptr+yoffset) - *(imptr-yoffset))  / 2.;
+			  fz  = ((float)*(imptr+zoffset) - *(imptr-zoffset))  / 2.;
+			  norm = (fx*fx+fy*fy+fz*fz);
+			  if(norm>EPSILON)
+			      {
+				  fxx = (float)(*(imptr+2) - 2.*(*imptr) + *(imptr-2))/4.;
+				  fyy = (float)(*(imptr+2*yoffset) - 2.*(*imptr) + *(imptr-2*yoffset))/4.;
+				  fzz = (float)(*(imptr+2*zoffset) - 2.*(*imptr) + *(imptr-2*zoffset))/4.;
+				  fxy = (float)(*(imptr+1+yoffset) - *(imptr-1+yoffset)
+						- *(imptr+1-yoffset) + *(imptr-1-yoffset))/4.;
+				  fxz = (float)(*(imptr+1+zoffset) - *(imptr-1+zoffset)
+						- *(imptr+1-zoffset) + *(imptr-1-zoffset))/4.;
+				  fyz = (float)(*(imptr+yoffset+zoffset) - *(imptr-yoffset+zoffset)
+						- *(imptr+yoffset-zoffset) + *(imptr-yoffset-zoffset))/4.;
+				  switch(which)
+				      {
+				      case MEAN_CURVATURE:
+				      case MEAN_LVV:
+					  norm = (float)sqrt((double)norm);
+					  mc =  (fx*fx*(fyy+fzz) - 2*fy*fz*fyz +
+						 fy*fy*(fxx+fzz) - 2*fx*fz*fxz +
+						 fz*fz*(fxx+fyy) - 2*fx*fy*fxy) 
+					      / ( 2. * norm * norm *norm ) ;
+					  if(which==MEAN_CURVATURE) *newptr = mc;
+					  else *newptr = -norm*mc;
+					  break;
+				      case GAUSSIAN_CURVATURE:
+				      case GAUSSIAN_LVV:
+					  gc = 
+					      (fx*fx*(fyy*fzz-fyz*fyz) +
+					       2*fy*fz*(fxz*fxy-fxx*fyz)  + 
+					       fy*fy*(fxx*fzz-fxz*fxz) +
+					       2*fx*fz*(fyz*fxy-fyy*fxz)  +
+					       fz*fz*(fxx*fyy-fxy*fxy) +
+					       2*fx*fy*(fxz*fyz-fzz*fxy)  ) / (norm*norm);
+					  if(which==GAUSSIAN_CURVATURE) *newptr = gc;
+					  else *newptr = norm*gc;
+					  break;
+				      case PRINCIPAL_CURVATURE_1:
+				      case PRINCIPAL_CURVATURE_2:
+					  gc = 
+					      (fx*fx*(fyy*fzz-fyz*fyz) +
+					       2*fy*fz*(fxz*fxy-fxx*fyz)  + 
+					       fy*fy*(fxx*fzz-fxz*fxz) +
+					       2*fx*fz*(fyz*fxy-fyy*fxz)  +
+					       fz*fz*(fxx*fyy-fxy*fxy) +
+					       2*fx*fy*(fxz*fyz-fzz*fxy)  ) / (norm*norm);
+					  norm = (float)sqrt((double)norm);
+					  norm = norm*norm*norm;
+					  mc =  (fx*fx*(fyy+fzz) - 2*fy*fz*fyz +
+						 fy*fy*(fxx+fzz) - 2*fx*fz*fxz +
+						 fz*fz*(fxx+fyy) - 2*fx*fy*fxy) 
+					      / ( 2. * norm ) ;
+                                          temp = mVipMax(0.,mc*mc-4*gc);
+					  if(which == PRINCIPAL_CURVATURE_1)
+					      *newptr = 0.5*(mc + (float)sqrt((double)(temp)));
+					  else
+					      *newptr = 0.5*(mc - (float)sqrt((double)(temp)));
+					  break;
+                                      case LAPLACIAN:
+                                        *newptr = fxx + fyy + fzz;
+                                        break;
+				      default:
+					  VipPrintfError("This differential invariant is not implemented");
+					  VipFreeVolume(new);
+					  return(PB);
+				      }
+					  
+			      }
+			  else *newptr = 0.;
+		      }		      	  
+		  imptr += 2;
+		  *newptr++ = 0.;
+		  *newptr++ = 0.;
+	      }
+	  imptr+=2*yoffset;
+	  for(loop=2*yoffset;loop--;) *newptr++ = 0.;
+      }
+  for(loop=2*zoffset;loop--;) *newptr++ = 0.;
+
+  printf("\n");
+  return(new); 
+}
+#FUNCTION_END
+#TYPED_FUNC_END

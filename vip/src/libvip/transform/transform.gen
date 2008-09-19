@@ -1,0 +1,287 @@
+/****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_transform.gen    * TYPE     : Generic
+ * AUTHOR      : POUPON F.            * CREATION : 24/10/1997
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C++                  * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ ****************************************************************************
+ *
+ * DESCRIPTION : Effectue une transformation 3D a un volume
+ *
+ ****************************************************************************
+ *
+ * USED MODULES : Vip_bucket.h
+ *
+ ****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|---------------------------------------
+ *              / /   |              |
+ ****************************************************************************/
+
+#include <vip/transform.h>
+
+#H_EXPAND_BEGIN
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+
+typedef struct
+{ 
+  Vip3DPoint_GENSTRING gravity;     /** rotation center position coordinates **/
+  Vip3DPoint_GENSTRING rotation;    /** rotation angles **/
+  Vip3DPoint_GENSTRING translation; /** translation coordinates **/
+  Vip3DPoint_GENSTRING scale;       /** scale factors **/
+} VipTransform_GENSTRING;
+
+#H_EXPAND_END
+
+
+#TYPED_FUNC_BEGIN VipTranformationMatrix_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipMatrix_GENSTRING *VipTransformationMatrix_GENSTRING(
+  VipTransform_GENSTRING *transfo
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  VipMatrix_GENSTRING *rotX, *rotY, *rotZ, *trans, *grT, *grTmoins, *scale;
+  VipMatrix_GENSTRING *result, *prod1, *prod2, *prod3, *prod4, *prod5;
+  GENTYPE **rotXptr, **rotYptr, **rotZptr, **transptr, **grTptr, **grTmoinsptr;
+  GENTYPE **scaleptr, theCos, theSin;
+  int i;
+
+  rotX = VipAllocationMatrix_GENSTRING(4, 4, "");
+  if (!rotX)
+    {
+      VipPrintfError("Error while allocating X rotation matrix...");
+      VipPrintfExit("(Vip_transform.gen)VipTransformationMatrix_GENTSRING");
+      return((VipMatrix_GENSTRING *)NULL);
+    }
+
+  rotY = VipAllocationMatrix_GENSTRING(4, 4, "");
+  if (!rotY)
+    {
+      VipPrintfError("Error while allocating Y rotation matrix...");
+      VipPrintfExit("(Vip_transform.gen)VipTransformationMatrix_GENTSRING");
+      if (rotX) VipFreeMatrix_GENSTRING(rotX);
+      return((VipMatrix_GENSTRING *)NULL);
+    }
+
+  rotZ = VipAllocationMatrix_GENSTRING(4, 4, "");
+  if (!rotZ)
+    {
+      VipPrintfError("Error while allocating Z rotation matrix...");
+      VipPrintfExit("(Vip_transform.gen)VipTransformationMatrix_GENTSRING");
+      if (rotY) VipFreeMatrix_GENSTRING(rotY);
+      if (rotX) VipFreeMatrix_GENSTRING(rotX);
+      return((VipMatrix_GENSTRING *)NULL);
+    }
+
+  trans = VipAllocationMatrix_GENSTRING(4, 4, "");
+  if (!trans)
+    {
+      VipPrintfError("Error while allocating translation matrix...");
+      VipPrintfExit("(Vip_transform.gen)VipTransformationMatrix_GENTSRING");
+      if (rotZ) VipFreeMatrix_GENSTRING(rotZ);
+      if (rotY) VipFreeMatrix_GENSTRING(rotY);
+      if (rotX) VipFreeMatrix_GENSTRING(rotX);
+      return((VipMatrix_GENSTRING *)NULL);
+    }
+
+  grT = VipAllocationMatrix_GENSTRING(4, 4, "");
+  if (!grT)
+    {
+      VipPrintfError("Error while allocating gravity translation matrix...");
+      VipPrintfExit("(Vip_transform.gen)VipTransformationMatrix_GENTSRING");
+      if (trans) VipFreeMatrix_GENSTRING(trans);
+      if (rotZ) VipFreeMatrix_GENSTRING(rotZ);
+      if (rotY) VipFreeMatrix_GENSTRING(rotY);
+      if (rotX) VipFreeMatrix_GENSTRING(rotX);
+      return((VipMatrix_GENSTRING *)NULL);
+    }
+
+  grTmoins = VipAllocationMatrix_GENSTRING(4, 4, "");
+  if (!grTmoins)
+    {
+      VipPrintfError("Error while allocating gravity inverse translation matrix...");
+      VipPrintfExit("(Vip_transform.gen)VipTransformationMatrix_GENTSRING");
+      if (grT) VipFreeMatrix_GENSTRING(grT);
+      if (trans) VipFreeMatrix_GENSTRING(trans);
+      if (rotZ) VipFreeMatrix_GENSTRING(rotZ);
+      if (rotY) VipFreeMatrix_GENSTRING(rotY);
+      if (rotX) VipFreeMatrix_GENSTRING(rotX);
+      return((VipMatrix_GENSTRING *)NULL);
+    }
+
+  scale = VipAllocationMatrix_GENSTRING(4, 4, "");
+  if (!scale)
+    {
+      VipPrintfError("Error while allocating scale matrix...");
+      VipPrintfExit("(Vip_transform.gen)VipTransformationMatrix_GENTSRING");
+      if (grTmoins) VipFreeMatrix_GENSTRING(grTmoins);
+      if (grT) VipFreeMatrix_GENSTRING(grT);
+      if (trans) VipFreeMatrix_GENSTRING(trans);
+      if (rotZ) VipFreeMatrix_GENSTRING(rotZ);
+      if (rotY) VipFreeMatrix_GENSTRING(rotY);
+      if (rotX) VipFreeMatrix_GENSTRING(rotX);
+      return((VipMatrix_GENSTRING *)NULL);
+    }
+
+  rotXptr = VipGetMatrixPtr_GENSTRING(rotX);
+  rotYptr = VipGetMatrixPtr_GENSTRING(rotY);
+  rotZptr = VipGetMatrixPtr_GENSTRING(rotZ);
+  transptr = VipGetMatrixPtr_GENSTRING(trans);
+  grTptr = VipGetMatrixPtr_GENSTRING(grT);
+  grTmoinsptr = VipGetMatrixPtr_GENSTRING(grTmoins);
+  scaleptr = VipGetMatrixPtr_GENSTRING(scale);
+
+  /***** Matrice de rotation en X *****/
+  theCos = cos(M_PI/180.0*transfo->rotation.x);
+  theSin = sin(M_PI/180.0*transfo->rotation.x);
+  rotXptr[0][0] = rotXptr[3][3] = 1.0;
+  rotXptr[1][1] = rotXptr[2][2] = theCos;
+  rotXptr[2][1] = -theSin;
+  rotXptr[1][2] = theSin;
+
+  /***** Matrice de rotation en Y *****/
+  theCos = cos(M_PI/180.0*transfo->rotation.y);
+  theSin = sin(M_PI/180.0*transfo->rotation.y);
+  rotYptr[1][1] = rotYptr[3][3] = 1.0;
+  rotYptr[0][0] = rotYptr[2][2] = theCos;
+  rotYptr[2][0] = theSin;
+  rotYptr[0][2] = -theSin;
+
+  /***** Matrice de rotation en Z *****/
+  theCos = cos(M_PI/180.0*transfo->rotation.z);
+  theSin = sin(M_PI/180.0*transfo->rotation.z);
+  rotZptr[2][2] = rotZptr[3][3] = 1.0;
+  rotZptr[0][0] = rotZptr[1][1] = theCos;
+  rotZptr[1][0] = -theSin;
+  rotZptr[0][1] = theSin;
+
+  /***** Matrice de translation *****/
+  for (i=0; i<4; i++) transptr[i][i] = 1.0;
+  transptr[0][3] = -transfo->translation.x;
+  transptr[1][3] = -transfo->translation.y;
+  transptr[2][3] = -transfo->translation.z;
+
+  /***** Matrice de scaling *****/
+  scaleptr[0][0] = 1.0/transfo->scale.x;
+  scaleptr[1][1] = 1.0/transfo->scale.y;
+  scaleptr[2][2] = 1.0/transfo->scale.z;
+  scaleptr[3][3] = 1.0;
+
+  /***** Matrice de translation du centre de gravite *****/
+  for (i=0; i<4; i++)  grTptr[i][i] = 1.0;
+  grTptr[0][3] = -transfo->gravity.x;
+  grTptr[1][3] = -transfo->gravity.y;
+  grTptr[2][3] = -transfo->gravity.z;
+
+  /***** Matrice de translation inverse du centre de gravite *****/
+  for (i=0; i<4; i++)  grTmoinsptr[i][i] = 1.0;
+  grTmoinsptr[0][3] = transfo->gravity.x;
+  grTmoinsptr[1][3] = transfo->gravity.y;
+  grTmoinsptr[2][3] = transfo->gravity.z;
+
+  /***** Matrice de transformation : P = T-g.S.Rx.Ry.Rz.Tg.T *****/
+  prod1 = VipMatrixProduct_GENSTRING(grTmoins, scale);
+  prod2 = VipMatrixProduct_GENSTRING(prod1, rotX);
+  prod3 = VipMatrixProduct_GENSTRING(prod2, rotY);
+  prod4 = VipMatrixProduct_GENSTRING(prod3, rotZ);
+  prod5 = VipMatrixProduct_GENSTRING(prod4, grT);
+  result = VipMatrixProduct_GENSTRING(prod5, trans);
+
+  VipFreeMatrix_GENSTRING(prod5);
+  VipFreeMatrix_GENSTRING(prod4);
+  VipFreeMatrix_GENSTRING(prod3);
+  VipFreeMatrix_GENSTRING(prod2);
+  VipFreeMatrix_GENSTRING(prod1);
+  VipFreeMatrix_GENSTRING(scale);
+  VipFreeMatrix_GENSTRING(grTmoins);
+  VipFreeMatrix_GENSTRING(grT);
+  VipFreeMatrix_GENSTRING(trans);
+  VipFreeMatrix_GENSTRING(rotZ);
+  VipFreeMatrix_GENSTRING(rotY);
+  VipFreeMatrix_GENSTRING(rotX);
+
+  return(result);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipTranformation_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume *VipTransformation_GENSTRING(
+  Volume *vol, 
+  VipTransform_GENSTRING *transfo
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Volume *volout;
+  int ydec, zdec, sx, sy, sz, x, y, z;
+  Vip_S16BIT *imptr, *outptr;
+  VipMatrix_GENSTRING *transform;
+  VipVector_GENSTRING *pt1;
+  VipOffsetStruct *vos;
+  GENTYPE *p1, **pt;
+
+  pt1 = VipAllocationVector_GENSTRING(4, "");
+  if (!pt1)
+    {
+      VipPrintfError("Error while allocating point vector");
+      VipPrintfExit("(Vip_transform.gen)VipTransform_GENSTRING");
+      return((Volume *)NULL);
+    }
+
+  volout = VipDuplicateVolumeStructure(vol, "");
+  VipAllocateVolumeData(volout);
+
+  sx = mVipVolSizeX(vol);
+  sy = mVipVolSizeY(vol);
+  sz = mVipVolSizeZ(vol);
+
+  vos = VipGetOffsetStructure(vol);
+  imptr = VipGetDataPtr_S16BIT(vol)+vos->oFirstPoint;
+  outptr = VipGetDataPtr_S16BIT(volout)+vos->oFirstPoint;
+  p1 = VipGetVectorPtr_GENSTRING(pt1);
+  p1[3] = 1.0;
+
+  ydec = vos->oLine;
+  zdec = vos->oSlice;
+
+  transform = VipTransformationMatrix_GENSTRING(transfo);
+  pt = VipGetMatrixPtr_GENSTRING(transform);
+  printf("\nTransformation matrix (homogeneous coordinates) : \n");
+  VipPrintMatrix_GENSTRING(NULL, transform);
+  printf("\nTransformation : %5d%%", 0);
+
+  for (p1[2]=0.0; p1[2]<(GENTYPE)sz; p1[2]++, outptr+=vos->oLineBetweenSlice)
+    {
+      for (p1[1]=0.0; p1[1]<(GENTYPE)sy; p1[1]++, outptr+=vos->oPointBetweenLine)
+        for (p1[0]=0.0; p1[0]<(GENTYPE)sx; p1[0]++, outptr++)
+          {
+            x = mVipRint(pt[0][0]*p1[0]+pt[0][1]*p1[1]+pt[0][2]*p1[2]+pt[0][3]*p1[3]);
+            y = mVipRint(pt[1][0]*p1[0]+pt[1][1]*p1[1]+pt[1][2]*p1[2]+pt[1][3]*p1[3]);
+            z = mVipRint(pt[2][0]*p1[0]+pt[2][1]*p1[1]+pt[2][2]*p1[2]+pt[2][3]*p1[3]);
+            if ((x >= 0) && (x < sx) && (y >= 0) && (y < sy) && (z >= 0) && (z < sz))
+              *outptr = *(imptr+x+y*ydec+z*zdec);
+          }
+      printf("\b\b\b\b\b\b%5d%%", (int)(100.0*(double)p1[2]/(double)sz)+1);
+      fflush(stdout);
+    }
+
+  printf("\n");
+
+  VipFreeVector_GENSTRING(pt1);
+  VipFree(vos);
+
+  return(volout);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

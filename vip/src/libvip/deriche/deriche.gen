@@ -1,0 +1,934 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_deriche.gen      * TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 04/01/1997
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : PC Linux
+ *****************************************************************************
+ *
+ * DESCRIPTION : jfmangin@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <errno.h>
+#include <math.h>
+
+#include <vip/util.h>
+#include <vip/alloc.h>
+#include <vip/volume.h>
+#include <vip/bucket.h>
+#include <vip/deriche.h>
+#include <vip/deriche_static.h>
+
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipDeriche2DGradientX
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+Volume  *VipDeriche2DGradientX(
+  Volume *vol,
+  float ALPHA,
+  int how)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *newv;
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(deriche.gen)VipDeriche2DGradientX");
+     return(PB);
+   }
+ if((ALPHA<0.3)||(ALPHA>3))
+    {
+      VipPrintfWarning("Alpha Deriche parameter should be in the range [0.3,3]");
+    }
+  if(how == NEW_VOLUME)
+    {
+      (void)strcpy(name,mVipVolName(vol));
+      (void)strcat(name,"_deriche_2DgradientX");
+      newv = VipDuplicateVolumeStructure (vol,name);
+      if(VipAllocateVolumeData(newv)==PB) return(PB);
+    }
+  else newv = vol;
+
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      newv = VolumeDeriche2DGradientX_GENSTRING( vol, newv, ALPHA );
+      break;
+    }		
+      
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VolumeDeriche2DGradientX_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------------------*/
+Volume *VolumeDeriche2DGradientX_GENSTRING(
+    Volume *vol,
+    Volume *newv,
+    float alpha)
+/*------------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+					
+	/* coordonnee en x du gradient */
+
+{
+  float *pointeur_1;
+  int s;
+  float *p1;
+  float *work,*input,*output,afl1,afl2,aflr1,aflr2,bfl1,bfl2;
+  float afl1_g, bfl1_g, bfl2_g;
+  int xsize, ysize;
+  VipOffsetStruct *vos;
+  GENTYPE *ptrin, *ptrout;
+  int ix, iy;
+  
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeX(vol);
+
+  pointeur_1 = (float*)VipCalloc(xsize*ysize,sizeof(float),"VolumeDeriche2DGradientX_GENSTRING");
+
+  if (xsize>ysize)
+    {
+      input = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientX_GENSTRING");
+      output = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientX_GENSTRING");
+      work = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientX_GENSTRING");
+    } 
+  else
+    {
+      input = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientX_GENSTRING");
+      output = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientX_GENSTRING");
+      work = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientX_GENSTRING");
+    }
+  
+  if(!pointeur_1 || !input || !output || !work)
+    {
+      VipPrintfExit("VolumeDeriche2DGradientX_GENSTRING");
+      return(PB);
+    }
+
+  CoefGradientDeriche(alpha,&afl1_g,&bfl1_g,&bfl2_g);
+
+  CoefSmoothingDeriche(alpha,&afl1,&afl2,&aflr1,&aflr2,&bfl1,&bfl2);
+
+  printf("Processing slice:   ");
+
+  vos = VipGetOffsetStructure(vol);
+
+  for( s=1; s<=mVipVolSizeZ(vol); s++ )
+    {
+      printf("\b\b\b%3d", s);
+      fflush(stdout);
+      
+      /*duplication en float */
+
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+      p1 = pointeur_1;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+		*p1++ = (float) *ptrin++;
+	    }
+	  ptrin += vos->oPointBetweenLine;  /*skip border points*/
+	}
+        
+      GradientDericheAlongLines(pointeur_1,pointeur_1,output,work,afl1_g,bfl1_g,bfl2_g,xsize,ysize);
+      
+      SmoothingDericheAlongColumns(pointeur_1,pointeur_1,
+				       input,output,work,afl1,afl2,aflr1,aflr2,bfl1,bfl2,xsize,ysize);
+				       
+
+      /*recopie (could be inserted before for optimization...*/
+
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+
+      p1 = pointeur_1;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+	      *ptrout++ = (GENTYPE) *p1++;
+	    }
+	  ptrout += vos->oPointBetweenLine;  /*skip border points*/
+	}
+    }
+  printf("\n");
+      
+  VipFree(input); 
+  VipFree(output);
+  VipFree(work);
+  VipFree(pointeur_1);
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipDeriche2DGradientY
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+Volume  *VipDeriche2DGradientY(
+  Volume *vol,
+  float ALPHA,
+  int how)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *newv;
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(deriche.gen)VipDeriche2DGradientY");
+     return(PB);
+   }
+ if((ALPHA<0.3)||(ALPHA>3))
+    {
+      VipPrintfWarning("Alpha Deriche parameter should be in the range [0.3,3]");
+    }
+  if(how == NEW_VOLUME)
+    {
+      (void)strcpy(name,mVipVolName(vol));
+      (void)strcat(name,"_deriche_2DgradientY");
+      newv = VipDuplicateVolumeStructure (vol,name);
+      if(VipAllocateVolumeData(newv)==PB) return(PB);
+    }
+  else newv = vol;
+
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      newv = VolumeDeriche2DGradientY_GENSTRING( vol, newv, ALPHA );
+      break;
+    }		
+      
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VolumeDeriche2DGradientY_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------------------*/
+Volume *VolumeDeriche2DGradientY_GENSTRING(
+    Volume *vol,
+    Volume *newv,
+    float alpha)
+/*------------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+					
+	/* coordonnee en y du gradient */
+
+{
+  float *pointeur_1;
+  int s;
+  float *p1;
+  float *work,*input,*output,afl1,afl2,aflr1,aflr2,bfl1,bfl2;
+  float afl1_g, bfl1_g, bfl2_g;
+  int xsize, ysize;
+  VipOffsetStruct *vos;
+  GENTYPE *ptrin, *ptrout;
+  int ix, iy;
+  
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeX(vol);
+
+  pointeur_1 = (float*)VipCalloc(xsize*ysize,sizeof(float),"VolumeDeriche2DGradientY_GENSTRING");
+
+  if (xsize>ysize)
+    {
+      input = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientY_GENSTRING");
+      output = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientY_GENSTRING");
+      work = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientY_GENSTRING");
+    } 
+  else
+    {
+      input = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientY_GENSTRING");
+      output = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientY_GENSTRING");
+      work = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientY_GENSTRING");
+    }
+  
+  if(!pointeur_1 || !input || !output || !work)
+    {
+      VipPrintfExit("VolumeDeriche2DGradientY_GENSTRING");
+      return(PB);
+    }
+
+  CoefGradientDeriche(alpha,&afl1_g,&bfl1_g,&bfl2_g);
+
+  CoefSmoothingDeriche(alpha,&afl1,&afl2,&aflr1,&aflr2,&bfl1,&bfl2);
+
+  printf("Processing slice:   ");
+
+  vos = VipGetOffsetStructure(vol);
+
+  for( s=1; s<=mVipVolSizeZ(vol); s++ )
+    {
+      printf("\b\b\b%3d", s);
+      fflush(stdout);
+      
+      /*duplication en float */
+
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+      p1 = pointeur_1;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+		*p1++ = (float) *ptrin++;
+	    }
+	  ptrin += vos->oPointBetweenLine;  /*skip border points*/
+	}
+        
+     
+      GradientDericheAlongColumns(pointeur_1,pointeur_1,
+				     input,output,work,afl1_g,bfl1_g,bfl2_g,xsize,ysize);
+
+ 
+      SmoothingDericheAlongLines(pointeur_1,pointeur_1,
+				    output,work,afl1,afl2,aflr1,aflr2,bfl1,bfl2,xsize,ysize);
+
+
+      /*recopie (could be inserted before for optimization...*/
+
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+
+      p1 = pointeur_1;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+	      *ptrout++ = (GENTYPE) *p1++;
+	    }
+	  ptrout += vos->oPointBetweenLine;  /*skip border points*/
+	}
+    }
+  printf("\n");
+      
+  VipFree(input); 
+  VipFree(output);
+  VipFree(work);
+  VipFree(pointeur_1);
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipDeriche2DSmoothing
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+Volume  *VipDeriche2DSmoothing(
+  Volume *vol,
+  float ALPHA,
+  int how)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *newv;
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(deriche.gen)VipDeriche2DSmoothing");
+     return(PB);
+   }
+ if((ALPHA<0.3)||(ALPHA>3))
+    {
+      VipPrintfWarning("Alpha Deriche parameter should be in the range [0.3,3]");
+    }
+  if(how == NEW_VOLUME)
+    {
+      (void)strcpy(name,mVipVolName(vol));
+      (void)strcat(name,"_deriche_2Dsmoothed");
+      newv = VipDuplicateVolumeStructure (vol,name);
+      if(VipAllocateVolumeData(newv)==PB) return(PB);
+    }
+  else newv = vol;
+
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      newv = VolumeDeriche2DSmoothing_GENSTRING( vol, newv, ALPHA );
+      break;
+    }		
+      
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VolumeDeriche2DSmoothing_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------------------*/
+Volume *VolumeDeriche2DSmoothing_GENSTRING(
+    Volume *vol,
+    Volume *newv,
+    float alpha)
+/*------------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+					
+	/* Lissage dans les directions X et Y */
+
+{
+  float *pointeur_1;
+  int s;
+  float *p1;
+  float *work,*input,*output,afl1,afl2,aflr1,aflr2,bfl1,bfl2;
+  int xsize, ysize;
+  VipOffsetStruct *vos;
+  GENTYPE *ptrin, *ptrout;
+  int ix, iy;
+  
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeX(vol);
+
+  pointeur_1 = (float*)VipCalloc(xsize*ysize,sizeof(float),"VolumeDeriche2DSmoothing_GENSTRING");
+
+  if (xsize>ysize)
+    {
+      input = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DSmoothing_GENSTRING");
+      output = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DSmoothing_GENSTRING");
+      work = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DSmoothing_GENSTRING");
+    } 
+  else
+    {
+      input = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DSmoothing_GENSTRING");
+      output = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DSmoothing_GENSTRING");
+      work = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DSmoothing_GENSTRING");
+    }
+  
+  if(!pointeur_1 || !input || !output || !work)
+    {
+      VipPrintfExit("VolumeDeriche2DSmoothing_GENSTRING");
+      return(PB);
+    }
+
+  CoefSmoothingDeriche(alpha,&afl1,&afl2,&aflr1,&aflr2,&bfl1,&bfl2);
+
+  printf("Processing slice:   ");
+
+  vos = VipGetOffsetStructure(vol);
+
+  for( s=1; s<=mVipVolSizeZ(vol); s++ )
+    {
+      printf("\b\b\b%3d", s);
+      fflush(stdout);
+      
+      /*duplication en float */
+
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+      p1 = pointeur_1;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+		*p1++ = (float) *ptrin++;
+	    }
+	  ptrin += vos->oPointBetweenLine;  /*skip border points*/
+	}
+  
+ 
+      SmoothingDericheAlongLines(pointeur_1,pointeur_1,
+				    output,work,afl1,afl2,aflr1,aflr2,bfl1,bfl2,xsize,ysize);
+ 
+      SmoothingDericheAlongColumns(pointeur_1,pointeur_1,
+				       input,output,work,afl1,afl2,aflr1,aflr2,bfl1,bfl2,xsize,ysize);
+ 
+
+      /*recopie (could be inserted before for optimization...*/
+
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+
+      p1 = pointeur_1;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+	      *ptrout++ = (GENTYPE) *p1++;
+	    }
+	  ptrout += vos->oPointBetweenLine;  /*skip border points*/
+	}
+    }
+  printf("\n");
+      
+  VipFree(input); 
+  VipFree(output);
+  VipFree(work);
+  VipFree(pointeur_1);
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipDeriche2DGradientNormAndReturnG2DBucket
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+Volume  *VipDeriche2DGradientNormAndReturnG2DBucket(
+  Volume *vol,
+  float ALPHA,
+  int how,
+  int mode,
+  float threshold,
+  VipG2DBucket **gbuck)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *newv;
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(deriche.gen)VipDeriche2DGradientNormAndReturnG2DBucket");
+     return(PB);
+   }
+
+  if((mode!=DERICHE_NORM)&&(mode!=DERICHE_EXTREMA)&&(mode!=DERICHE_EXTREMA_DIRECTION))
+    {
+      VipPrintfError("Unknown mode in VipDeriche2DGradientNormAndReturnG2DBucket");
+      VipPrintfExit("VipDeriche2DGradientNormAndReturnG2DBucket");
+      return(PB);
+    }
+  if(threshold<0)
+    {
+      VipPrintfWarning("Negative threshold in VipDeriche2DGradientNormAndReturnG2DBucket");
+    }
+  if((ALPHA<0.3)||(ALPHA>3))
+    {
+      VipPrintfWarning("Alpha deriche parameter should be in the range [0.3,3]");
+    }
+  if(how == NEW_VOLUME)
+    {
+      (void)strcpy(name,mVipVolName(vol));
+      (void)strcat(name,"_deriche_2Dnorm");
+      newv = VipDuplicateVolumeStructure (vol,name);
+      if(VipAllocateVolumeData(newv)==PB) return(PB);
+    }
+  else newv = vol;
+
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      newv = VolumeDeriche2DGradientNorm_GENSTRING( vol, newv, ALPHA, mode, threshold, gbuck );
+      break;
+    }		
+
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VolumeDeriche2DGradientNorm_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------------------*/
+Volume *VolumeDeriche2DGradientNorm_GENSTRING(
+    Volume *vol,
+    Volume *newv,
+    float alpha,
+    int mode,
+    float threshold,
+    VipG2DBucket **gbuck)
+/*------------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+					
+
+{
+  float *gx, *gy, *gnorm,*gext;
+  int i,j,s;
+  float *p1;
+  float *work,*input,*output,afl1,afl2,aflr1,aflr2,bfl1,bfl2;
+  float afl1_g, bfl1_g, bfl2_g;
+  int xsize, ysize;
+  VipOffsetStruct *vos;
+  GENTYPE *ptrin, *ptrout;
+  int ix, iy;
+  float *gxptr, *gyptr;
+  int nextrema;
+  VipG2DPoint *bufptr;
+  VipG2DBucket *list,*walker=NULL;
+
+  list =NULL;
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeY(vol);
+
+  if((mode!=DERICHE_NORM)&&(mode!=DERICHE_EXTREMA)&&(mode!=DERICHE_EXTREMA_DIRECTION))
+    {
+      VipPrintfError("Unknown mode in VolumeDeriche2DGradientNorm_GENSTRING");
+      return(PB);
+    }
+
+  if(mode==DERICHE_EXTREMA_DIRECTION)
+    {
+      if(!gbuck)
+	{
+	  VipPrintfError("NULL gbuck in ...DIRECTION mode!\n");
+	  VipPrintfExit("VipDeriche2DGradientNormAndReturnG2DBucket");
+	  return(PB);
+	}     
+    }
+
+  gx = (float*)VipCalloc(xsize*ysize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+  gy = (float*)VipCalloc(xsize*ysize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+  gnorm = (float*)VipCalloc(xsize*ysize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+  gext = (float*)VipCalloc(xsize*ysize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+
+  if (xsize>ysize)
+    {
+      input = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+      output = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+      work = (float*) VipCalloc(xsize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+    } 
+  else
+    {
+      input = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+      output = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+      work = (float*) VipCalloc(ysize,sizeof(float),"VolumeDeriche2DGradientNorm_GENSTRING");
+    }
+  
+  if(!gx || !gy || !gnorm || !gext || !input || !output || !work)
+    {
+      VipPrintfExit("VolumeDeriche2DSmoothing_GENSTRING");
+      return(PB);
+    }
+
+  CoefGradientDeriche(alpha,&afl1_g,&bfl1_g,&bfl2_g);
+
+  CoefSmoothingDeriche(alpha,&afl1,&afl2,&aflr1,&aflr2,&bfl1,&bfl2);
+
+  printf("Processing slice:   ");
+
+  vos = VipGetOffsetStructure(vol);
+
+  for( s=1; s<=mVipVolSizeZ(vol); s++ )
+    {
+      printf("\b\b\b%3d", s);
+      fflush(stdout);
+
+      /*duplication en float dans gext */
+
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+      p1 = gext;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+	      *p1++ = (float) *ptrin++;
+	    }
+	  ptrin += vos->oPointBetweenLine;  /*skip border points*/
+	}
+        
+      GradientDericheAlongLines(gext,gx,output,work,afl1_g,bfl1_g,bfl2_g,xsize,ysize);
+ 
+      SmoothingDericheAlongColumns(gx,gx,
+				   input,output,work,afl1,afl2,aflr1,aflr2,bfl1,bfl2,xsize,ysize);
+
+  
+      GradientDericheAlongColumns(gext,gy,
+				  input,output,work,afl1_g,bfl1_g,bfl2_g,xsize,ysize);
+
+ 
+      SmoothingDericheAlongLines(gy,gy,
+				 output,work,afl1,afl2,aflr1,aflr2,bfl1,bfl2,xsize,ysize);
+  
+      Compute2dGradientNorme(gx,gy,gnorm,xsize*ysize);
+
+      if((mode==DERICHE_EXTREMA)||(mode==DERICHE_EXTREMA_DIRECTION))
+	Extract2dMaximaFloat(gx,gy,gnorm,gext,xsize,ysize,threshold);
+
+      /*recopie (could be inserted before for optimization...*/
+
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint + (s-1)*vos->oSlice;
+
+      if((mode==DERICHE_EXTREMA)||(mode==DERICHE_EXTREMA_DIRECTION)) p1 = gext;
+      else p1 = gnorm;
+
+      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	    {
+	      *ptrout++ = (GENTYPE) *p1++;
+	    }
+	  ptrout += vos->oPointBetweenLine;  /*skip border points*/
+	}
+      if(mode==DERICHE_EXTREMA_DIRECTION)
+	{
+	  p1 = gext;
+	  nextrema = 0;
+	  for(i=xsize*ysize;i--;) if(*p1++) nextrema++;
+	  if(list==NULL)
+	    {
+	      list = VipAllocG2DBucket(nextrema);
+	      if (!list) 
+		{
+		  VipFree(input); 
+		  VipFree(output);
+		  VipFree(work);
+		  VipFree(gx);
+		  VipFree(gy);
+		  VipFree(gnorm);
+		  VipFree(gext);
+		  return(PB);
+		}
+	      walker = list;
+	    }
+	  else
+	    {
+	      walker->next = VipAllocG2DBucket(nextrema);
+	      if (!(walker->next))	     
+		{
+		  VipFree(input); 
+		  VipFree(output);
+		  VipFree(work);
+		  VipFree(gx);
+		  VipFree(gy);
+		  VipFree(gnorm);
+		  VipFree(gext);
+		  return(PB);
+		} 
+	      walker = walker->next;
+	    }
+	  bufptr = walker->data;
+	  /* pour chaque extrema: x, y, z, gx, gy */
+	 
+	  p1 = gext;
+	  gxptr = gx;
+	  gyptr = gy;
+	  for(j=0;j<ysize;j++)
+	    for(i=0;i<xsize;i++)
+	      {
+		if(*p1)
+		  {
+		    bufptr->p.x = i;
+		    bufptr->p.y = j;
+		    bufptr->p.z = s-1;
+		    bufptr->g2D.x = *gxptr/ (*p1);
+		    bufptr->g2D.y = *gyptr/ (*p1);
+		    bufptr++;
+		    walker->n_points++;
+		  }
+		p1++;
+		gxptr++;
+		gyptr++;
+	      }	
+	  *gbuck = list;	
+	}
+    }
+  printf("\n");
+  VipFree(input); 
+  VipFree(output);
+  VipFree(work);
+  VipFree(gx);
+  VipFree(gy);
+  VipFree(gnorm);
+  VipFree(gext);
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipPreserveFloatVolume
+#TYPE_LIST_STATIC S8BIT S16BIT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipPreserveFloatVolume
+/*----------------------------------------------------------------------------*/
+(
+        Volume      *fvol,
+        Volume      *volume,
+        float *lemax
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if(VipTestExist( volume )==PB)
+    {
+      VipPrintfExit("(volume.gen)VipPreserveFloatVolume");
+      return(PB);
+    }
+  if((VipVerifyAll( fvol )==PB)||(VipTestType(fvol,VFLOAT)==PB))
+    {
+      VipPrintfError("PB with FLOAT volume");
+      VipPrintfExit("(volume.gen)VipPreserveFloatVolume");
+      return(PB);
+    }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = PreserveFloatVolume_GENSTRING( fvol, volume, lemax);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+
+#TYPED_FUNC_BEGIN PreserveFloatVolume_GENSTRING
+#TYPE_LIST_STATIC S8BIT S16BIT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+	int			PreserveFloatVolume_GENSTRING
+/*----------------------------------------------------------------------------*/
+(
+	Volume *fvol,
+	Volume	    *volume,
+        float *lemax
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char message[VIP_NAME_MAXLEN];
+  long offset_pbl, offset_lbs, offset_vol, offset_fp;
+  long foffset_pbl, foffset_lbs, foffset_vol, foffset_fp;
+  int xsize, ysize, zsize, tsize;
+  int ix, iy, iz, it;
+  GENTYPE *dataGENSTRING, *ptrGENSTRING;
+  Vip_FLOAT *fdata, *fptr;
+  float absmax, temp;
+  int typemax;
+  float factor;
+
+  if (VipTestState(fvol,STATE_DECLARED))
+    {
+      (void)sprintf(message,"(PreserveFloatVolume_GENSTRING)This volume is not allocated: %s",VipGetVolumeName(fvol));
+      VipPrintfError(message);
+      return(PB);
+    }
+  if ( (mVipVolSizeX(volume)!=mVipVolSizeX(fvol))
+       ||(mVipVolSizeY(volume)!=mVipVolSizeY(fvol))
+       ||(mVipVolSizeT(volume)!=mVipVolSizeT(fvol))
+       ||(mVipVolSizeZ(volume)!=mVipVolSizeZ(fvol)))
+   {
+      VipPrintfError("Same size are required in 4 dimensions...");
+      VipPrintfExit("PreserveFloatVolume_GENSTRING");
+      return(PB);
+   }
+   if (mVipVolType(volume)==S8BIT) typemax = D_S8BITMAX;
+   else typemax = D_S16BITMAX;
+				     
+	
+   VipGet4DSize(volume,&xsize,&ysize,&zsize,&tsize);
+	
+  offset_vol = VipOffsetVolume( volume );
+  offset_pbl = VipOffsetPointBetweenLine( volume );
+  offset_lbs = VipOffsetLineBetweenSlice( volume );
+  offset_fp = VipOffsetFirstPoint( volume );
+  foffset_vol = VipOffsetVolume( fvol );
+  foffset_pbl = VipOffsetPointBetweenLine( fvol );
+  foffset_lbs = VipOffsetLineBetweenSlice( fvol );
+  foffset_fp = VipOffsetFirstPoint( fvol );
+
+  dataGENSTRING = VipGetDataPtr_GENSTRING( volume );
+  fdata = VipGetDataPtr_VFLOAT( fvol );
+
+  absmax = 0.;
+  for(it=0;it<tsize;it++)
+    {
+      fptr = fdata + foffset_fp + it*foffset_vol;
+      for(iz=0;iz<zsize;iz++)
+	{
+	  for(iy=0;iy<ysize;iy++)
+	    {
+	      for(ix=xsize;ix--;)
+		{
+                  temp = *fptr++;
+                  temp = (float)fabs((double)temp);
+                  if(temp>absmax) absmax = temp;
+		}
+	      fptr += foffset_pbl;
+	    }
+	  fptr += foffset_lbs;
+	}		
+    }	
+
+  if(absmax < 0.0001)
+      VipSetImageLevel(volume,0);
+  else
+    {
+      factor = typemax/absmax;
+      for(it=0;it<tsize;it++)
+	{
+	  ptrGENSTRING = dataGENSTRING + offset_fp + it*offset_vol;
+	  fptr = fdata + foffset_fp + it*foffset_vol;
+
+	  for(iz=0;iz<zsize;iz++)
+	    {
+	      for(iy=0;iy<ysize;iy++)
+		{
+		  for(ix=xsize;ix--;)
+		    {
+		      *ptrGENSTRING++ = (GENTYPE) (*fptr++ * factor);
+		    }
+		  ptrGENSTRING += offset_pbl;
+		  fptr += foffset_pbl;
+		}
+	      ptrGENSTRING += offset_lbs;
+	      fptr += foffset_lbs;
+	    }		
+	}	
+    }
+
+
+  *lemax = absmax;
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+

@@ -1,0 +1,18 @@
+VERSION = @version@
+DEFINES	= @defines@ TIVOLI_LIB
+CONFIG  = thread
+
+PREPROCESSOR = @bin@/VipPreprocessing
+
+INCLUDE_STATIC	= ../../include_static/vip
+
+INCLUDEPATH = @includeBuild@
+
+BUILDMODEEXT	= @buildModeExtension@
+
+LIBS		= @libDepsLine@
+linux:LIBS	+= -lm -lrpcsvc
+solaris:LIBS	+= -lm -lrpcsvc
+irix:LIBS	+= -lm -lrpcsvc
+tru64:LIBS	+= -lm -lrpcsvc
+

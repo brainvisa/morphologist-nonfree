@@ -1,0 +1,77 @@
+#-----------------------------------------------------------------------------
+class VipComponent( GenericMakerComponent ):
+  _name = 'vip'
+
+  optionsDescription = GenericMakerComponent.optionsDescription.copy()
+  optionsDescription.update( {
+    'vida': ( None, 'include VIDA/SPM file format support (default: yes)' ),
+    'minc': ( None, 'include MINC (MNI) file format support (default: no)' ),
+    } )
+
+  def __init__( self, options ):
+    GenericMakerComponent.__init__( self, options )
+    self.setDefaultOption( 'vida', 1 )
+    self.setDefaultOption( 'minc', 0 )
+
+  def useAims( self ):
+    ver = self._data.get( 'version' )
+    if ver:
+      v = map( lambda x: int(x), ver.split( '.' ) )
+      minversion = ( 2, 6 )
+      if v[0] > minversion[0] \
+        or ( v[0] == minversion[0] and v[1] >= minversion[1] ):
+        return 1
+    return 0
+
+  def dependencies( self ):
+    result = []
+    ver = self._data.get( 'version' )
+    if self.useAims():
+      result.append( 'aimsalgo' )
+
+    if self.getOption( 'vida' ) \
+      and weakDependency( "vidaIO" ):
+      result.append( "vidaIO" )
+    else:
+      self.setOptions( vida = 0 )
+    #if self._options[ 'minc' ] \:
+    #  and weakDependency( MincComponent, self ):
+    #  result.append( MincComponent )
+    #else:
+    #  self.setOptions( minc = 0 )
+    return result
+
+  #def weakDependencies( self ):
+  #  if self.useAims() and weakDependency( VipAimsAlgoComponent, self ):
+  #    return [ VipAimsAlgoComponent ]
+  #  return []
+
+  def configure( self, instances ):
+    if not self._found or self._data[ 'enabled' ] == '0':
+      return
+    # Define substitution variables
+    defines = self.get( 'defines' )
+    if not defines:
+      defines = []
+    if self.getOption( 'vida' ):
+      self._data[ 'vida' ] = 'VIDA_LIB'
+      defines.append( 'VIDA_LIB' )
+    if self.getOption( 'minc' ):
+      self._data[ 'minc' ] = 'MINC_LIB'
+      defines.append( 'MINC_LIB' )
+    self._data[ 'defines' ] = defines
+    GenericMakerComponent.configure( self, instances )
+
+#-----------------------------------------------------------------------------
+##class VipAimsAlgoComponent( GenericMakerModuleComponent ):
+##  _name = 'vipaimsalgo'
+
+##  def sourceName( self ):
+##    return 'vip'
+
+##  def dependencies( self ):
+##    return [ 'aimsalgo', VipComponent ]
+
+##  def _libraries( self ):
+##    return []
+

@@ -1,0 +1,2815 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_util.gen         * TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 04/11/1996
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : jfmangin@cea.fr
+ *
+ *****************************************************************************
+ * 
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <limits.h>
+
+#include <vip/volume.h>
+#include <vip/util.h>
+#include <vip/util_static.h>
+#include <vip/alloc.h>
+
+
+
+/*----------------------------------------------------------------------------*/
+static int ImplementedSingleThresholdMode
+(
+ int mode
+);
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+static int ImplementedDoubleThresholdMode
+(
+ int mode
+);
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+static int ImplementedResultMode
+(
+ int mode
+);
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+static int ImplementedSingleThresholdMode
+(
+ int mode
+)
+/*----------------------------------------------------------------------------*/
+{
+  if( (mode==GREATER_THAN)
+      ||(mode==GREATER_OR_EQUAL_TO)
+      ||(mode==EQUAL_TO)
+      ||(mode==LOWER_THAN)
+      ||(mode==LOWER_OR_EQUAL_TO)
+      ||(mode==NOT_EQUAL_TO) ) return(VTRUE);
+  else return(VFALSE);
+}
+
+
+/*----------------------------------------------------------------------------*/
+static int ImplementedDoubleThresholdMode
+(
+ int mode
+)
+/*----------------------------------------------------------------------------*/
+{
+  if( (mode==VIP_BETWEEN)
+      ||(mode==VIP_BETWEEN_OR_EQUAL_TO)
+      ||(mode==VIP_OUTSIDE)
+      ||(mode==VIP_OUTSIDE_OR_EQUAL_TO)
+	||(mode==NOT_EQUAL_TO) || (mode==EQUAL_TO)) return(VTRUE);
+  else return(VFALSE);
+}
+
+/*----------------------------------------------------------------------------*/
+static int ImplementedResultMode
+(
+ int mode
+)
+/*----------------------------------------------------------------------------*/
+{
+  if( (mode==BINARY_RESULT)
+      ||(mode==GREYLEVEL_RESULT))  return(VTRUE);
+  else return(VFALSE);
+}
+
+#NONTYPED_FUNC_BEGIN VipGetNumberLabelPoints
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+long			VipGetNumberLabelPoints
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int label	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipGetNumberLabelPoints");
+     return(PB);
+   }
+
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipGetNumberLabelPoints_GENSTRING( volume, label );
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetNumberLabelPoints_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipGetNumberLabelPoints_GENSTRING
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int label
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long number;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(util.gen)VipGetNumberLabelPoints_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  number = 0;
+  
+  for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {		  
+	      for ( ix = mVipVolSizeX(vol); ix-- ; )
+		{
+		  if(*ptr++==label) number++;		  
+		}      					     
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return((int)number);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipGetNumberNonZeroPoints
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+long			VipGetNumberNonZeroPoints
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipGetNumberNonZeroPoints");
+     return(PB);
+   }
+
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipGetNumberNonZeroPoints_GENSTRING( volume );
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetNumberNonZeroPoints_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipGetNumberNonZeroPoints_GENSTRING
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long number;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(util.gen)VipGetNumberNonZeroPoints_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  number = 0;
+  
+  for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {		  
+	      for ( ix = mVipVolSizeX(vol); ix-- ; )
+		{
+		  if(*ptr++) number++;		  
+		}      					     
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return((int)number);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipGetVolumeMax
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+float			VipGetVolumeMax
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  float status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipGetVolumeMax");
+     return(PB);
+   }
+
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipGetVolumeMax_GENSTRING( volume );
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetVolumeMax_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+float			VipGetVolumeMax_GENSTRING
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  float max;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(util.gen)VipGetVolumeMax_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  max = -4000000000000000.0f;
+  
+  for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {		  
+	      for ( ix = mVipVolSizeX(vol); ix-- ; )
+		{
+		  if((float)(*ptr) > max) max = (float)(*ptr);
+		  ptr++;
+		}      					     
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return(max);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipGetVolumeMin
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+float			VipGetVolumeMin
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  float status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipGetVolumeMin");
+     return(PB);
+   }
+
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipGetVolumeMin_GENSTRING( volume );
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetVolumeMin_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+float			VipGetVolumeMin_GENSTRING
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  float min;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(util.gen)VipGetVolumeMax_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  min = 400000000000000.0f;
+  
+  for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {		  
+	      for ( ix = mVipVolSizeX(vol); ix-- ; )
+		{
+		  if((float)(*ptr) < min) min = (float)(*ptr);
+		  ptr++;
+		}      					     
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return(min);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipSingleThreshold
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipSingleThreshold
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ int         level,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipSingleThreshold");
+     return(PB);
+   }
+ if(ImplementedSingleThresholdMode(mode)==VFALSE)
+   {
+     VipPrintfError("Unknown mode in VipSingleThreshold");
+     VipPrintfExit("(util.gen)VipSingleThreshold");
+     return(PB);
+   }
+
+ if(ImplementedResultMode(result_mode)==VFALSE)
+   {
+     VipPrintfError("Unknown result mode (binary or grey level) in VipSingleThreshold");
+     VipPrintfExit("(util.gen)VipSingleThreshold");
+     return(PB);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipSingleThreshold_GENSTRING( volume, mode, level, result_mode);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipSingleThreshold_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipSingleThreshold_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ int  level,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char message[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipSingleThreshold_GENSTRING");
+      return(PB);
+    }
+  if (VipTestState(vol,STATE_DECLARED)==OK)
+    {
+      (void)sprintf(message,"(VipSingleThreshold_GENSTRING)Allocate data for volume %s",VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(PB);
+    }
+  if(ImplementedSingleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipSingleThreshold_GENSTRING");
+      VipPrintfExit("(util.gen)VipSingleThreshold_GENSTRING");
+      return(PB);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipSingleThreshold");
+      VipPrintfExit("(util.gen)VipSingleThreshold_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )        /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )    /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr > level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr >= level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr == level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr < level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr <= level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr != level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;      /*  skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+    else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )        /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )    /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr > level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr >= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr == level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr < level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr <= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr != level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipCreateSingleThresholdedVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateSingleThresholdedVolume
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ int         level,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VIP_DEC_VOLUME(newv);
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+    {
+      VipPrintfExit("(util.gen)VipCreateSingleThresholdedVolume");
+      return(NULL);
+    }
+  if(ImplementedSingleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipCreateSingleThresholdedVolume");
+      VipPrintfExit("(util.gen)VipCreateSingleThresholdedVolume");
+      return(NULL);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipCreateSingleThresholdedVolume");
+      VipPrintfExit("(util.gen)VipCreateSingleThresholdedVolume");
+      return(PB);
+    }
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      newv = VipCreateSingleThresholdedVolume_GENSTRING( volume, mode, level, result_mode);
+      break;
+    }
+
+  return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipCreateSingleThresholdedVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateSingleThresholdedVolume_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ int level,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+
+  VIP_DEC_VOLUME(newv);
+  char message[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr, *ptrnew;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+  char name[VIP_NAME_MAXLEN];
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipCreateSingleThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+  if (VipTestState(vol,STATE_DECLARED)==OK)
+    {
+      (void)sprintf(message,"(VipCreateSingleThresholdedVolume_GENSTRING)Allocate data for volume %s",VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(NULL);
+    }
+  if(ImplementedSingleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipCreateSingleThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateSingleThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipCreateSingleThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateSingleThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_copy");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  if(VipAllocateVolumeData(newv)==PB)
+    {
+      VipFreeVolume(newv); 
+      VipFree(newv);
+      return(NULL);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrnew = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )         /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )     /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr++ > level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr++ >= level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr++ == level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr++ < level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr++ <= level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr++ != level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;      /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;    /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+    else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )         /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )      /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr > level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr >= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr == level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr < level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr <= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr != level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;      /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipDoubleThreshold
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipDoubleThreshold
+/*two values thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ int level_left,
+ int level_right,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+ if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipDoubleThreshold");
+     return(PB);
+   }
+ if(ImplementedDoubleThresholdMode(mode)==VFALSE)
+   {
+     VipPrintfError("Unknown mode in VipDoubleThreshold");
+     VipPrintfExit("(util.gen)VipDoubleThreshold");
+     return(PB);
+   }
+
+ if(ImplementedResultMode(result_mode)==VFALSE)
+   {
+     VipPrintfError("Unknown result mode (binary or grey level) in VipDoubleThreshold");
+     VipPrintfExit("(util.gen)VipDoubleThreshold");
+     return(PB);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipDoubleThreshold_GENSTRING( volume, mode, level_left, level_right, result_mode);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipDoubleThreshold_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipDoubleThreshold_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ int level_left,
+ int level_right,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char message[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipDoubleThreshold_GENSTRING");
+      return(PB);
+    }
+  if (VipTestState(vol,STATE_DECLARED))
+    {
+      (void)sprintf(message,"(VipDoubleThreshold_GENSTRING)Allocate data for volume %s",VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(PB);
+    }
+  if(ImplementedDoubleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipDoubleThreshold_GENSTRING");
+      VipPrintfExit("(util.gen)VipDoubleThreshold_GENSTRING");
+      return(PB);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipDoubleThreshold_GENSTRING");
+      VipPrintfExit("(util.gen)VipDoubleThreshold_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )         /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )      /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr > level_left)&&(*ptr < level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr >= level_left)&&(*ptr <= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr < level_left)||(*ptr > level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr <= level_left)||(*ptr >= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr != level_left)&&(*ptr != level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr == level_left)||(*ptr == level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+  else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )         /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )       /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr > level_left)&&(*ptr < level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr >= level_left)&&(*ptr <= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr < level_left)||(*ptr > level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (((*ptr <= level_left)||(*ptr >= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			    *ptr = (((*ptr != level_left)&&(*ptr != level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			    *ptr = (((*ptr == level_left)||(*ptr == level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipCreateDoubleThresholdedVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateDoubleThresholdedVolume
+/*two values thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ int level_left,
+ int level_right,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VIP_DEC_VOLUME(newv);
+
+ if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipCreateDoubleThresholdedVolume");
+     return(NULL);
+   }
+ if(ImplementedDoubleThresholdMode(mode)==VFALSE)
+   {
+     VipPrintfError("Unknown mode in VipCreateDoubleThresholdedVolume");
+     VipPrintfExit("(util.gen)VipCreateDoubleThresholdedVolume");
+     return(NULL);
+   }
+
+ if(ImplementedResultMode(result_mode)==VFALSE)
+   {
+     VipPrintfError("Unknown result mode (binary or grey level) in VipCreateDoubleThresholdedVolume");
+     VipPrintfExit("(util.gen)VipCreateDoubleThresholdedVolume");
+     return(NULL);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     newv = VipCreateDoubleThresholdedVolume_GENSTRING( volume, mode, level_left,
+						 level_right, result_mode);
+     break;
+   }
+
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipCreateDoubleThresholdedVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateDoubleThresholdedVolume_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ int level_left,
+ int level_right,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VIP_DEC_VOLUME(newv);
+  char message[VIP_NAME_MAXLEN];
+  char name[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr, *ptrnew;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipCreateDoubleThresholdedVolume_GENSTRING");
+      return(NULL);
+    }
+  if (VipTestState(vol,STATE_DECLARED))
+    {
+      (void)sprintf(message,"(VipCreateDoubleThresholdedVolume_GENSTRING)Allocate data for volume %s",
+		    VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(NULL);
+    }
+  if(ImplementedDoubleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipCreateDoubleThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateDoubleThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipCreateDoubleThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateDoubleThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_copy");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  VipAllocateVolumeData(newv);
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrnew = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+ 
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr > level_left)&&(*ptr < level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr >= level_left)&&(*ptr <= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr < level_left)||(*ptr > level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr <= level_left)||(*ptr >= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr == level_left)||(*ptr == level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr != level_left)&&(*ptr != level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+  else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr > level_left)&&(*ptr < level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr >= level_left)&&(*ptr <= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr < level_left)||(*ptr > level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr <= level_left)||(*ptr >= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr == level_left)||(*ptr == level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (((*ptr != level_left)&&(*ptr != level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipSingleFloatThreshold
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipSingleFloatThreshold
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ float         level,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipSingleFloatThreshold");
+     return(PB);
+   }
+ if(ImplementedSingleThresholdMode(mode)==VFALSE)
+   {
+     VipPrintfError("Unknown mode in VipSingleFloatThreshold");
+     VipPrintfExit("(util.gen)VipSingleFloatThreshold");
+     return(PB);
+   }
+
+ if(ImplementedResultMode(result_mode)==VFALSE)
+   {
+     VipPrintfError("Unknown result mode (binary or grey level) in VipSingleFloatThreshold");
+     VipPrintfExit("(util.gen)VipSingleFloatThreshold");
+     return(PB);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipSingleFloatThreshold_GENSTRING( volume, mode, level, result_mode);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipSingleFloatThreshold_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipSingleFloatThreshold_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ float  level,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char message[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipSingleFloatThreshold_GENSTRING");
+      return(PB);
+    }
+  if (VipTestState(vol,STATE_DECLARED)==OK)
+    {
+      (void)sprintf(message,"(VipSingleFloatThreshold_GENSTRING)Allocate data for volume %s",VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(PB);
+    }
+  if(ImplementedSingleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipSingleFloatThreshold_GENSTRING");
+      VipPrintfExit("(util.gen)VipSingleFloatThreshold_GENSTRING");
+      return(PB);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipSingleThreshold");
+      VipPrintfExit("(util.gen)VipSingleFloatThreshold_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr > level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr >= level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr == level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr < level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr <= level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr != level ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+    else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = (*ptr > level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr >= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr == level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr < level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr <= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((float)*ptr != level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipCreateSingleFloatThresholdedVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateSingleFloatThresholdedVolume
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ float         level,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VIP_DEC_VOLUME(newv);
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+    {
+      VipPrintfExit("(util.gen)VipCreateSingleFloatThresholdedVolume");
+      return(NULL);
+    }
+  if(ImplementedSingleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipCreateSingleFloatThresholdedVolume");
+      VipPrintfExit("(util.gen)VipCreateSingleFloatThresholdedVolume");
+      return(NULL);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipCreateSingleFloatThresholdedVolume");
+      VipPrintfExit("(util.gen)VipCreateSingleFloatThresholdedVolume");
+      return(PB);
+    }
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      newv = VipCreateSingleFloatThresholdedVolume_GENSTRING( volume, mode, level, result_mode);
+      break;
+    }
+
+  return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipCreateSingleFloatThresholdedVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateSingleFloatThresholdedVolume_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ float level,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+
+  VIP_DEC_VOLUME(newv);
+  char message[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr, *ptrnew;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+  char name[VIP_NAME_MAXLEN];
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipCreateSingleFloatThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+  if (VipTestState(vol,STATE_DECLARED)==OK)
+    {
+      (void)sprintf(message,"(VipCreateSingleFloatThresholdedVolume_GENSTRING)Allocate data for volume %s",VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(NULL);
+    }
+  if(ImplementedSingleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipCreateSingleFloatThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateSingleFloatThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipCreateSingleFloatThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateSingleFloatThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_copy");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  if(VipAllocateVolumeData(newv)==PB)
+    {
+      VipFreeVolume(newv);
+      VipFree(newv);
+      return(NULL);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrnew = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr++ > level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr++ >= level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr++ == level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr++ < level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr++ <= level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr++ != level ? BINARY_VALUE : (GENTYPE)0 );
+			}
+		      break;
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+    else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case GREATER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = (*ptr > level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case GREATER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr >= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr == level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_THAN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr < level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case LOWER_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr <= level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case NOT_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((float)*ptr != level ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipDoubleFloatThreshold
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipDoubleFloatThreshold
+/*two values thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ float level_left,
+ float level_right,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+ if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipDoubleThreshold");
+     return(PB);
+   }
+ if(ImplementedDoubleThresholdMode(mode)==VFALSE)
+   {
+     VipPrintfError("Unknown mode in VipDoubleFloatThreshold");
+     VipPrintfExit("(util.gen)VipDoubleFloatThreshold");
+     return(PB);
+   }
+
+ if(ImplementedResultMode(result_mode)==VFALSE)
+   {
+     VipPrintfError("Unknown result mode (binary or grey level) in VipDoubleFloatThreshold");
+     VipPrintfExit("(util.gen)VipDoubleFloatThreshold");
+     return(PB);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipDoubleFloatThreshold_GENSTRING( volume, mode, level_left, level_right, result_mode);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipDoubleFloatThreshold_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipDoubleFloatThreshold_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ float level_left,
+ float level_right,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char message[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipDoubleFloatThreshold_GENSTRING");
+      return(PB);
+    }
+  if (VipTestState(vol,STATE_DECLARED))
+    {
+      (void)sprintf(message,"(VipDoubleFloatThreshold_GENSTRING)Allocate data for volume %s",VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(PB);
+    }
+  if(ImplementedDoubleThresholdMode(mode)==VFALSE)
+    {
+      VipPrintfError("Unknown mode in VipDoubleFloatThreshold_GENSTRING");
+      VipPrintfExit("(util.gen)VipDoubleFloatThreshold_GENSTRING");
+      return(PB);
+    }
+
+  if(ImplementedResultMode(result_mode)==VFALSE)
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipDoubleFloatThreshold_GENSTRING");
+      VipPrintfExit("(util.gen)VipDoubleFloatThreshold_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr > level_left)&&((float)*ptr < level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr >= level_left)&&((float)*ptr <= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr < level_left)||((float)*ptr > level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr <= level_left)||((float)*ptr >= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+  else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr > level_left)&&((float)*ptr < level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr >= level_left)&&((float)*ptr <= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr < level_left)||((float)*ptr > level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptr = ((((float)*ptr <= level_left)||((float)*ptr >= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipCreateDoubleFloatThresholdedVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateDoubleFloatThresholdedVolume
+/*two values thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int 	mode,	
+ float level_left,
+ float level_right,
+ int result_mode	
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VIP_DEC_VOLUME(newv);
+
+ if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(util.gen)VipCreateDoubleFloatThresholdedVolume");
+     return(NULL);
+   }
+ if(ImplementedDoubleThresholdMode(mode)==VFALSE)
+   {
+     VipPrintfError("Unknown mode in VipCreateDoubleFloatThresholdedVolume");
+     VipPrintfExit("(util.gen)VipCreateDoubleFloatThresholdedVolume");
+     return(NULL);
+   }
+
+ if(ImplementedResultMode(result_mode)==VFALSE)
+   {
+     VipPrintfError("Unknown result mode (binary or grey level) in VipCreateDoubleFloatThresholdedVolume");
+     VipPrintfExit("(util.gen)VipCreateDoubleFloatThresholdedVolume");
+     return(NULL);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     newv = VipCreateDoubleFloatThresholdedVolume_GENSTRING( volume, mode, level_left,
+						 level_right, result_mode);
+     break;
+   }
+
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipCreateDoubleFloatThresholdedVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateDoubleFloatThresholdedVolume_GENSTRING
+/*one value thresholding*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int 	mode,	
+ float level_left,
+ float level_right,
+ int result_mode
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VIP_DEC_VOLUME(newv);
+  char message[VIP_NAME_MAXLEN];
+  char name[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+  GENTYPE *ptr, *ptrnew;
+  GENTYPE BINARY_VALUE = (GENTYPE)255;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(volume.gen)VipCreateDoubleFloatThresholdedVolume_GENSTRING");
+      return(NULL);
+    }
+  if (VipTestState(vol,STATE_DECLARED))
+    {
+      (void)sprintf(message,"(VipCreateDoubleFloatThresholdedVolume_GENSTRING)Allocate data for volume %s",
+		    VipGetVolumeName(vol));
+      VipPrintfWarning(message);
+      if(VipAllocateVolumeData(vol)==PB) return(NULL);
+    }
+  if(!ImplementedDoubleThresholdMode(mode))
+    {
+      VipPrintfError("Unknown mode in VipCreateDoubleFloatThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateDoubleFloatThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  if(!ImplementedResultMode(result_mode))
+    {
+      VipPrintfError("Unknown result mode (binary or grey level) in VipCreateDoubleFloatThresholdedVolume_GENSTRING");
+      VipPrintfExit("(util.gen)VipCreateDoubleFloatThresholdedVolume_GENSTRING");
+      return(PB);
+    }
+
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_copy");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  VipAllocateVolumeData(newv);
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrnew = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+ 
+
+  if(result_mode==BINARY_RESULT)
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr > level_left)&&((float)*ptr < level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr >= level_left)&&((float)*ptr <= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr < level_left)||((float)*ptr > level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr <= level_left)||((float)*ptr >= level_right)) ? BINARY_VALUE : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    
+		    }
+					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+  else
+    {
+      for ( it = mVipVolSizeT(vol); it-- ; )            /* loop on volumes */
+	{
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+		{		  
+		  switch(mode)
+		    {
+		    case VIP_BETWEEN:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr > level_left)&&((float)*ptr < level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_BETWEEN_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr >= level_left)&&((float)*ptr <= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr < level_left)||((float)*ptr > level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    case VIP_OUTSIDE_OR_EQUAL_TO:
+		      for ( ix = mVipVolSizeX(vol); ix-- ; )
+			{
+			  *ptrnew++ = ((((float)*ptr <= level_left)||((float)*ptr >= level_right)) ? *ptr : (GENTYPE)0 );
+			  ptr++;
+			}
+		      break;
+		    }					     
+		  ptr += vos->oPointBetweenLine;        /*skip border points*/
+		  ptrnew += vos->oPointBetweenLine;        /*skip border points*/
+		}
+	      ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+	  ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+	  ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+	}
+    }
+
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#NONTYPED_FUNC_BEGIN VipCreateInvertedBinaryVolume
+#TYPE_LIST ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateInvertedBinaryVolume
+/*reverse black and white*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VIP_DEC_VOLUME(newv);
+
+  if (!VipVerifyAll(volume) || !VipTestType(volume,ANY_INT))
+    {
+      VipPrintfExit("(util.gen)VipCreateInvertedBinaryVolume");
+      return(PB);
+    }
+
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      newv = VipCreateInvertedBinaryVolume_GENSTRING( volume);
+      break;
+    }
+
+  return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipCreateInvertedBinaryVolume_GENSTRING
+#TYPE_LIST_STATIC ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume			*VipCreateInvertedBinaryVolume_GENSTRING
+/*reverse black and white*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+
+  VIP_DEC_VOLUME(newv);
+  GENTYPE *ptr, *ptrnew;
+  char name[VIP_NAME_MAXLEN];
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+
+  if (!VipVerifyAll(vol) || !VipTestType(vol,GENSTRING))
+    {
+      VipPrintfExit("(volume.gen)VipCreateInvertedBinaryVolume_GENSTRING");
+      return(PB);
+    }
+
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_inverted");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  if(VipAllocateVolumeData(newv)==PB) return(PB);
+
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrnew = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+
+  for ( it = mVipVolSizeT(vol); it-- ; )               /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {
+	      for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		{
+		  if(*ptr++) *ptrnew++ = (GENTYPE)0;
+		  else *ptrnew++ = (GENTYPE)255;
+		}
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	      ptrnew += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	  ptrnew += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+      ptrnew += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+      
+  VipFree(vos);
+
+  return(newv);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipInvertBinaryVolume
+#TYPE_LIST ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipInvertBinaryVolume
+/*reverse black and white*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if (VipVerifyAll(volume)==PB || !VipTestType(volume,ANY_INT))
+    {
+      VipPrintfExit("(util.gen)VipInvertBinaryVolume");
+      return(PB);
+    }
+
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      status = VipInvertBinaryVolume_GENSTRING( volume );
+      break;
+    }
+
+  return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipInvertBinaryVolume_GENSTRING
+#TYPE_LIST_STATIC ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipInvertBinaryVolume_GENSTRING
+/*reverse black and white*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+
+  if (VipVerifyAll(vol)==PB || !VipTestType(vol,GENSTRING))
+    {
+      VipPrintfExit("(volume.gen)VipInvertBinaryVolume_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  for ( it = mVipVolSizeT(vol); it-- ; )               /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {
+	      for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		{
+		  if(*ptr) *ptr = (GENTYPE)0;
+		  else *ptr = (GENTYPE)255;
+		  ptr++;
+		}
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return(OK);      
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipChangeIntLabel
+#TYPE_LIST ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipChangeIntLabel
+/**/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int oldlabel,
+ int newlabel
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if (VipVerifyAll(volume)==PB || !VipTestType(volume,ANY_INT))
+    {
+      VipPrintfExit("(util.gen)VipChangeIntLabel");
+      return(PB);
+    }
+
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      status = VipChangeIntLabel_GENSTRING( volume, oldlabel, newlabel );
+      break;
+    }
+
+  return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipChangeIntLabel_GENSTRING
+#TYPE_LIST_STATIC ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipChangeIntLabel_GENSTRING
+/*reverse black and white*/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int oldlabel,
+ int newlabel
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+
+  if (!VipTestType(vol,GENSTRING))
+    {
+      VipPrintfExit("(volume.gen)VipChangeIntLabel_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  for ( it = mVipVolSizeT(vol); it-- ; )               /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {
+	      for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		{
+		  if(*ptr==(GENTYPE)oldlabel) *ptr = (GENTYPE)newlabel;
+		  ptr++;
+		}
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return(OK);      
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipChangeIntInfiniteRange
+#TYPE_LIST ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipChangeIntInfiniteRange
+/**/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int mode,
+ int range,
+ int newlabel
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if (VipVerifyAll(volume)==PB || !VipTestType(volume,ANY_INT))
+    {
+      VipPrintfExit("(util.gen)VipChangeIntInfiniteRange");
+      return(PB);
+    }
+  if((mode!=GREATER_THAN)&&(mode!=GREATER_OR_EQUAL_TO)&&(mode!=LOWER_THAN)
+     &&(mode!=LOWER_OR_EQUAL_TO) &&(mode!=NOT_EQUAL_TO))
+    {
+      VipPrintfError("Unkown mode in VipChangeIntInfiniteRange");
+      VipPrintfExit("VipChangeIntInfiniteRange");
+      return(PB);
+    }
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      status = VipChangeIntInfiniteRange_GENSTRING( volume, mode, range, newlabel );
+      break;
+    }
+
+  return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipChangeIntInfiniteRange_GENSTRING
+#TYPE_LIST_STATIC ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipChangeIntInfiniteRange_GENSTRING
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int mode,
+ int range,
+ int newlabel
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+
+  if (!VipTestType(vol,GENSTRING))
+    {
+      VipPrintfExit("(volume.gen)VipChangeIntInfiniteRange_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  for ( it = mVipVolSizeT(vol); it-- ; )               /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {
+	      switch(mode)
+		{
+		case GREATER_THAN:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if(*ptr>(GENTYPE)range) *ptr = (GENTYPE)newlabel;
+		      ptr++;
+		    }
+		  break;
+		case GREATER_OR_EQUAL_TO:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if(*ptr>=(GENTYPE)range) *ptr =(GENTYPE) newlabel;
+		      ptr++;
+		    }
+		  break;
+		case LOWER_THAN:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if(*ptr<(GENTYPE)range) *ptr = (GENTYPE)newlabel;
+		      ptr++;
+		    }
+		  break;
+		case LOWER_OR_EQUAL_TO:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if(*ptr<=(GENTYPE)range) *ptr = (GENTYPE)newlabel;
+		      ptr++;
+		    }
+		  break;
+		case NOT_EQUAL_TO:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if(*ptr!=(GENTYPE)range) *ptr = (GENTYPE)newlabel;
+		      ptr++;
+		    }
+		  break;
+		}
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return(OK);      
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipChangeIntRange
+#TYPE_LIST ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipChangeIntRange
+/**/
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *volume,
+ int mode,
+ int inf,
+ int sup,	
+ int newlabel
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if (VipVerifyAll(volume)==PB || !VipTestType(volume,ANY_INT))
+    {
+      VipPrintfExit("(util.gen)VipChangeIntRange");
+      return(PB);
+    }
+  if((mode!=VIP_BETWEEN)&&(mode!=VIP_BETWEEN_OR_EQUAL_TO)&&(mode!=VIP_OUTSIDE)
+     &&(mode!=VIP_OUTSIDE_OR_EQUAL_TO))
+    {
+      VipPrintfError("Unkown mode in VipChangeIntRange");
+      VipPrintfExit("VipChangeIntRange");
+      return(PB);
+    }
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      status = VipChangeIntRange_GENSTRING( volume, mode, (GENTYPE)inf, (GENTYPE)sup, (GENTYPE)newlabel );
+      break;
+    }
+
+  return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipChangeIntRange_GENSTRING
+#TYPE_LIST_STATIC ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int			VipChangeIntRange_GENSTRING
+/*----------------------------------------------------------------------------*/
+(
+ Volume    *vol,
+ int mode,
+ GENTYPE inf,
+ GENTYPE sup,
+ GENTYPE newlabel
+)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, it;
+
+  if (!VipTestType(vol,GENSTRING))
+    {
+      VipPrintfExit("(volume.gen)VipChangeIntRange_GENSTRING");
+      return(PB);
+    }
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+  for ( it = mVipVolSizeT(vol); it-- ; )               /* loop on volumes */
+    {
+      for ( iz = mVipVolSizeZ(vol); iz-- ; )             /* loop on slices */
+	{
+	  for ( iy = mVipVolSizeY(vol); iy-- ; )          /* loop on lines */
+	    {
+	      switch(mode)
+		{
+		case VIP_BETWEEN:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if((*ptr>inf)&&(*ptr<sup)) *ptr = newlabel;
+		      ptr++;
+		    }
+		  break;
+		case VIP_BETWEEN_OR_EQUAL_TO:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if((*ptr>=inf)&&(*ptr<=sup)) *ptr = newlabel;
+		      ptr++;
+		    }
+		  break;
+		case VIP_OUTSIDE:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if((*ptr<inf)&&(*ptr>sup)) *ptr = newlabel;
+		      ptr++;
+		    }
+		  break;
+		case VIP_OUTSIDE_OR_EQUAL_TO:
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if((*ptr<=inf)&&(*ptr>=sup)) *ptr = newlabel;
+		      ptr++;
+		    }
+		  break;
+		}
+	      ptr += vos->oPointBetweenLine;        /*skip border points*/
+	    }
+	  ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	}
+      ptr += vos->oSliceBetweenVolume; /*skip border slices*/
+    }
+
+  VipFree(vos);
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

@@ -1,0 +1,67 @@
+/****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_subvolume.gen      * TYPE     : Function
+ * AUTHOR      : POUPON F.            * CREATION : 26/01-01
+ * VERSION     : 1.8                  * REVISION :
+ * LANGUAGE    : C                  * EXAMPLE  :
+ ****************************************************************************
+ *
+ * DESCRIPTION : byteswapping d'une ligne
+ *
+ ****************************************************************************
+ *
+ *
+ ****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|---------------------------------------
+ *              / /   |              |
+ ****************************************************************************/
+
+#include <vip/volume.h>
+#include <vip/TivoliIO.h>
+
+
+#TYPED_FUNC_BEGIN VipByteSwapping_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipByteSwapping_GENSTRING(GENTYPE *ptr, int bytesPerVoxel, int nx)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  char	    *ptr8, *ptr8bis, temp;
+  int i;
+
+  if(bytesPerVoxel==2)
+    {
+      for(i=nx;i--;)
+	{
+	  ptr8 = ((char *)ptr) + 1;
+	  temp = *ptr8;
+	  *ptr8 = *((char *)ptr);
+	  *((char *)ptr) = temp;
+	  ptr++;
+	}
+    }
+  else if(bytesPerVoxel==4)
+    {
+      for(i=nx;i--;)
+	{
+	  ptr8 = ((char *)ptr) + 3;
+	  temp = *ptr8;
+	  *ptr8 = *((char *)ptr);
+	  *((char *)ptr) = temp;
+	  ptr8 = ((char *)ptr) + 2;
+	  ptr8bis = ((char *)ptr) + 1;
+	  temp = *ptr8;
+	  *ptr8 = *ptr8bis;
+	  *ptr8bis = temp;
+	  ptr++;
+	}
+    }
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

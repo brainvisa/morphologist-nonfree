@@ -1,0 +1,627 @@
+/****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_pca.gen          * TYPE     : Generic
+ * AUTHOR      : POUPON F.            * CREATION : 28/06/1996
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C++                  * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ ****************************************************************************
+ *
+ * DESCRIPTION : Analyse en Composantes Principales
+ *
+ ****************************************************************************
+ *
+ * USED MODULES : string.h - Vip_util.h - Vip_pca.h
+ *
+ ****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|---------------------------------------
+ *              / /   |              |
+ ****************************************************************************/
+
+#include <string.h>
+
+#include <vip/util.h>
+#include <vip/pca.h>
+
+#H_EXPAND_BEGIN
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+
+typedef struct
+{ 
+  int nb_variables;
+  int nb_tests;
+  VipVector_GENSTRING *mean;
+  VipVector_GENSTRING *stddev;
+  VipMatrix_GENSTRING *data;
+  VipMatrix_GENSTRING *correlation;
+  VipMatrix_GENSTRING *eigenvector;
+  VipMatrix_GENSTRING *principal;
+  VipMatrix_GENSTRING *circle;
+  VipVector_GENSTRING *eigenvalue;
+  VipVector_GENSTRING *pctinertie;
+  VipVector_GENSTRING *pctcumule;
+} Pca_GENSTRING;
+
+#H_EXPAND_END
+
+
+#TYPED_FUNC_BEGIN *VipCreatePCA_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+Pca_GENSTRING *VipCreatePCA_GENSTRING(
+  int nb_var, 
+  int nb_tests
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  Pca_GENSTRING *pca;
+
+  pca = (Pca_GENSTRING *)VipCalloc(1, sizeof(Pca_GENSTRING), NULL);
+  if (pca == NULL)  return((Pca_GENSTRING *)NULL);
+
+  pca->nb_variables = nb_var;
+  pca->nb_tests = nb_tests;
+
+  pca->mean = VipAllocationVector_GENSTRING(nb_var, NULL);
+  pca->stddev = VipAllocationVector_GENSTRING(nb_var, NULL);
+  if (!pca->mean || !pca->stddev)
+    {
+      VipPrintfError("Pca structure Satistic Vectors allocation failure.");
+      VipPrintfExit("(Vip_pca.c)VipCreatePCA_GENSTRING");
+      return((Pca_GENSTRING *)NULL);
+    }
+
+  pca->data = VipAllocationMatrix_GENSTRING(nb_tests, nb_var, NULL);
+  pca->correlation = VipAllocationMatrix_GENSTRING(nb_var, nb_var, NULL);
+  pca->eigenvector = VipAllocationMatrix_GENSTRING(nb_var, nb_var, NULL);
+  pca->principal = VipAllocationMatrix_GENSTRING(nb_tests, nb_var, NULL);
+  pca->circle = VipAllocationMatrix_GENSTRING(nb_var, nb_var, NULL);
+  if (!pca->data || !pca->correlation || !pca->eigenvector || !pca->principal 
+      || !pca->circle)
+    { 
+      VipPrintfError("Pca structure Matrices allocation failure.");
+      VipPrintfExit("(Vip_pca.c)VipCreatePCA_GENSTRING");
+      return((Pca_GENSTRING *)NULL);
+    }
+
+  pca->eigenvalue = VipAllocationVector_GENSTRING(nb_var, NULL);
+  pca->pctinertie = VipAllocationVector_GENSTRING(nb_var, NULL);
+  pca->pctcumule = VipAllocationVector_GENSTRING(nb_var, NULL);
+  if (!pca->eigenvalue || !pca->pctinertie || !pca->pctcumule)
+    {
+      VipPrintfError("Pca structure Vectors allocation failure.");
+      VipPrintfExit("(Vip_pca.c)VipCreatePCA_GENSTRING.");
+      return((Pca_GENSTRING *)NULL);
+    }
+
+  return(pca);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipFreePCA_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipFreePCA_GENSTRING(
+  Pca_GENSTRING *pca
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  VipFreeVector_GENSTRING(pca->mean);
+  VipFreeVector_GENSTRING(pca->stddev);
+  VipFreeMatrix_GENSTRING(pca->data);
+  VipFreeMatrix_GENSTRING(pca->correlation);
+  VipFreeMatrix_GENSTRING(pca->eigenvector);
+  VipFreeMatrix_GENSTRING(pca->principal);
+  VipFreeMatrix_GENSTRING(pca->circle);
+  VipFreeVector_GENSTRING(pca->eigenvalue);
+  VipFreeVector_GENSTRING(pca->pctinertie);
+  VipFreeVector_GENSTRING(pca->pctcumule);
+  VipFree(pca);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipReadPCADataFile_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+Pca_GENSTRING *VipReadPCADataFile_GENSTRING(
+  char *input, 
+  int nb_tests, 
+  int nb_var
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  Pca_GENSTRING *pca;
+  int i, j, type=GENSTRING;
+  char message[256];  
+  GENTYPE **dataptr;
+  FILE *file;
+
+  pca = (Pca_GENSTRING *)VipCreatePCA_GENSTRING(nb_var, nb_tests);
+  if (!pca)  return((Pca_GENSTRING *)NULL);
+
+  if ((file = fopen(input, VIP_READ_TEXT)) == NULL)  
+    { 
+      sprintf(message, "Error while reading %s...\n", input);
+      VipPrintfError(message);
+      VipPrintfExit("(Vip_pca.c)VipReadPCADataFile");
+      return((Pca_GENSTRING *)NULL);
+    }
+
+  dataptr = VipGetMatrixPtr_GENSTRING(pca->data);
+
+  switch(type)
+  {
+  case VFLOAT:
+    for (i=0; i<nb_tests; i++)
+      for (j=0; j<nb_var; j++)
+        fscanf(file, "%f", (float *)&dataptr[i][j]);
+    break;
+  case VDOUBLE:
+    for (i=0; i<nb_tests; i++)
+      for (j=0; j<nb_var; j++)
+        fscanf(file, "%lf", (double *)&dataptr[i][j]);
+    break;
+  }
+
+  fclose(file);
+
+  return(pca);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPCACorrelationMatrix_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipPCACorrelationMatrix_GENSTRING(
+  Pca_GENSTRING *pca
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *meanptr, *stddevptr, **dataptr, **correlationptr;
+  int i, j, j1, j2;
+
+  meanptr = VipGetVectorPtr_GENSTRING(pca->mean);
+  stddevptr = VipGetVectorPtr_GENSTRING(pca->stddev);
+  dataptr = VipGetMatrixPtr_GENSTRING(pca->data);
+  correlationptr = VipGetMatrixPtr_GENSTRING(pca->correlation);
+
+  /* Mean of column vectors from input data matrix */
+  for (j=0; j<pca->nb_variables; j++)
+    {
+      meanptr[j] = 0.0;
+      for (i=0; i<pca->nb_tests; i++)  meanptr[j] += dataptr[i][j];
+      meanptr[j] /= (GENTYPE)pca->nb_tests;
+    }
+
+  /* Standard deviations of column vectors of data matrix. */
+  for (j=0; j<pca->nb_variables; j++)
+    { 
+      stddevptr[j] = 0.0;
+      for (i=0; i<pca->nb_tests; i++)  
+	stddevptr[j] += mVipSq(dataptr[i][j]-meanptr[j]);
+      stddevptr[j] /= (GENTYPE)pca->nb_tests;
+      stddevptr[j] = sqrt(stddevptr[j]);
+    }
+
+  /* Center and reduce the column vectors. */
+  for (i=0; i<pca->nb_tests; i++)
+    for (j=0; j<pca->nb_variables; j++)
+      {
+	dataptr[i][j] -= meanptr[j];
+	dataptr[i][j] /= sqrt((GENTYPE)pca->nb_tests)*stddevptr[j];
+      }
+
+  /* Compute the nb_variables*nb_variables correlation matrix. */
+  for (j1=0; j1<pca->nb_variables-1; j1++)
+    { 
+      correlationptr[j1][j1] = 1.0;
+      for (j2=j1+1; j2<pca->nb_variables; j2++)
+	{ 
+	  correlationptr[j1][j2] = 0.0;
+	  for (i=0; i<pca->nb_tests; i++)  
+	    correlationptr[j1][j2] += (dataptr[i][j1]*dataptr[i][j2]);
+	  correlationptr[j2][j1] = correlationptr[j1][j2];
+	}
+    }
+
+  correlationptr[pca->nb_variables-1][pca->nb_variables-1] = 1.0;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPCACovarianceMatrix_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipPCACovarianceMatrix_GENSTRING(
+  Pca_GENSTRING *pca
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *meanptr, **dataptr, **correlationptr;
+  int i, j, j1, j2;
+
+  meanptr = VipGetVectorPtr_GENSTRING(pca->mean);
+  dataptr = VipGetMatrixPtr_GENSTRING(pca->data);
+  correlationptr = VipGetMatrixPtr_GENSTRING(pca->correlation);
+
+  /* Mean of column vectors of input data matrix */
+  for (j=0; j<pca->nb_variables; j++)
+    {
+      meanptr[j] = 0.0;
+      for (i=0; i<pca->nb_tests; i++)  meanptr[j] += dataptr[i][j];
+      meanptr[j] /= (GENTYPE)pca->nb_tests;
+    }
+
+  /* Center the column vectors. */
+  for (i=0; i<pca->nb_tests; i++)
+    for (j=0; j<pca->nb_variables; j++)  dataptr[i][j] -= meanptr[j];
+
+  /* Compute the nb_varaibles*nb_variables covariance matrix. */
+  for (j1=0; j1<pca->nb_variables; j1++)
+    for (j2=j1; j2<pca->nb_variables; j2++)
+      {
+	correlationptr[j1][j2] = 0.0;
+	for (i=0; i<pca->nb_tests; i++)  
+	  correlationptr[j1][j2] += dataptr[i][j1]*dataptr[i][j2]/
+	                            (GENTYPE)(pca->nb_tests-1);
+	correlationptr[j2][j1] = correlationptr[j1][j2];
+      }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPCASumOfSquaresAndCrossProductsMatrix_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipPCASumOfSquaresAndCrossProductsMatrix_GENSTRING(
+  Pca_GENSTRING *pca
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  int i, j1, j2;
+  GENTYPE **correlationptr, **dataptr;
+
+  correlationptr = VipGetMatrixPtr_GENSTRING(pca->correlation);
+  dataptr = VipGetMatrixPtr_GENSTRING(pca->data);
+
+  /* Compute the pca->nb_variables*pca->nb_variables SSCP matrix. */
+  for (j1=0; j1<pca->nb_variables; j1++)
+    for (j2=j1; j2<pca->nb_variables; j2++)
+      {
+	correlationptr[j1][j2] = 0.0;
+	for (i=0; i<pca->nb_tests; i++)  
+	  correlationptr[j1][j2] += dataptr[i][j1]*dataptr[i][j2];
+	correlationptr[j2][j1] = correlationptr[j1][j2];
+      }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPCAAnalysis_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipPCAAnalysis_GENSTRING(
+  Pca_GENSTRING *pca, 
+  int analyse
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int i, j, k;
+  VipVector_GENSTRING *intermediate;
+  GENTYPE **circleptr, **principalptr, **eigenvectorptr, **dataptr;
+  GENTYPE **correlationptr;
+  GENTYPE *eigenvalueptr, *intermediateptr, *pctinertieptr, *pctcumuleptr;
+  GENTYPE swap, eigensum=0.0;
+
+  switch(analyse)
+    {
+    case PCA_CORRELATION: 
+      VipPCACorrelationMatrix_GENSTRING(pca);
+      break;
+    case PCA_COVARIANCE: 
+      VipPCACovarianceMatrix_GENSTRING(pca);
+      break;
+    case PCA_SSCP: 
+      VipPCASumOfSquaresAndCrossProductsMatrix_GENSTRING(pca);
+      break;
+    }
+
+  intermediate = VipAllocationVector_GENSTRING(pca->nb_variables, NULL);
+
+  circleptr = VipGetMatrixPtr_GENSTRING(pca->circle);
+  principalptr = VipGetMatrixPtr_GENSTRING(pca->principal);
+  eigenvectorptr = VipGetMatrixPtr_GENSTRING(pca->eigenvector);
+  dataptr = VipGetMatrixPtr_GENSTRING(pca->data);
+  correlationptr = VipGetMatrixPtr_GENSTRING(pca->correlation);
+  eigenvalueptr = VipGetVectorPtr_GENSTRING(pca->eigenvalue);
+  intermediateptr = VipGetVectorPtr_GENSTRING(intermediate);
+  pctinertieptr = VipGetVectorPtr_GENSTRING(pca->pctinertie);
+  pctcumuleptr = VipGetVectorPtr_GENSTRING(pca->pctcumule);
+
+  for (i=0; i<pca->nb_variables; i++)
+    for (j=0; j<pca->nb_variables; j++)
+      circleptr[i][j] = eigenvectorptr[i][j] = correlationptr[i][j];
+
+  VipTRED2_GENSTRING(pca->eigenvector, pca->eigenvalue, intermediate);
+  VipTQLI_GENSTRING(pca->eigenvalue, intermediate, pca->eigenvector);
+
+  /*** Range les valeurs propres dans l'ordre decroissant ***/
+  for (i=0; i<pca->nb_variables; i++)
+    for (j=i+1; j<pca->nb_variables; j++)
+      if (eigenvalueptr[j] > eigenvalueptr[i])
+        {
+          swap = eigenvalueptr[i];
+          eigenvalueptr[i] = eigenvalueptr[j];
+          eigenvalueptr[j] = swap;
+
+          for (k=0; k<pca->nb_variables; k++)
+            {
+              swap = eigenvectorptr[k][i];
+              eigenvectorptr[k][i] = eigenvectorptr[k][j];
+              eigenvectorptr[k][j] = swap;
+            }
+        }
+
+  for (i=0; i<pca->nb_variables; i++) eigensum += eigenvalueptr[i];
+
+  pctcumuleptr[0] = pctinertieptr[0] = 100.0*eigenvalueptr[0]/eigensum;
+
+  for (i=1; i<pca->nb_variables; i++)
+    { 
+      pctinertieptr[i] = 100.0*eigenvalueptr[i]/eigensum;
+      pctcumuleptr[i] = pctcumuleptr[i-1]+pctinertieptr[i];
+    }
+
+  for (i=0; i<pca->nb_tests; i++)
+    for (j=0; j<pca->nb_variables; j++)
+      for (k=0, principalptr[i][j]=0.0; k<pca->nb_variables; k++)  
+	principalptr[i][j] += dataptr[i][k]*eigenvectorptr[k][j]*
+                              sqrt((GENTYPE)pca->nb_tests);
+
+  for (i=0; i<pca->nb_variables; i++)
+    { 
+      for (j=0; j<pca->nb_variables; j++)  
+	intermediateptr[j] = circleptr[i][j];
+      for (j=0; j<pca->nb_variables; j++)
+	{
+	  for (k=0, circleptr[i][j]=0.0; k<pca->nb_variables; k++)
+	    circleptr[i][j] += intermediateptr[k]*eigenvectorptr[k][j];
+	  if (eigenvalueptr[j] > 0.00001)  
+	    circleptr[i][j] /= sqrt(eigenvalueptr[j]);
+	  else  circleptr[i][j] = 0.0;
+	}
+    }
+ 
+  VipFreeVector_GENSTRING(intermediate);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPrintStreamPCAStatistic_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipPrintStreamPCAStatistic_GENSTRING(
+  FILE *stream, 
+  Pca_GENSTRING *pca, 
+  int analyse
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int i, j;
+  GENTYPE *meanptr, *stddevptr, *eigenvalueptr, *pctinertieptr;
+  GENTYPE *pctcumuleptr;
+  GENTYPE **eigenvectorptr, **correlationptr;
+
+  meanptr = VipGetVectorPtr_GENSTRING(pca->mean);
+  stddevptr = VipGetVectorPtr_GENSTRING(pca->stddev);
+  eigenvalueptr = VipGetVectorPtr_GENSTRING(pca->eigenvalue);
+  pctinertieptr = VipGetVectorPtr_GENSTRING(pca->pctinertie);
+  pctcumuleptr = VipGetVectorPtr_GENSTRING(pca->pctcumule);
+  eigenvectorptr = VipGetMatrixPtr_GENSTRING(pca->eigenvector);
+  correlationptr = VipGetMatrixPtr_GENSTRING(pca->correlation);
+
+  fprintf(stream, "\nPCA Statistics\n\n");
+  fprintf(stream, "Means of column vectors :\n");
+  for (i=0; i<pca->nb_variables; i++)
+    fprintf(stream, "%g ", meanptr[i]);
+  
+  fprintf(stream, "\n\nStandard deviations of column vectors :\n");
+  for (i=0; i<pca->nb_variables; i++)
+    fprintf(stream, "%g ", stddevptr[i]);
+
+  fprintf(stream, "\n\n%s matrix :\n", (analyse == PCA_CORRELATION) ? 
+	  "Correlation" 
+	  : (analyse == PCA_COVARIANCE) ? "Covariance" 
+	  : "SSCP");
+  for (i=0; i<pca->nb_variables; i++)
+    {
+      for (j=0; j<pca->nb_variables; j++)
+	fprintf(stream, "%12.4f ", correlationptr[i][j]);
+      fprintf(stream, "\n");
+    }
+
+  fprintf(stream, "\n\nEigenvalues\tInertia(%%)\tCumulated(%%) :\n");
+  for (i=0; i<pca->nb_variables; i++)
+    fprintf(stream, "%f\t%f\t%f\n", eigenvalueptr[i], pctinertieptr[i],
+	    pctcumuleptr[i]);
+
+  fprintf(stream, "\nEigenvectors :\n");
+  for (i=0; i<pca->nb_variables; i++)
+    { 
+      for (j=0; j<pca->nb_variables; j++)
+	fprintf(stream, "%12.4f ", eigenvectorptr[i][pca->nb_variables-j-1]);
+      fprintf(stream, "\n");
+    }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPrintStreamPCA_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipPrintStreamPCA_GENSTRING(
+  FILE *stream, 
+  VipMatrix_GENSTRING *matrix, 
+  int nx,
+  int ny, 
+  char *text
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int i, j;
+  GENTYPE **matrixptr;
+
+  matrixptr = VipGetMatrixPtr_GENSTRING(matrix);
+
+  fprintf(stream, "\n");
+  fprintf(stream, text);
+  fprintf(stream, "\n");
+  for (i=0; i<nx; i++)
+    { 
+      for (j=0; j<ny; j++)
+	fprintf(stream, "%12.4f ", matrixptr[i][j]);
+      fprintf(stream, "\n");
+    }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPrintStreamPCAForPlot_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+void VipPrintStreamPCAForPlot_GENSTRING(
+  FILE *stream, 
+  VipMatrix_GENSTRING *matrix, 
+  int nx, 
+  int ny
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int i, j;
+  GENTYPE **matrixptr;
+
+  matrixptr = VipGetMatrixPtr_GENSTRING(matrix);
+
+  for (i=0; i<nx; i++)
+    { 
+      for (j=0; j<ny; j++)
+	fprintf(stream, "%12.4f ", matrixptr[i][j]);
+      fprintf(stream, "\n");
+    }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPrintPCA_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*---------------------------------------------------------------------------*/
+int VipPrintPCA_GENSTRING(
+  Pca_GENSTRING *pca, 
+  char *principal, 
+  char *circle, 
+  int analyse
+)
+/*---------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  FILE *file;
+
+  VipPrintStreamPCAStatistic_GENSTRING(stdout, pca, analyse);
+  if ((principal != NULL) || (circle != NULL))  
+    { 
+      if ((file = fopen("pca.stat", VIP_WRITE_TEXT)) != NULL)
+	{ 
+          VipPrintStreamPCAStatistic_GENSTRING(file, pca, analyse);
+	  fclose(file);
+	}
+      else
+	{
+	  VipPrintfError("Error while writing pca.stat file.");
+	  VipPrintfExit("(Vip_pca.c)VipPrintPCA_GENSTRING.");
+	  return(PB);
+	}
+    }
+
+  if (principal == NULL)  
+    VipPrintStreamPCA_GENSTRING(stdout, pca->principal, pca->nb_tests, 
+		                pca->nb_variables, "Principal Components");
+  else 
+    {
+      file = fopen(principal, VIP_WRITE_TEXT);
+      if (file == NULL)
+	{
+	  VipPrintfError("Error, can't open principal components file.");
+	  VipPrintfExit("(Vip_pca.c)VipPrintPCA_GENSTRING.");
+	  return(PB);
+	}
+      if (strstr(principal, ".plot") != NULL) 
+	VipPrintStreamPCAForPlot_GENSTRING(file, pca->principal, 
+                                           pca->nb_tests, pca->nb_variables); 
+      else VipPrintStreamPCA_GENSTRING(file, pca->principal, pca->nb_tests, 
+			               pca->nb_variables, 
+                                       "Principal Components");
+      fclose(file);
+    }
+
+  if (circle == NULL)
+    VipPrintStreamPCA_GENSTRING(stdout, pca->circle, pca->nb_variables,
+		                pca->nb_variables, "Correlation Circle");
+  else
+    { 
+      file = fopen(circle, VIP_WRITE_TEXT);
+      if (file == NULL)
+	{
+	  VipPrintfError("Error, can't open correlation circle result file.");
+	  VipPrintfExit("(Vip_pca.c)VipPrintPCA_GENSTRING.");
+	  return(PB);
+	}
+      if (strstr(circle, ".plot") != NULL)  
+	VipPrintStreamPCAForPlot_GENSTRING(file, pca->circle,
+                                           pca->nb_variables, 
+				           pca->nb_variables);   
+      else  VipPrintStreamPCA_GENSTRING(file, pca->circle, pca->nb_variables,
+			                pca->nb_variables, 
+                                        "Correlation Circle");
+      fclose(file);
+    }
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

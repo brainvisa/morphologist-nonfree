@@ -1,0 +1,678 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_extedge.gen      * TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 05/01/1997
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : jfmangin@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <errno.h>
+#include <math.h>
+
+#include <vip/util.h>
+#include <vip/alloc.h>
+#include <vip/volume.h>
+#include <vip/deriche.h>
+#include <vip/deriche_static.h>
+
+
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipExtedge
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+Volume  *VipExtedge(
+  Volume *vol,
+  int mode,
+  int how)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *newv;
+
+  /*NB. A more sophisticated memory management could preserve
+some space...*/
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(deriche:extedge.gen)VipExtedge");
+     return(PB);
+   } 
+  if((how!=SAME_VOLUME)&&(how!=NEW_VOLUME))
+    {
+      VipPrintfError("bad parameter: SAME_VOLUME or NEW_VOLUME");
+      VipPrintfExit("(deriche:extedge.gen)VipExtedge");
+      return(PB);
+    }
+  if((mode!=EXTEDGE2D_ALL)&&
+     (mode!=EXTEDGE2D_ALL_EXCEPT_Y_TOP)&&
+     (mode!=EXTEDGE2D_ALL_EXCEPT_Y_BOTTOM)&&
+     (mode!=EXTEDGE3D_ALL)&&
+     (mode!=EXTEDGE3D_ALL_EXCEPT_Z_TOP)&&
+     (mode!=EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
+    {
+      VipPrintfError("bad mode!");
+      VipPrintfExit("(deriche:extedge.gen)VipExtedge");
+      return(PB);
+    }
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_extedge");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  if(VipAllocateVolumeData(newv)==PB) return(PB);
+  VipSetImageLevel( newv, 0);
+    
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      VipExtedge_GENSTRING( vol, mode, newv );
+      break;
+    }		
+      
+  if(how==SAME_VOLUME)
+    {
+      VipTransferVolumeData(newv,vol);
+      VipFreeVolume(newv);
+      VipFree(newv);
+      newv = vol;
+    }
+
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipExtedge_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------------------*/
+void VipExtedge_GENSTRING(
+    Volume *vol,
+    int mode,
+    Volume *newv)
+/*------------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{					
+  VipOffsetStruct *vos;
+  int ix, iy, iz;
+  GENTYPE *ptrin, *ptrout, *ptr;
+  int oline, oslice, slicesize;
+  int offset;
+  int xsize, ysize, zsize;
+
+  vos = VipGetOffsetStructure(vol);
+
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeY(vol);
+  zsize = mVipVolSizeZ(vol);
+  oline = vos->oLine;
+  oslice = vos->oSlice;
+  
+  ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+
+  for( iz = zsize;iz--;)
+    {
+      for( iy=ysize;iy--;)
+	{
+	  ptr = ptrin;
+	  offset=0;
+	  while( (offset<xsize) && !(*ptr++) ) offset++;
+	  if(offset!=xsize)
+	    {
+	      *(ptrout+offset)=(GENTYPE)255;
+	    }
+	  ptr = ptrin+xsize-1;
+	  offset=0;
+	  while((offset<xsize) && !(*ptr--) ) offset++;
+	  if(offset!=xsize) *(ptrout+xsize-1-offset)=(GENTYPE)255;
+	  ptrin += oline;
+	  ptrout += oline;
+	}
+      ptrin += vos->oLineBetweenSlice;
+      ptrout += vos->oLineBetweenSlice;
+    }
+
+
+
+  for( iz = 0;iz<zsize;iz++)
+    {
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint + iz * oslice;
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint + iz * oslice;
+      for( ix=xsize;ix--;)
+	{
+	  if(mode!=EXTEDGE2D_ALL_EXCEPT_Y_TOP)
+	    {
+	      ptr = ptrin;
+	      offset=0;
+	      while( (offset<ysize) && !(*ptr))
+		{
+		  offset++;
+		  ptr += oline;
+		}
+	      if(offset!=ysize) *(ptrout+offset*oline)=(GENTYPE)255;
+	    }
+	  if(mode!=EXTEDGE2D_ALL_EXCEPT_Y_BOTTOM)
+	    {
+	      ptr = ptrin+oline*(ysize-1);
+	      offset=0;
+	      while((offset<ysize) && !(*ptr) )
+		{
+		  offset++;
+		  ptr-=oline;
+		}
+	      if(offset!=ysize) *(ptrout+oline*(ysize-1-offset))=(GENTYPE)255;
+	    }
+	  ptrin += 1;
+	  ptrout += 1;
+	}
+    }
+   
+  if((mode==EXTEDGE3D_ALL) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_TOP) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
+    {
+
+      slicesize = vos->oSlice;
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+      for( iy = ysize;iy--;)
+	{
+	  for( ix=xsize;ix--;)
+	    {
+	      if(mode!=EXTEDGE3D_ALL_EXCEPT_Z_TOP)
+		{
+		  ptr = ptrin;
+		  offset=0;
+		  while( (offset<zsize) && !(*ptr) )
+		    {
+		      offset++;
+		      ptr += oslice;
+		    }
+		  if(offset!=zsize) *(ptrout+offset*oslice)=(GENTYPE)255;
+		}
+	      if(mode!=EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM)
+		{
+		  ptr = ptrin+oslice*(zsize-1);
+		  offset=0;
+		  while((offset<zsize) && !(*ptr) )
+		    {
+		      offset++;
+		      ptr-=oslice;
+		    }
+		  if(offset!=zsize)
+		    {
+		      *(ptrout+oslice*(zsize-1-offset))=(GENTYPE)255;
+		    }
+		}
+	      ptrin += 1;
+	      ptrout += 1;
+	    }
+	  ptrin += vos->oPointBetweenLine;
+	  ptrout += vos->oPointBetweenLine;
+	}
+    }
+
+  VipFree(vos);
+ }
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipExtRayCorner
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+Volume  *VipExtRayCorner(
+  Volume *vol,
+  int mode,
+  int how)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *newv;
+
+  /*NB. A more sophisticated memory management could preserve
+some space...*/
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(deriche:extedge.gen)VipExtRay");
+     return(PB);
+   } 
+  if((how!=SAME_VOLUME)&&(how!=NEW_VOLUME))
+    {
+      VipPrintfError("bad parameter: SAME_VOLUME or NEW_VOLUME");
+      VipPrintfExit("(deriche:extedge.gen)VipExtRay");
+      return(PB);
+    }
+  if((mode!=EXTEDGE2D_ALL)&&
+     (mode!=EXTEDGE2D_ALL_EXCEPT_Y_TOP)&&
+     (mode!=EXTEDGE2D_ALL_EXCEPT_Y_BOTTOM)&&
+     (mode!=EXTEDGE3D_ALL)&&
+     (mode!=EXTEDGE3D_ALL_EXCEPT_Z_TOP)&&
+     (mode!=EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
+    {
+      VipPrintfError("bad mode!");
+      VipPrintfExit("(deriche:extedge.gen)VipExtRay");
+      return(PB);
+    }
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_extray");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  if(VipAllocateVolumeData(newv)==PB) return(PB);
+  VipSetImageLevel( newv, 0);
+    
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      VipExtRayCorner_GENSTRING( vol, mode, newv );
+      break;
+    }		
+      
+  if(how==SAME_VOLUME)
+    {
+      VipTransferVolumeData(newv,vol);
+      VipFreeVolume(newv);
+      VipFree(newv);
+      newv = vol;
+    }
+
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipExtRayCorner_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------------------*/
+void VipExtRayCorner_GENSTRING(
+    Volume *vol,
+    int mode,
+    Volume *newv)
+/*------------------------------------------------------------------------------*/
+#PROTOTYPE_END 
+#FUNCTION_BEGIN
+{					
+  VipOffsetStruct *vos;
+  int ix, iy, iz;
+  GENTYPE *ptrin, *ptrout, *ptr;
+  int oline, oslice, slicesize;
+  int offset;
+  int xsize, ysize, zsize;
+  int i;
+  int qxsize, qysize, qzsize;
+  int q3xsize, q3ysize, q3zsize;
+
+  vos = VipGetOffsetStructure(vol);
+
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeY(vol);
+  zsize = mVipVolSizeZ(vol);
+  oline = vos->oLine;
+  oslice = vos->oSlice;
+
+  qxsize = xsize/4;
+  q3xsize = 3*qxsize;
+  qysize = ysize/4;
+  q3ysize = 3*qysize;
+  qzsize = zsize/4;
+  q3zsize = 3*qzsize;
+  
+  ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+
+for( iz = zsize;iz--;)
+    {
+      for( iy=ysize;iy--;)
+	{
+	  ptr = ptrin;
+	  offset=0;
+	  while( (offset<xsize) && !(*ptr++) ) offset++;
+	  for(i=0;i<offset;i++)
+	    {
+	      *(ptrout+i)=(GENTYPE)255;
+	    }
+	  ptr = ptrin+xsize-1;
+	  offset=0;
+	  while((offset<xsize) && !(*ptr--) ) offset++;
+	  for(i=0;i<offset;i++)
+	    {
+	      *(ptrout+xsize-1-i)=(GENTYPE)255;
+	    }
+	  ptrin += oline;
+	  ptrout += oline;
+	}
+      ptrin += vos->oLineBetweenSlice;
+      ptrout += vos->oLineBetweenSlice;
+    }
+
+
+
+  for( iz = 0;iz<zsize;iz++)
+    {
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint + iz * oslice;
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint + iz * oslice;
+      for( ix=xsize;ix--;)
+	{
+	  if(mode!=EXTEDGE2D_ALL_EXCEPT_Y_TOP)
+	    {
+	      ptr = ptrin;
+	      offset=0;
+	      while( (offset<ysize) && !(*ptr))
+		{
+		  offset++;
+		  ptr += oline;
+		}
+	      for(i=0;i<offset;i++)
+		*(ptrout+i*oline)=(GENTYPE)255;
+	    }
+	  if(mode!=EXTEDGE2D_ALL_EXCEPT_Y_BOTTOM)
+	    {
+	      ptr = ptrin+oline*(ysize-1);
+	      offset=0;
+	      while((offset<ysize) && !(*ptr) )
+		{
+		  offset++;
+		  ptr-=oline;
+		}
+	      for(i=0;i<offset;i++)
+		*(ptrout+oline*(ysize-1-i))=(GENTYPE)255;
+	    }
+	  ptrin += 1;
+	  ptrout += 1;
+	}
+    }
+   
+  if((mode==EXTEDGE3D_ALL) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_TOP) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
+    {
+
+      slicesize = vos->oSlice;
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+      for( iy = ysize;iy--;)
+	{
+	  for( ix=xsize;ix--;)
+	    {
+	      if(mode!=EXTEDGE3D_ALL_EXCEPT_Z_TOP)
+		{
+		  ptr = ptrin;
+		  offset=0;
+		  while( (offset<zsize) && !(*ptr) )
+		    {
+		      offset++;
+		      ptr += oslice;
+		    }
+		  for(i=0;i<offset;i++)
+		    *(ptrout+i*oslice)=(GENTYPE)255;
+		}
+	      if(mode!=EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM)
+		{
+		  ptr = ptrin+oslice*(zsize-1);
+		  offset=0;
+		  while((offset<zsize) && !(*ptr) )
+		    {
+		      offset++;
+		      ptr-=oslice;
+		    }
+		  for(i=0;i<offset;i++)
+		    *(ptrout+oslice*(zsize-1-i))=(GENTYPE)255;
+		}
+	      ptrin += 1;
+	      ptrout += 1;
+	    }
+	  ptrin += vos->oPointBetweenLine;
+	  ptrout += vos->oPointBetweenLine;
+	}
+    }
+
+  ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+  for( iz = zsize;iz--;)
+    {
+       for( iy=ysize;iy--;)      
+	{
+          for( ix=xsize;ix--;)  
+          {    
+             if((ix>qxsize && ix<q3xsize) || 
+                (iy>qysize && iy<q3ysize) || (iz>qzsize && iz<q3zsize))
+               *ptrout=0;        
+	      ptrout++;
+          }
+	  ptrout += vos->oPointBetweenLine;
+	}
+      ptrout += vos->oLineBetweenSlice;
+    } 
+
+  VipFree(vos);
+ }
+#FUNCTION_END
+#TYPED_FUNC_END
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipExtRay
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+Volume  *VipExtRay(
+  Volume *vol,
+  int mode,
+  int how)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  char name[VIP_NAME_MAXLEN];
+  Volume *newv;
+
+  /*NB. A more sophisticated memory management could preserve
+some space...*/
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(deriche:extedge.gen)VipExtRay");
+     return(PB);
+   } 
+  if((how!=SAME_VOLUME)&&(how!=NEW_VOLUME))
+    {
+      VipPrintfError("bad parameter: SAME_VOLUME or NEW_VOLUME");
+      VipPrintfExit("(deriche:extedge.gen)VipExtRay");
+      return(PB);
+    }
+  if((mode!=EXTEDGE2D_ALL)&&
+     (mode!=EXTEDGE2D_ALL_EXCEPT_Y_TOP)&&
+     (mode!=EXTEDGE2D_ALL_EXCEPT_Y_BOTTOM)&&
+     (mode!=EXTEDGE3D_ALL)&&
+     (mode!=EXTEDGE3D_ALL_EXCEPT_Z_TOP)&&
+     (mode!=EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
+    {
+      VipPrintfError("bad mode!");
+      VipPrintfExit("(deriche:extedge.gen)VipExtRay");
+      return(PB);
+    }
+  (void)strcpy(name,mVipVolName(vol));
+  (void)strcat(name,"_extray");
+  newv = VipDuplicateVolumeStructure (vol,name);
+  if(VipAllocateVolumeData(newv)==PB) return(PB);
+  VipSetImageLevel( newv, 0);
+    
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      VipExtRay_GENSTRING( vol, mode, newv ); 
+      break;
+    }		
+      
+  if(how==SAME_VOLUME)
+    {
+      VipTransferVolumeData(newv,vol);
+      VipFreeVolume(newv);
+      VipFree(newv);
+      newv = vol;
+    }
+
+ return(newv);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipExtRay_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------------------*/
+void VipExtRay_GENSTRING(
+    Volume *vol,
+    int mode,
+    Volume *newv)
+/*------------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{					
+  VipOffsetStruct *vos;
+  int ix, iy, iz;
+  GENTYPE *ptrin, *ptrout, *ptr;
+  int oline, oslice, slicesize;
+  int offset;
+  int xsize, ysize, zsize;
+  int i;
+
+  vos = VipGetOffsetStructure(vol);
+
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeY(vol);
+  zsize = mVipVolSizeZ(vol);
+  oline = vos->oLine;
+  oslice = vos->oSlice;
+  
+  ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+  ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+
+  for( iz = zsize;iz--;)
+    {
+      for( iy=ysize;iy--;)
+	{
+	  ptr = ptrin;
+	  offset=0;
+	  while( (offset<xsize) && !(*ptr++) ) offset++;
+	  for(i=0;i<offset;i++)
+	    {
+	      *(ptrout+i)=(GENTYPE)255;
+	    }
+	  ptr = ptrin+xsize-1;
+	  offset=0;
+	  while((offset<xsize) && !(*ptr--) ) offset++;
+	  for(i=0;i<offset;i++)
+	    {
+	      *(ptrout+xsize-1-i)=(GENTYPE)255;
+	    }
+	  ptrin += oline;
+	  ptrout += oline;
+	}
+      ptrin += vos->oLineBetweenSlice;
+      ptrout += vos->oLineBetweenSlice;
+    }
+
+
+
+  for( iz = 0;iz<zsize;iz++)
+    {
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint + iz * oslice;
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint + iz * oslice;
+      for( ix=xsize;ix--;)
+	{
+	  if(mode!=EXTEDGE2D_ALL_EXCEPT_Y_TOP)
+	    {
+	      ptr = ptrin;
+	      offset=0;
+	      while( (offset<ysize) && !(*ptr))
+		{
+		  offset++;
+		  ptr += oline;
+		}
+	      for(i=0;i<offset;i++)
+		*(ptrout+i*oline)=(GENTYPE)255;
+	    }
+	  if(mode!=EXTEDGE2D_ALL_EXCEPT_Y_BOTTOM)
+	    {
+	      ptr = ptrin+oline*(ysize-1);
+	      offset=0;
+	      while((offset<ysize) && !(*ptr) )
+		{
+		  offset++;
+		  ptr-=oline;
+		}
+	      for(i=0;i<offset;i++)
+		*(ptrout+oline*(ysize-1-i))=(GENTYPE)255;
+	    }
+	  ptrin += 1;
+	  ptrout += 1;
+	}
+    }
+   
+  if((mode==EXTEDGE3D_ALL) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_TOP) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
+    {
+
+      slicesize = vos->oSlice;
+      ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+      ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
+      for( iy = ysize;iy--;)
+	{
+	  for( ix=xsize;ix--;)
+	    {
+	      if(mode!=EXTEDGE3D_ALL_EXCEPT_Z_TOP)
+		{
+		  ptr = ptrin;
+		  offset=0;
+		  while( (offset<zsize) && !(*ptr) )
+		    {
+		      offset++;
+		      ptr += oslice;
+		    }
+		  for(i=0;i<offset;i++)
+		    *(ptrout+i*oslice)=(GENTYPE)255;
+		}
+	      if(mode!=EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM)
+		{
+		  ptr = ptrin+oslice*(zsize-1);
+		  offset=0;
+		  while((offset<zsize) && !(*ptr) )
+		    {
+		      offset++;
+		      ptr-=oslice;
+		    }
+		  for(i=0;i<offset;i++)
+		    *(ptrout+oslice*(zsize-1-i))=(GENTYPE)255;
+		}
+	      ptrin += 1;
+	      ptrout += 1;
+	    }
+	  ptrin += vos->oPointBetweenLine;
+	  ptrout += vos->oPointBetweenLine;
+	}
+    }
+
+  VipFree(vos);
+ }
+#FUNCTION_END
+#TYPED_FUNC_END
+  

@@ -1,0 +1,145 @@
+/****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_subvolume.gen      * TYPE     : Function
+ * AUTHOR      : POUPON F.            * CREATION : 16/08/1996
+ * VERSION     : 1.1                  * REVISION :
+ * LANGUAGE    : C                  * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ ****************************************************************************
+ *
+ * DESCRIPTION : Extraction d'un sous-volume
+ *
+ ****************************************************************************
+ *
+ * USED MODULES : Vip_subvolume.h
+ *
+ ****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|---------------------------------------
+ *            18/04/97| JFM          | passage en generique
+ *            04/11/97| F. Poupon    | optimisation de la boucle
+ *              / /   |              |
+ ****************************************************************************/
+
+#include <vip/volume.h>
+#include <vip/volume_static.h>
+#include <vip/alloc.h>
+
+
+#NONTYPED_FUNC_BEGIN VipGetSubVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume *VipGetSubVolume(Volume *vol, int xd, int yd, int zd, int td, int dx, int dy, int dz, int dt, int isDim)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+ if (!VipVerifyAll(vol) || !VipTestType(vol,ANY_TYPE))
+   {
+     VipPrintfExit("(volume)VipGetSubVolume");
+     return(PB);
+   }
+ switch( mVipVolType( vol ) )
+   {
+   case GENSTRING :
+     return(VipGetSubVolume_GENSTRING(vol, xd, yd, zd, td,  dx, dy, dz, dt, isDim));
+     break;
+   }
+  return((Volume*)NULL);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipGetSubVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Volume *VipGetSubVolume_GENSTRING(Volume *vol, int xd, int yd, int zd, int td, int dx, int dy, int dz, int dt, int isDim)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VIP_DEC_VOLUME(volout);
+  int i, j, k, l, xf, yf, zf, tf, type;
+  /*int ydec, zdec, tdec;*/
+  float xvoxsize, yvoxsize, zvoxsize, tvoxsize;
+  GENTYPE *imptr, *outptr;
+  VipOffsetStruct *vos;
+
+  if (isDim)
+  { xf = xd+dx-1;
+    yf = yd+dy-1;
+    zf = zd+dz-1;
+    tf = td+dt-1;
+  }
+  else
+  { xf = dx;
+    yf = dy;
+    zf = dz;
+    tf = dt;
+    dx = xf-xd+1;
+    dy = yf-yd+1;
+    dz = zf-zd+1;
+    dt = tf-td+1;
+  }
+
+  if (xf >= mVipVolSizeX(vol))  
+  { VipPrintfError("Invalide sub-volume X size.");
+    VipPrintfExit("(Vip_subvolume)VipGetSubVolume.");
+    return((Volume *)NULL);
+  }
+  if (yf >= mVipVolSizeY(vol))  
+  { VipPrintfError("Invalide sub-volume Y size.");
+    VipPrintfExit("(Vip_subvolume)VipGetSubVolume.");
+    return((Volume *)NULL);
+  }
+  if (zf >= mVipVolSizeZ(vol))  
+  { VipPrintfError("Invalide sub-volume Z size.");
+    VipPrintfExit("(Vip_subvolume)VipGetSubVolume.");
+    return((Volume *)NULL);
+  }
+  if (tf >= mVipVolSizeT(vol)) {
+    
+    VipPrintfError("Invalide sub-volume T size.");
+    VipPrintfExit("(Vip_subvolume)VipGetSubVolume.");
+    return((Volume *)NULL);
+  }
+
+  xvoxsize = mVipVolVoxSizeX(vol);
+  yvoxsize = mVipVolVoxSizeY(vol);
+  zvoxsize = mVipVolVoxSizeZ(vol);
+  tvoxsize = mVipVolVoxSizeT(vol);
+  type = mVipVolType(vol);
+
+  volout = VipCreate4DVolume(dx, dy, dz, dt, xvoxsize, yvoxsize, zvoxsize, tvoxsize, type, "", 0);
+  VipSetShfjUnite(volout,mVipVolShfjUnite(vol));
+  vos = VipGetOffsetStructure(vol);
+  
+  imptr = VipGetDataPtr_GENSTRING(vol)+vos->oFirstPoint;
+  outptr = VipGetDataPtr_GENSTRING(volout);
+
+  imptr += xd+yd*vos->oLine+zd*vos->oSlice+td*vos->oVolume;
+
+/*  ydec = vos->oLine-dx;
+  zdec = vos->oSlice-vos->oLine*dy-dx;
+  tdec = vos->oVolume-vos->oSlice*dz-vos->oLine*dy-dx;
+
+  for (l=dt; l--; imptr+=tdec)
+    for (k=dz; k--; imptr+=zdec)
+      for (j=dy; j--; imptr+=ydec)
+        for (i=dx; i--;)
+          *outptr++ = *imptr++;
+*/
+  for (l=0; l<dt; l++)
+    for (k=0; k<dz; k++)
+      for (j=0; j<dy; j++)
+        for (i=0; i<dx; i++)
+          *outptr++ = *(imptr+i+j*vos->oLine+k*vos->oSlice+l*vos->oVolume);
+
+  VipFree(vos);
+
+  return(volout);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

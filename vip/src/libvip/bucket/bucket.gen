@@ -1,0 +1,859 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_bucket.gen       * TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 22/11/1996
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : Reprise de la vieille notion de bucket:
+ *               des vecteurs de 3DPoint
+ *               jfmangin@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *            07/02/97| POUPON F.    | Ajout des fonctions :
+ *                    |              |   VipDeclareVectorOf3DBucket_GENSTRING
+ *                    |              |   VipAllocateVectorOf3DBucket_GENSTRING
+ *                    |              |   VipCreateVectorOf3DBucket_GENSTRING
+ *                    |              |   VipFreeVectorOf3DBucket_GENSTRING
+ *                    |              |   VipGet3DBucketVectorPtr_GENSTRING
+ *--------------------|--------------|----------------------------------------
+ *            12/02/97| POUPON F.    | Ajout des fonctions :
+ *                    |              |   VipDeclareVectorOf2DBucket_GENSTRING
+ *                    |              |   VipAllocateVectorOf2DBucket_GENSTRING
+ *                    |              |   VipCreateVectorOf2DBucket_GENSTRING
+ *                    |              |   VipFreeVectorOf2DBucket_GENSTRING
+ *                    |              |   VipGet2DBucketVectorPtr_GENSTRING
+ *--------------------|--------------|----------------------------------------
+ *            14/04/97| POUPON F.    | Ajout des fonctions :
+ *                    |              |   VipIncrease3DBucket_GENSTRING
+ *                    |              |   VipIncrease2DBucket_GENSTRING
+ *--------------------|--------------|----------------------------------------
+ *              /  /  |              |
+ *****************************************************************************/
+
+#include <vip/bucket.h>
+
+#TYPED_FUNC_BEGIN *VipAlloc3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucket_GENSTRING *VipAlloc3DBucket_GENSTRING(size_t size)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DBucket_GENSTRING *newb;
+
+  newb = (Vip3DBucket_GENSTRING *)VipCalloc(1, sizeof(Vip3DBucket_GENSTRING),
+				         "Error while allocating Vip3DBucket_GENSTRING.");
+  if (newb == NULL)
+    {
+      VipPrintfExit("VipAlloc3DBucket_GENSTRING");
+      return(PB);
+    }
+
+  newb->size = (int)size;
+  newb->data = (Vip3DPoint_GENSTRING *)VipCalloc(size, sizeof(Vip3DPoint_GENSTRING), 
+				   "Error while allocating Vip3DPoint_GENSTRING vector");
+  if (newb->data == NULL)  
+  {
+    VipFree((void *)newb); 
+    VipPrintfExit("VipAlloc3DBucket_GENSTRING");
+    return(PB);
+  }
+
+  return(newb);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipMalloc3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucket_GENSTRING *VipMalloc3DBucket_GENSTRING(size_t size)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DBucket_GENSTRING *newb;
+
+  newb = (Vip3DBucket_GENSTRING *)VipCalloc(1, sizeof(Vip3DBucket_GENSTRING),
+				         "Error while allocating  Vip3DBucket_GENSTRING.");
+  if (newb == NULL)
+    {
+      VipPrintfExit("VipAlloc3DBucket_GENSTRING");
+      return(PB);
+    }
+
+  newb->size = (int)size;
+  newb->data = (Vip3DPoint_GENSTRING *)VipMalloc(size * sizeof(Vip3DPoint_GENSTRING), 
+				   "Error while allocating Vip3DPoint_GENSTRING vector");
+  if (newb->data == NULL)  
+  {
+    VipFree((void *)newb); 
+    VipPrintfExit("VipMalloc3DBucket_GENSTRING");
+    return(PB);
+  }
+
+  return(newb);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipDwindle3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipDwindle3DBucket_GENSTRING(Vip3DBucket_GENSTRING *vec)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DPoint_GENSTRING *newb;
+#ifdef _WIN32
+  size_t size, oldsize;
+#endif
+
+  if(vec==NULL)
+    {
+      VipPrintfExit("VipDwindle3DBucket_GENSTRING");
+      return(PB);
+    }
+  else if(vec->data==NULL)
+    {
+      VipPrintfExit("VipDwindle3DBucket_GENSTRING");
+      return(PB);
+    }
+  else
+    {
+#ifdef _WIN32
+      size = vec->n_points * sizeof(Vip3DPoint_GENSTRING);
+      oldsize = vec->size * sizeof(Vip3DPoint_GENSTRING);
+      if( size < oldsize ) /* shrink: avoid windows bug... */
+      {
+        newb = (Vip3DPoint_GENSTRING *)VipMalloc( size, "");
+        if (newb==NULL)
+        {
+          VipPrintfError("Memory pb in realloc");
+          VipPrintfExit("VipDwindle3DBucket_GENSTRING");
+          return(PB);
+        }
+        if( vec->data != NULL )
+        {
+          memcpy( newb, vec->data, size <= oldsize ? size : oldsize );
+          VipFree( vec->data );
+        }
+      }
+      else
+      {
+      	newb = (Vip3DPoint_GENSTRING *)VipRealloc((void *)(vec->data),
+      				 vec->n_points * sizeof(Vip3DPoint_GENSTRING),
+      				 "");
+      	if (newb==NULL)
+        {
+      	  VipPrintfError("Memory pb in realloc");
+            	  VipPrintfExit("VipDwindle3DBucket_GENSTRING");
+                return(PB);
+        }
+      }
+#else
+	newb = (Vip3DPoint_GENSTRING *)VipRealloc((void *)(vec->data),
+				 vec->n_points * sizeof(Vip3DPoint_GENSTRING),
+				 "");
+	if (newb==NULL)
+    	{
+	  VipPrintfError("Memory pb in realloc");
+      	  VipPrintfExit("VipDwindle3DBucket_GENSTRING");
+          return(PB);
+    	}
+#endif
+	vec->data = newb;
+	vec->size = vec->n_points;
+    }
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetNthBiggest3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucket_GENSTRING *VipGetNthBiggest3DBucket_GENSTRING(Vip3DBucket_GENSTRING *list, int n)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DBucket_GENSTRING *walker=NULL, *biggest=NULL, **forbidens=NULL;
+  int size;
+  int length;
+  int i,j;
+  int deja;
+
+  if(list==NULL)
+    {
+      VipPrintfWarning("Empty bucket list in VipGetNthBiggest3DBucket_GENSTRING");
+      return(NULL);
+    }
+
+
+  length = VipGet3DBucketListLength_GENSTRING( list );
+  if(length<n || n<=0)
+   {
+      VipPrintfError("Not enough buckets in VipGetNthBiggest3DBucket_GENSTRING");
+      VipPrintfExit("VipGetNthBiggest3DBucket_GENSTRING");
+      return(PB);
+   }
+
+  forbidens = (Vip3DBucket_GENSTRING **)VipCalloc(n,sizeof (Vip3DBucket_GENSTRING *),"VipGetNthBiggest3DBucket_GENSTRING");
+  if (forbidens==PB) return(PB);
+
+  
+  for(i=0;i<n;i++)
+    {
+      walker = list;
+      size = -1;
+      while( walker!=NULL )
+	{
+	  if(walker->n_points > size)
+	    {
+	      deja = VFALSE;
+	      for(j=0;j<=i;j++)
+		{
+		  if (walker==forbidens[j])
+		    {
+		      deja = VTRUE;
+		      break;
+		    }
+		}
+	      if (deja == VFALSE)
+		{
+		  biggest = walker;
+		  size = biggest->n_points;
+		}
+	    }
+	  walker = walker->next;
+	}
+      forbidens[i] = biggest;
+    }
+
+  VipFree(forbidens);
+
+  return(biggest);  
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetBiggest3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucket_GENSTRING *VipGetBiggest3DBucket_GENSTRING(Vip3DBucket_GENSTRING *list)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DBucket_GENSTRING *biggest=NULL;
+  int size;
+
+  if(list==NULL)
+    {
+      VipPrintfWarning("Empty bucket list in VipGetBiggest3DBucket_GENSTRING");
+      return(NULL);
+    }
+
+  
+  size = 0;
+  while( list!=NULL )
+    {
+      if(list->n_points > size)
+	{
+	  biggest = list;
+	  size = biggest->n_points;
+	}
+      list = list->next;
+    }
+
+  if (size==0)
+    {
+      VipPrintfWarning("List of empty buckets in VipGetBiggest3DBucket_GENSTRING");
+      return(NULL);
+    }
+
+  return( biggest);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipUnhook3DBucketFromList_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucket_GENSTRING *VipUnhook3DBucketFromList_GENSTRING(
+Vip3DBucket_GENSTRING *ToUnhook,
+Vip3DBucket_GENSTRING *list)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DBucket_GENSTRING *ptr;
+
+  if(list==NULL)
+    {
+      VipPrintfWarning("Empty bucket list in VipUnhook3DBucketFromList_GENSTRING");
+      return(NULL);
+    }
+  if(ToUnhook==NULL)
+    {
+      VipPrintfWarning("Nobody to be deleted in VipUnhook3DBucketFromList_GENSTRING");
+      VipPrintfExit("VipUnhook3DBucketFromList_GENSTRING");
+      return(PB);
+    }
+
+  if(ToUnhook == list) list = list->next;
+  else
+    {
+      ptr = list;
+      while((ptr)&&(ptr->next != ToUnhook))
+	{
+	  ptr = ptr->next;
+	}
+      if (ptr==NULL)
+	{
+	  VipPrintfError("Can not find this bucket in List");
+	  VipPrintfExit("VipUnhook3DBucketFromList_GENSTRING");
+	  return(PB);
+	}
+      ptr->next = ptr->next->next;
+    }
+  ToUnhook->next = NULL;
+
+  return(list);  
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFree3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipFree3DBucket_GENSTRING(Vip3DBucket_GENSTRING *vec)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  if(vec==NULL)
+    {
+      VipPrintfExit("VipFree3DBucket_GENSTRING");
+      return(PB);
+    }
+  else if(vec->data==NULL)
+    {
+      VipPrintfExit("VipFree3DBucket_GENSTRING");
+      return(PB);
+    }
+  else
+    {
+      VipFree(vec->data);
+      VipFree(vec);
+    }
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFree3DBucketList_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipFree3DBucketList_GENSTRING(Vip3DBucket_GENSTRING *list)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DBucket_GENSTRING *killer;
+
+  while (list!=NULL)
+    {
+      killer = list;
+      list = list->next;
+      VipFree3DBucket_GENSTRING(killer);
+    }
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGet3DBucketListLength_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipGet3DBucketListLength_GENSTRING(Vip3DBucket_GENSTRING *list)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int l;
+
+  if(list==NULL)
+    {
+      VipPrintfWarning("VipGet3DBucketListLength_GENSTRING");
+      return(0);
+    }
+
+  l=0;
+  while (list!=NULL)
+    {
+      l++;
+      list = list->next;
+    }
+  
+  return(l);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipAlloc2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip2DBucket_GENSTRING *VipAlloc2DBucket_GENSTRING(size_t size)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip2DBucket_GENSTRING *newb;
+
+  newb = (Vip2DBucket_GENSTRING *)VipCalloc(1, sizeof(Vip2DBucket_GENSTRING),
+				         "Error while allocating  Vip2DBucket_GENSTRING.");
+  if (newb == NULL)
+    {
+      VipPrintfExit("VipAlloc2DBucket_GENSTRING");
+      return(PB);
+    }
+
+  newb->size = (int)size;
+  newb->data = (Vip2DPoint_GENSTRING *)VipCalloc(size, sizeof(Vip2DPoint_GENSTRING), 
+				   "Error while allocating Vip2DPoint_GENSTRING vector");
+  if (newb->data == NULL)  
+  {
+    VipFree((void *)newb); 
+    VipPrintfExit("VipAlloc2DBucket_GENSTRING");
+    return(PB);
+  }
+
+  return(newb);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipDwindle2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipDwindle2DBucket_GENSTRING(Vip2DBucket_GENSTRING *vec)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip2DPoint_GENSTRING *newb;
+
+  if(vec==NULL)
+    {
+      VipPrintfExit("VipDwindle2DBucket_GENSTRING");
+      return(PB);
+    }
+  else if(vec->data==NULL)
+    {
+      VipPrintfExit("VipDwindle2DBucket_GENSTRING");
+      return(PB);
+    }
+  else
+    {
+	newb = (Vip2DPoint_GENSTRING *)VipRealloc((char *)vec->data,
+				 vec->n_points * sizeof(Vip2DPoint_GENSTRING),
+				 "");
+	if (newb==NULL)
+    	{
+	  VipPrintfError("Memory pb in realloc");
+      	  VipPrintfExit("VipDwindle2DBucket_GENSTRING");
+          return(PB);
+    	}
+	vec->data = newb;
+	vec->size = vec->n_points;
+    }
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFree2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipFree2DBucket_GENSTRING(Vip2DBucket_GENSTRING *vec)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  if(vec==NULL)
+    {
+      VipPrintfExit("VipFree2DBucket_GENSTRING");
+      return(PB);
+    }
+  else if(vec->data==NULL)
+    {
+      VipPrintfExit("VipFree2DBucket_GENSTRING");
+      return(PB);
+    }
+  else
+    {
+      VipFree(vec->data);
+      VipFree(vec);
+    }
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFree2DBucketList_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipFree2DBucketList_GENSTRING(Vip2DBucket_GENSTRING *list)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip2DBucket_GENSTRING *killer;
+
+  while (list!=NULL)
+    {
+      killer = list;
+      list = list->next;
+      VipFree2DBucket_GENSTRING(killer);
+    }
+  
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN *VipDeclareVectorOf3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucketVector_GENSTRING *VipDeclareVectorOf3DBucket_GENSTRING(int nb_bucket)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Vip3DBucketVector_GENSTRING *bucket;
+
+ if (nb_bucket <= 0)
+  { VipPrintfError("Invalid number of bucket(s)");
+    VipPrintfExit("(Vip_bucket_gen)VipDeclareVectorOf3DBucket_GENSTRING");
+    return((Vip3DBucketVector_GENSTRING *)NULL);
+  }
+
+  bucket = (Vip3DBucketVector_GENSTRING *)VipCalloc(1, sizeof(Vip3DBucketVector_GENSTRING),"");
+  if (bucket == NULL)
+  { VipPrintfError("Error while allocating bucket vector structure");
+    VipPrintfExit("(Vip_label_contour.c)VipDeclareVectorOf3DBucket_GENSTRING");
+    return((Vip3DBucketVector_GENSTRING *)NULL);
+  }
+
+  bucket->bucket = (Vip3DBucket_GENSTRING **)VipCalloc(1, sizeof(Vip3DBucket_GENSTRING *), NULL);
+  if (!bucket->bucket)
+  { VipPrintfError("Error while allocating bucket Vector");
+    VipPrintfExit("(Vip_bucket_gen)VipDeclareVectorOf3DBucket_GENSTRING");
+    VipFree(bucket);
+    return((Vip3DBucketVector_GENSTRING *)NULL);
+  }
+  
+  bucket->nb_bucket = nb_bucket;
+
+  return(bucket);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipAllocateVectorOf3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipAllocateVectorOf3DBucket_GENSTRING(Vip3DBucketVector_GENSTRING *bucket, size_t size)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ int loop;
+
+  if (!bucket)
+  { VipPrintfError("Bucket Vector is not declared");
+    VipPrintfExit("(Vip_bucket_gen)VipAllocateVectorOf3DBucket_GENSTRING");
+    return(PB);
+  }
+
+  for (loop=0; loop<bucket->nb_bucket; loop++)
+  { bucket->bucket[loop] = VipAlloc3DBucket_GENSTRING(size);
+    if (!bucket->bucket[loop])
+    { VipPrintfError("Error while allocating a vector's Bucket");
+      VipPrintfExit("(Vip_bucket_gen)VipAllocateVectorOf3DBucket_GENSTRING");
+      for (;loop--;)  VipFree3DBucket_GENSTRING(bucket->bucket[loop]);
+      VipFree(bucket->bucket);
+      VipFree(bucket);
+      return(PB);
+    }
+  }
+  
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN *VipCreateVectorOf3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucketVector_GENSTRING *VipCreateVectorOf3DBucket_GENSTRING(int nb_bucket, size_t size)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Vip3DBucketVector_GENSTRING *bucket;
+
+  bucket = VipDeclareVectorOf3DBucket_GENSTRING(nb_bucket);
+  if (!bucket)
+  { VipPrintfError("Unable to declare a vector of buckets");
+    VipPrintfExit("(Vip_bucket_gen)VipCreateVectorOf3DBucket_GENSTRING");
+    return((Vip3DBucketVector_GENSTRING *)NULL);
+  }
+
+  if ((VipAllocateVectorOf3DBucket_GENSTRING(bucket, size)) == PB)
+  { VipPrintfError("Vector of buckets allocation failure");
+    VipPrintfExit("(Vip_bucket_gen)VipCreateVectorOf3DBucket_GENSTRING");
+    VipFreeVectorOf3DBucket_GENSTRING(bucket);
+    return((Vip3DBucketVector_GENSTRING *)NULL);
+  }
+
+  return(bucket);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipFreeVectorOf3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+void VipFreeVectorOf3DBucket_GENSTRING(Vip3DBucketVector_GENSTRING *bucket)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ int loop;
+
+  if (bucket)
+  { if (bucket->bucket)
+    { for (loop=0; loop<bucket->nb_bucket; loop++)
+       if (bucket->bucket[loop])  VipFree3DBucket_GENSTRING(bucket->bucket[loop]);
+     VipFree(bucket->bucket);
+    }
+    VipFree(bucket);
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN **VipGet3DBucketVectorPtr_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip3DBucket_GENSTRING **VipGet3DBucketVectorPtr_GENSTRING(Vip3DBucketVector_GENSTRING *bucket)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!bucket || (bucket->bucket == NULL))
+  { VipPrintfError("Bucket not allocated.");
+    VipPrintfExit("(Vip_bucket_gen)VipGet3DBucketVectorPtr_GENSTRING");
+    return((Vip3DBucket_GENSTRING **)NULL);
+  }
+
+  return((Vip3DBucket_GENSTRING **)bucket->bucket);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipIncrease3DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipIncrease3DBucket_GENSTRING(Vip3DBucket_GENSTRING *vec, size_t increment)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Vip3DPoint_GENSTRING *newbuf;
+
+  if ((vec == NULL) || (increment <= 0))
+  { VipPrintfError("Arguments error");
+    VipPrintfExit("(Vip_bucket_gen)VipIncrease3DBucket_GENSTRING");
+    return(PB);
+  }
+
+  newbuf = (Vip3DPoint_GENSTRING *)VipRealloc((void *)(vec->data), 
+			(vec->size+increment)*sizeof(Vip3DPoint_GENSTRING),
+			"");
+  if (newbuf == NULL)
+  { VipPrintfError("Sorry, no more memory...");
+    VipPrintfExit("(Vip_bucket_gen)VipIncrease3DBucket_GENSTRING");
+    return(PB);
+  }
+  else
+  { vec->data = newbuf;
+    vec->size += increment;
+  }
+  
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipDeclareVectorOf2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip2DBucketVector_GENSTRING *VipDeclareVectorOf2DBucket_GENSTRING(int nb_bucket)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Vip2DBucketVector_GENSTRING *bucket;
+
+ if (nb_bucket <= 0)
+  { VipPrintfError("Invalid number of bucket(s)");
+    VipPrintfExit("(Vip_bucket_gen)VipDeclareVectorOf2DBucket_GENSTRING");
+    return((Vip2DBucketVector_GENSTRING *)NULL);
+  }
+
+  bucket = (Vip2DBucketVector_GENSTRING *)VipCalloc(1, sizeof(Vip2DBucketVector_GENSTRING),"");
+  if (bucket == NULL)
+  { VipPrintfError("Error while allocating bucket vector structure");
+    VipPrintfExit("(Vip_label_contour.c)VipDeclareVectorOf2DBucket_GENSTRING");
+    return((Vip2DBucketVector_GENSTRING *)NULL);
+  }
+
+  bucket->bucket = (Vip2DBucket_GENSTRING **)VipCalloc(1, sizeof(Vip2DBucket_GENSTRING *), NULL);
+  if (!bucket->bucket)
+  { VipPrintfError("Error while allocating bucket Vector");
+    VipPrintfExit("(Vip_bucket_gen)VipDeclareVectorOf2DBucket_GENSTRING");
+    VipFree(bucket);
+    return((Vip2DBucketVector_GENSTRING *)NULL);
+  }
+  
+  bucket->nb_bucket = nb_bucket;
+
+  return(bucket);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipAllocateVectorOf2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipAllocateVectorOf2DBucket_GENSTRING(Vip2DBucketVector_GENSTRING *bucket, size_t size)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ int loop;
+
+  if (!bucket)
+  { VipPrintfError("Bucket Vector is not declared");
+    VipPrintfExit("(Vip_bucket_gen)VipAllocateVectorOf2DBucket_GENSTRING");
+    return(PB);
+  }
+
+  for (loop=0; loop<bucket->nb_bucket; loop++)
+  { bucket->bucket[loop] = VipAlloc2DBucket_GENSTRING(size);
+    if (!bucket->bucket[loop])
+    { VipPrintfError("Error while allocating a vector's Bucket");
+      VipPrintfExit("(Vip_bucket_gen)VipAllocateVectorOf2DBucket_GENSTRING");
+      for (;loop--;)  VipFree2DBucket_GENSTRING(bucket->bucket[loop]);
+      VipFree(bucket->bucket);
+      VipFree(bucket);
+      return(PB);
+    }
+  }
+  
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN *VipCreateVectorOf2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip2DBucketVector_GENSTRING *VipCreateVectorOf2DBucket_GENSTRING(int nb_bucket, size_t size)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Vip2DBucketVector_GENSTRING *bucket;
+
+  bucket = VipDeclareVectorOf2DBucket_GENSTRING(nb_bucket);
+  if (!bucket)
+  { VipPrintfError("Unable to declare a vector of buckets");
+    VipPrintfExit("(Vip_bucket_gen)VipCreateVectorOf2DBucket_GENSTRING");
+    return((Vip2DBucketVector_GENSTRING *)NULL);
+  }
+
+  if ((VipAllocateVectorOf2DBucket_GENSTRING(bucket, size)) == PB)
+  { VipPrintfError("Vector of buckets allocation failure");
+    VipPrintfExit("(Vip_bucket_gen)VipCreateVectorOf2DBucket_GENSTRING");
+    VipFreeVectorOf2DBucket_GENSTRING(bucket);
+    return((Vip2DBucketVector_GENSTRING *)NULL);
+  }
+
+  return(bucket);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN VipFreeVectorOf2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+void VipFreeVectorOf2DBucket_GENSTRING(Vip2DBucketVector_GENSTRING *bucket)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ int loop;
+
+  if (bucket)
+  { if (bucket->bucket)
+    { for (loop=0; loop<bucket->nb_bucket; loop++)
+       if (bucket->bucket[loop])  VipFree2DBucket_GENSTRING(bucket->bucket[loop]);
+     VipFree(bucket->bucket);
+    }
+    VipFree(bucket);
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN **VipGet2DBucketVectorPtr_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+Vip2DBucket_GENSTRING **VipGet2DBucketVectorPtr_GENSTRING(Vip2DBucketVector_GENSTRING *bucket)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!bucket || (bucket->bucket == NULL))
+  { VipPrintfError("Bucket not allocated.");
+    VipPrintfExit("(Vip_bucket_gen)VipGet2DBucketVectorPtr_GENSTRING");
+    return((Vip2DBucket_GENSTRING **)NULL);
+  }
+
+  return((Vip2DBucket_GENSTRING **)bucket->bucket);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipIncrease2DBucket_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipIncrease2DBucket_GENSTRING(Vip2DBucket_GENSTRING *vec, size_t increment)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Vip2DPoint_GENSTRING *newbuf;
+
+  if ((vec == NULL) || (increment <= 0))
+  { VipPrintfError("Arguments error");
+    VipPrintfExit("(Vip_bucket_gen)VipIncrease2DBucket_GENSTRING");
+    return(PB);
+  }
+
+  newbuf = (Vip2DPoint_GENSTRING *)VipRealloc((void *)(vec->data), 
+			(vec->size+increment)*sizeof(Vip2DPoint_GENSTRING),
+			"");
+  if (newbuf == NULL)
+  { VipPrintfError("Sorry, no more memory...");
+    VipPrintfExit("(Vip_bucket_gen)VipIncrease2DBucket_GENSTRING");
+    return(PB);
+  }
+  else
+  { vec->data = newbuf;
+    vec->size += increment;
+  }
+  
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

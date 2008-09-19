@@ -1,0 +1,399 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_linresamp.c          * TYPE     : Source
+ * AUTHOR      : MANGIN J.F.          * CREATION : 02/02/1997
+ * VERSION     : 1.0                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : PC Linux
+ *****************************************************************************
+ *
+ * DESCRIPTION : An old linear resampler developed in GE/buc in 1991... 
+ * (dedicated to int types, tricky)
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+#include <vip/linresamp.h>
+#include <vip/linresamp_static.h>
+
+#NONTYPED_FUNC_BEGIN VipLinearResampCustom
+#TYPE_LIST U8BIT S8BIT U16BIT S16BIT FLOAT
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------*/
+Volume *VipLinearResampCustom(
+Volume *vol,
+Volume *templatev,
+VipDeplacement *dep,
+int outmode)
+/*------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Volume *result;
+
+  if(!vol || !templatev || !dep )
+    {
+      VipPrintfExit("Argument in VipLinearResamp");
+      return(NULL);
+    }
+  if(VipVerifyAll(vol)==PB || VipVerifyAll(templatev)==PB)
+    {
+      VipPrintfExit("Argument in VipLinearResamp");
+      return(NULL);
+    }
+
+  if(mVipVolBorderWidth(vol)!=0)
+    {
+      VipPrintfError("VipLinearResamp requires 0 borderwidth for vol");
+      VipPrintfExit("Argument in VipLinearResamp");
+      return(NULL);
+    }
+
+  switch( mVipVolType( vol ) )
+    {
+    case GENSTRING :
+      result = VipLinearResampCustom_GENSTRING( vol, templatev, dep, outmode );
+      break;
+    default:
+      VipPrintfError("Sorry, VipLinearResamp not implemented for this type");
+      return(NULL);
+    }
+  return(result);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipLinearResampCustom_GENSTRING
+#TYPE_LIST_STATIC U8BIT S8BIT U16BIT S16BIT FLOAT
+#PROTOTYPE_BEGIN
+/*------------------------------------------------------------------*/
+Volume *VipLinearResampCustom_GENSTRING(
+Volume *vol,
+Volume *templatev,
+VipDeplacement *dep,
+int outmode)
+/*------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Volume *result;
+  VipDeplacement invdep;
+  float depart[3];
+  GENTYPE *slice_ptr_out;
+  int s;
+  int dimt;
+  char newname[512];
+  float    tmp;
+  GENTYPE  outlabel;
+
+  if (outmode == VIP_LINRESAMP_ZERO)
+    outlabel = (GENTYPE) 0;
+  else
+  {
+    tmp = VipGetVolumeMin( vol );
+    printf("VipLinearResampCustom : Force out of data samples to value %f.\n",tmp);
+    outlabel = (GENTYPE) tmp;
+  }
+
+  strcpy(newname,mVipVolName(vol));
+  strcat(newname,"_linresamp");
+  result = VipDuplicateVolumeStructure( templatev, newname);
+  dimt = mVipVolSizeT(result);
+  result->shfj->unite = vol->shfj->unite;
+  result->shfj->VmdType = vol->shfj->VmdType;
+  result->shfj->scale = vol->shfj->scale;
+  result->shfj->offset = vol->shfj->offset;
+  if (dimt > 1)
+  {
+    if (!result->shfj->start_time)
+      result->shfj->start_time = (int *)VipCalloc(dimt,sizeof(int),"");
+    if (!result->shfj->dur_time)
+      result->shfj->dur_time = (int *)VipCalloc(dimt,sizeof(int),"");
+    for (s=0; s<dimt; s++)
+    {
+      result->shfj->start_time[s] = vol->shfj->start_time[s];
+      result->shfj->dur_time[s] = vol->shfj->dur_time[s];
+    }
+  }
+  VipSetBorderWidth(result,0);
+  VipSetType(result,mVipVolType(vol));
+  if(!result) return(PB);
+  if (VipAllocateVolumeData( result)==PB) return(PB);
+
+  if(VipInverseDeplacement(dep,&invdep)==PB) return(PB);
+
+  VipScaleDeplacement(dep,vol,result);
+  VipScaleDeplacement(&invdep,result,vol);
+
+  depart[0] = invdep.t.x;
+  depart[1] = invdep.t.y;
+  depart[2] = invdep.t.z;
+
+  slice_ptr_out = VipGetDataPtr_GENSTRING(result);
+
+  printf("Resampling slice:  1");
+  for( s=1; s<=mVipVolSizeZ(result); s++ )
+    {
+      printf("\b\b\b%3d",s);
+      fflush( stdout );
+      SliceResamp_GENSTRING( vol, result, slice_ptr_out, depart, &(invdep.r), outlabel );
+      slice_ptr_out += mVipVolSizeX(result)*mVipVolSizeY(result);
+      depart[0] += (float)invdep.r.xz;
+      depart[1] += (float)invdep.r.yz;
+      depart[2] += (float)invdep.r.zz;
+    }
+  printf("\n");
+
+  return(result);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#TYPED_FUNC_BEGIN *SliceResamp_GENSTRING
+#TYPE_LIST_STATIC U8BIT S8BIT U16BIT S16BIT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int SliceResamp_GENSTRING(
+   Volume *orig,
+   Volume *resamp,
+   GENTYPE *out,
+   float depart[3],
+   VipRotation *Rinv,
+   GENTYPE outlabel
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+   int xsize1, xsize2, ysize2;
+   int xmax, ymax, zmax, slicesize1;
+   int u;
+   int SEIZE, DEUXPUIS16;
+   int stock1, stock2, stock3;
+   int dx, dy, dz;
+   GENTYPE *ptr, *orig_ptr;
+   int xcourant, ycourant, zcourant;
+   int xu, yu, zu;
+   int xligcourant, yligcourant, zligcourant;
+   int v;
+   int xv, yv, zv;
+
+   orig_ptr = VipGetDataPtr_GENSTRING(orig);
+
+   xsize1 = mVipVolSizeX(orig);
+   xsize2 = mVipVolSizeX(resamp);
+   ysize2 = mVipVolSizeY(resamp);
+   slicesize1 = xsize1 * mVipVolSizeY(orig);
+
+   SEIZE = 16;
+   DEUXPUIS16 = 65536;
+
+   xmax = DEUXPUIS16*(xsize1-1);
+   ymax = DEUXPUIS16*(mVipVolSizeY(orig)-1);
+   zmax = DEUXPUIS16*(mVipVolSizeZ(orig)-1);
+
+   xligcourant = (int)(65536. * depart[0]);
+   yligcourant = (int)(65536. * depart[1]);
+   zligcourant = (int)(65536. * depart[2]);
+   
+   xu = (int)(65536. * Rinv->xx);
+   yu = (int)(65536. * Rinv->yx);
+   zu = (int)(65536. * Rinv->zx);
+   xv = (int)(65536. * Rinv->xy);
+   yv = (int)(65536. * Rinv->yy);
+   zv = (int)(65536. * Rinv->zy);
+
+   for( v = ysize2; v--; )
+   {
+      xcourant = xligcourant;
+      ycourant = yligcourant;
+      zcourant = zligcourant;
+
+      for( u = xsize2; u--; )
+      {
+         if( (xcourant>=0) && (xcourant<xmax)
+           && (ycourant>=0) && (ycourant<ymax)
+           && (zcourant>=0) && (zcourant<zmax)
+           )
+         {
+            dx = xcourant & 0xffff;
+            dy = ycourant & 0xffff;
+            dz = zcourant & 0xffff;
+            ptr = orig_ptr
+	      + (zcourant >> SEIZE) * slicesize1 
+	      + (ycourant >> SEIZE) * xsize1
+	      + (xcourant >> SEIZE);
+            stock1 = *ptr * (DEUXPUIS16- dx);
+            stock1 += *(++ptr) * dx;
+            stock1 >>= SEIZE;
+            ptr += xsize1;
+            stock2 = *ptr * dx;
+            stock2 += *(--ptr) * (DEUXPUIS16 - dx);
+            stock2 >>= SEIZE;
+
+            stock1 *= (DEUXPUIS16 - dy);
+            stock1 += stock2 * dy;
+            stock1 >>= SEIZE;
+
+            ptr += slicesize1 - xsize1;
+            stock2 = *ptr * (DEUXPUIS16 - dx);
+            stock2 += *(++ptr) * dx;
+            stock2 >>= SEIZE;
+            ptr += xsize1;
+            stock3 = *ptr * dx;
+            stock3 += *(--ptr) * (DEUXPUIS16 - dx);
+            stock3 >>= SEIZE;
+
+            stock2 *= DEUXPUIS16 - dy;
+            stock2 += stock3 * dy;
+            stock2 >>= SEIZE;
+
+            stock1 *= (DEUXPUIS16 - dz);
+            stock1 += stock2 * dz;
+      
+            *out++ = (GENTYPE)(stock1 >> SEIZE);
+         }
+         else
+         {
+	   *out++ = (GENTYPE) outlabel;
+         }
+         xcourant += xu;
+         ycourant += yu;
+         zcourant += zu;
+      } 
+      xligcourant += xv;
+      yligcourant += yv;
+      zligcourant += zv;
+   }
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+ 	
+#TYPED_FUNC_BEGIN *SliceResamp_GENSTRING
+#TYPE_LIST_STATIC FLOAT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int SliceResamp_GENSTRING(
+   Volume *orig,
+   Volume *resamp,
+   GENTYPE *out,
+   float depart[3],
+   VipRotation *Rinv,
+   GENTYPE outlabel)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+   int xsize1, xsize2, ysize2;
+   int xmax, ymax, zmax, slicesize1;
+   int u;
+   int SEIZE, DEUXPUIS16;
+   float stock1, stock2, stock3;
+   int dx, dy, dz;
+   GENTYPE *ptr, *orig_ptr;
+   int xcourant, ycourant, zcourant;
+   int xu, yu, zu;
+   int xligcourant, yligcourant, zligcourant;
+   int v;
+   int xv, yv, zv;
+
+   orig_ptr = VipGetDataPtr_GENSTRING(orig);
+
+   xsize1 = mVipVolSizeX(orig);
+   xsize2 = mVipVolSizeX(resamp);
+   ysize2 = mVipVolSizeY(resamp);
+   slicesize1 = xsize1 * mVipVolSizeY(orig);
+
+   SEIZE = 16;
+   DEUXPUIS16 = 65536;
+
+   xmax = DEUXPUIS16*(xsize1-1);
+   ymax = DEUXPUIS16*(mVipVolSizeY(orig)-1);
+   zmax = DEUXPUIS16*(mVipVolSizeZ(orig)-1);
+
+   xligcourant = (int)(65536. * depart[0]);
+   yligcourant = (int)(65536. * depart[1]);
+   zligcourant = (int)(65536. * depart[2]);
+   
+   xu = (int)(65536. * Rinv->xx);
+   yu = (int)(65536. * Rinv->yx);
+   zu = (int)(65536. * Rinv->zx);
+   xv = (int)(65536. * Rinv->xy);
+   yv = (int)(65536. * Rinv->yy);
+   zv = (int)(65536. * Rinv->zy);
+
+   for( v = ysize2; v--; )
+   {
+      xcourant = xligcourant;
+      ycourant = yligcourant;
+      zcourant = zligcourant;
+
+      for( u = xsize2; u--; )
+      {
+         if( (xcourant>=0) && (xcourant<xmax)
+           && (ycourant>=0) && (ycourant<ymax)
+           && (zcourant>=0) && (zcourant<zmax)
+           )
+         {
+            dx = xcourant & 0xffff;
+            dy = ycourant & 0xffff;
+            dz = zcourant & 0xffff;
+            ptr = orig_ptr
+	      + (zcourant >> SEIZE) * slicesize1 
+	      + (ycourant >> SEIZE) * xsize1
+	      + (xcourant >> SEIZE);
+            stock1 = *ptr * (DEUXPUIS16- dx);
+            stock1 += *(++ptr) * dx;
+            stock1 /= DEUXPUIS16;
+            ptr += xsize1;
+            stock2 = *ptr * dx;
+            stock2 += *(--ptr) * (DEUXPUIS16 - dx);
+            stock2 /= DEUXPUIS16;
+
+            stock1 *= (DEUXPUIS16 - dy);
+            stock1 += stock2 * dy;
+            stock1 /= DEUXPUIS16;
+
+            ptr += slicesize1 - xsize1;
+            stock2 = *ptr * (DEUXPUIS16 - dx);
+            stock2 += *(++ptr) * dx;
+            stock2 /= DEUXPUIS16;
+            ptr += xsize1;
+            stock3 = *ptr * dx;
+            stock3 += *(--ptr) * (DEUXPUIS16 - dx);
+            stock3 /= DEUXPUIS16;
+
+            stock2 *= DEUXPUIS16 - dy;
+            stock2 += stock3 * dy;
+            stock2 /= DEUXPUIS16;
+
+            stock1 *= (DEUXPUIS16 - dz);
+            stock1 += stock2 * dz;
+      
+            *out++ = (GENTYPE)(stock1 / DEUXPUIS16);
+         }
+         else
+         {
+	   *out++ = (GENTYPE) outlabel;
+         }
+         xcourant += xu;
+         ycourant += yu;
+         zcourant += zu;
+      } 
+      xligcourant += xv;
+      yligcourant += yv;
+      zligcourant += zv;
+   }
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

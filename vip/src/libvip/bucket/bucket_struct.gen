@@ -1,0 +1,70 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_bucket_struct.gen* TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 17/01/1997
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : Reprise de la vieille notion de bucket:
+ *               des vecteurs de 3DPoint
+ *               jfmangin@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : Vip_bucket.h
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *            07/02/97| POUPON F.    | Ajout de la structure :
+ *                    |              |   Vip3DBucketVector_GENSTRING
+ *--------------------|--------------|----------------------------------------
+ *            12/02/97| POUPON F.    | Ajout de la structure :
+ *                    |              |   Vip2DBucketVector_GENSTRING
+ *--------------------|--------------|----------------------------------------
+ *              /  /  |              |
+ *****************************************************************************/
+
+#include <vip/bucket.h>
+
+#H_EXPAND_BEGIN
+#TYPE_LIST_EXTERN ANY
+
+typedef struct 
+{ GENTYPE x;
+  GENTYPE y;
+  GENTYPE z;
+} Vip3DPoint_GENSTRING;
+
+typedef struct vip3DBucket_GENSTRING
+{ Vip3DPoint_GENSTRING *data;
+  int size; /*allocated size*/
+  int n_points; /*filled locations*/
+  struct vip3DBucket_GENSTRING *next; /*listes chainees*/
+} Vip3DBucket_GENSTRING;
+
+typedef struct 
+{ int nb_bucket;
+  Vip3DBucket_GENSTRING **bucket;
+} Vip3DBucketVector_GENSTRING;
+
+typedef struct 
+{ GENTYPE x;
+  GENTYPE y;
+} Vip2DPoint_GENSTRING;
+
+typedef struct vip2DBucket_GENSTRING
+{ Vip2DPoint_GENSTRING *data;
+  int size; /*allocated size*/
+  int n_points; /*filled locations*/
+  struct vip2DBucket_GENSTRING *next; /*listes chainees*/
+} Vip2DBucket_GENSTRING;
+
+typedef struct
+{ int nb_bucket;
+  Vip2DBucket_GENSTRING **bucket;
+} Vip2DBucketVector_GENSTRING;
+
+#H_EXPAND_END

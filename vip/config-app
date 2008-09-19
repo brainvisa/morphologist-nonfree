@@ -1,0 +1,29 @@
+#
+#  Copyright (C) 2000-2001 CEA
+#
+#  This software and supporting documentation were developed by
+#  	CEA/DSV/SHFJ
+#  	4 place du General Leclerc
+#  	91401 Orsay cedex
+#  	France
+#
+#  Executables configuration.
+#
+#  $Id: //depot/vip/main/config-app#5 $
+#
+
+TEMPLATE        = app
+
+#!include config
+
+LIBS =				\
+	-L../../lib -lvip
+
+debug:LIBS    = 		\
+	-L../../lib -lvip-debug
+
+#!include config-app-local
+
+#LIBS =	-L/data/perforce/vip-linux-release/lib -lvip -L/data/perforce/vidaIO-linux-release/lib -lvidaIO
+#LIBS += -L/home2/local/appli/minc-0.8/lib -lvolume_io -lminc -L/home2/local/appli/netcdf-3.5.0/lib -lnetcdf
+

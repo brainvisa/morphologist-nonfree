@@ -1,0 +1,321 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_eigen.gen        * TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 20/11/1996
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : Calcul des vecteurs et valeurs propres
+ *               Numerical Recipes in C
+ *               fpoupon@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <vip/eigen.h>
+
+#TYPED_FUNC_BEGIN VipPythagore_GENSTRING
+#TYPE_LIST_STATIC FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE VipPythagore_GENSTRING(
+  GENTYPE a, 
+  GENTYPE b
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  double absa, absb;
+
+  absa = fabs((double)a);
+  absb = fabs((double)b);
+  if (absa > absb)  return((GENTYPE)(absa*sqrt(1.0+mVipSq(absb/absa))));
+  else return((GENTYPE)((absb == 0.0) ? 0.0 : absb*sqrt(1.0+mVipSq(absa/absb))));
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+/*** Reduction de matrice sous forme tridiagonale : methode de Householder ***/
+#TYPED_FUNC_BEGIN VipTRED2_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+void VipTRED2_GENSTRING(
+  VipMatrix_GENSTRING *a, 
+  VipVector_GENSTRING *d, 
+  VipVector_GENSTRING *e
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  int l, k, j, i, n;
+  GENTYPE scale, hh, h, g, f, *eptr, *dptr, **aptr;
+
+  aptr = VipGetMatrixPtr_GENSTRING(a);
+  eptr = VipGetVectorPtr_GENSTRING(e);
+  dptr = VipGetVectorPtr_GENSTRING(d);
+
+  n = mVipMatrixSizeX(a);
+
+  for (i=n-1; i>=1; i--)
+  { 
+    l = i-1;
+    h = scale = (GENTYPE)0.0;
+    if (l > 0)
+    { 
+      for (k=0; k<=l; k++)  scale += (GENTYPE)fabs((double)aptr[i][k]);
+      if (scale == (GENTYPE)0.0)  eptr[i] = aptr[i][l];
+      else
+      { 
+        for (k=0; k<=l; k++)
+        { 
+          aptr[i][k] /= scale;
+          h += aptr[i][k]*aptr[i][k];
+        }
+        f = aptr[i][l];
+        g = ((f >= (GENTYPE)0.0) ? -(GENTYPE)sqrt((double)h) 
+                                 : (GENTYPE)sqrt((double)h));
+        eptr[i] = scale*g;
+        h -= f*g;
+        aptr[i][l] = f-g;
+        f = 0.0;
+        for (j=0; j<=l; j++)
+        { 
+          aptr[j][i] = aptr[i][j]/h;          
+          g = 0.0;
+          for (k=0; k<=j; k++)  g += aptr[j][k]*aptr[i][k];
+          for (k=j+1; k<=l; k++)  g += aptr[k][j]*aptr[i][k];
+          eptr[j] = g/h;
+          f += eptr[j]*aptr[i][j];
+        }
+        hh = f/(h+h);
+        for (j=0; j<=l; j++)
+        { 
+          f = aptr[i][j];
+          eptr[j] = g = eptr[j]-hh*f;
+          for (k=0; k<=j; k++)  aptr[j][k] -= (f*eptr[k]+g*aptr[i][k]);
+        }
+      }
+    }
+    else  eptr[i] = aptr[i][l];
+    dptr[i] = h;
+  }
+  dptr[0] = 0.0;
+  eptr[0] = 0.0;
+  
+  for (i=0; i<n; i++)
+  { 
+    l = i-1;
+    if (dptr[i])
+    { 
+      for (j=0; j<=l; j++)
+      { 
+        g = 0.0;
+        for (k=0; k<=l; k++)  g += aptr[i][k]*aptr[k][j];
+        for (k=0; k<=l; k++)  aptr[k][j] -= g*aptr[k][i];
+      }
+    }
+    dptr[i] = aptr[i][i];
+    aptr[i][i] = 1.0;
+    for (j=0; j<=l; j++)  aptr[j][i] = aptr[i][j] = 0.0;
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+/*** Decomposition QL tridiagonale implicite ***/
+#TYPED_FUNC_BEGIN VipTQLI_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipTQLI_GENSTRING(
+  VipVector_GENSTRING *d, 
+  VipVector_GENSTRING *e, 
+  VipMatrix_GENSTRING *z
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  int m, l, iter, i, k, n;
+  GENTYPE s, r, p, g, f, dd, c, b, *dptr, *eptr, **zptr;
+
+  dptr = VipGetVectorPtr_GENSTRING(d);
+  eptr = VipGetVectorPtr_GENSTRING(e);
+  zptr = VipGetMatrixPtr_GENSTRING(z);
+
+  n = mVipMatrixSizeX(z);
+
+  if (n != mVipMatrixSizeY(z))
+  { 
+    VipPrintfError("Not a square matrix");
+    VipPrintfExit("(Vip_eigen.c)VipTQLI");
+    return(PB);
+  }
+
+  for (i=1; i<n; i++)  eptr[i-1] = eptr[i];
+  eptr[n-1] = 0.0;
+  for (l=0; l<n; l++)
+  { 
+    iter = 0;
+    do
+    { 
+      for (m=l; m<n-1; m++)
+      { 
+        dd = (GENTYPE)(fabs((double)dptr[m])+fabs((double)dptr[m+1]));
+        if ((GENTYPE)fabs((double)eptr[m])+dd == dd)  break;
+      }
+      if (m != l)
+      { 
+        if (iter++ == 30)  
+        { 
+          VipPrintfError("No convergence in TLQI.");
+          VipPrintfExit("(Vip_eigen.c)VipTQLI");
+          return(PB);
+        }
+        g = (dptr[l+1]-dptr[l])/(2.0*eptr[l]);
+        r = VipPythagore_GENSTRING(g, 1.0);
+        g = dptr[m]-dptr[l]+eptr[l]/(g+(GENTYPE)VipEigenSign((double)r, (double)g));
+        s = c = 1.0;
+        p = 0.0;
+        for (i=m-1; i>=l; i--)
+        { 
+          f = s*eptr[i];
+          b = c*eptr[i];
+          eptr[i+1] = (r = VipPythagore_GENSTRING(f, g));
+          if (r == 0.0)
+          { 
+            dptr[i+1] -= p;
+            eptr[m] = 0.0;
+            break;
+          }
+          s = f/r;
+          c = g/r;          
+          g = dptr[i+1]-p;
+          r = (dptr[i]-g)*s+2.0*c*b;
+          dptr[i+1] = g+(p = s*r);
+          g = c*r-b;
+          for (k=0; k<n; k++)
+          { 
+            f = zptr[k][i+1];
+            zptr[k][i+1] = s*zptr[k][i]+c*f;
+            zptr[k][i] = c*zptr[k][i]-s*f;
+          }
+        }
+        if ((r == 0.0) && (i >= l)) continue;
+        dptr[l] -= p;
+        eptr[l] = g;
+        eptr[m] = 0.0;
+      }
+    } while (m != l);
+  }
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+/*** Rangement des valeurs propres dans l'ordre decroissant ***/
+#TYPED_FUNC_BEGIN VipEigenSort_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+void VipEigenSort_GENSTRING(
+  VipVector_GENSTRING *eVal, 
+  VipMatrix_GENSTRING *eVec
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int i, j, k;
+  GENTYPE **evecptr;
+  GENTYPE *evalptr;
+  GENTYPE swap;
+
+  if ((eVal->size == eVec->xsize) && (eVec->xsize == eVec->ysize) )
+    {
+      evalptr = VipGetVectorPtr_GENSTRING( eVal );
+      evecptr = VipGetMatrixPtr_GENSTRING( eVec );
+
+      for (i=0; i<eVal->size; i++)
+        for (j=i+1; j<eVal->size; j++)
+          if (evalptr[j] > evalptr[i])
+            {
+              swap = evalptr[i];
+              evalptr[i] = evalptr[j];
+              evalptr[j] = swap;
+
+              for (k=0; k<eVal->size; k++)
+                {
+                  swap = evecptr[k][i];
+                  evecptr[k][i] = evecptr[k][j];
+                  evecptr[k][j] = swap;
+                }
+            }
+      }
+} 
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+/*** Diagonalisation de matrice ***/
+#TYPED_FUNC_BEGIN VipEigen_GENSTRING
+#TYPE_LIST_EXTERN FLOAT DOUBLE
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipVector_GENSTRING *VipEigen_GENSTRING(
+  VipMatrix_GENSTRING *eVec
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int x;
+  VipVector_GENSTRING *eVal=NULL, *intermediate=NULL;
+
+  x = mVipMatrixSizeX( eVec );
+
+  eVal = VipAllocationVector_GENSTRING( x, NULL );
+  if ( !eVal )
+    {
+      VipPrintfError("Cannot allocate eigen value vector.");
+      VipPrintfExit("(Vip_eigen.c)VipEigen");
+      return((VipVector_GENSTRING *)NULL);
+    }
+
+  intermediate = VipAllocationVector_GENSTRING( x, NULL );
+  if ( !intermediate )
+    {
+      VipPrintfError("Cannot allocate intermediate vector.");
+      VipPrintfExit("(Vip_eigen.c)VipEigen");
+      if (eVal) VipFreeVector_GENSTRING( eVal );
+      return((VipVector_GENSTRING *)NULL);
+    }
+
+  VipTRED2_GENSTRING( eVec, eVal, intermediate );
+  VipTQLI_GENSTRING( eVal, intermediate, eVec );
+
+  VipEigenSort_GENSTRING( eVal, eVec );
+
+  VipFreeVector_GENSTRING( intermediate );
+
+  return( eVal );
+} 
+#FUNCTION_END
+#TYPED_FUNC_END

@@ -1,0 +1,601 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_bucket_write.gen * TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 03/01/1997
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : interractions bucket/volume
+ *               jfmangin@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <errno.h>
+#include <math.h>
+
+#include <vip/util.h>
+#include <vip/volume.h>
+#include <vip/bucket.h>
+#include <vip/bucket_static.h>
+
+
+#NONTYPED_FUNC_BEGIN VipWriteCoordBucketInVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipWriteCoordBucketInVolume(
+  Vip3DBucket_S16BIT *buck,
+  Volume *volume,
+  int value)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketInVolume");
+     return(PB);
+   }
+
+  if(buck==NULL)
+   {
+     VipPrintfWarning("No bucket in VipWriteCoordBucketInVolume");
+     return(OK);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipWriteCoordBucketInVolume_GENSTRING( buck, volume, value);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipWriteCoordBucketInVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipWriteCoordBucketInVolume_GENSTRING(
+  Vip3DBucket_S16BIT *buck,
+  Volume *vol,
+  int value)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  Vip3DPoint_S16BIT *ptr3d;
+  int i;
+
+
+  if ( VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketInVolume_GENSTRING");
+      return(PB);
+    }
+
+   vos = VipGetOffsetStructure(vol);
+   ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+   ptr3d = buck->data;
+   for(i=buck->n_points;i--;)
+     {
+       *(ptr + ptr3d->x + ptr3d->y * vos->oLine + ptr3d->z * vos->oSlice) = (GENTYPE)value;
+       ptr3d++;
+     }
+
+  VipFree(vos);
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+
+
+
+#NONTYPED_FUNC_BEGIN TestHysteBucket
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int TestHysteBucket(
+  Vip3DBucket_S16BIT *buck,
+  Volume *volume,
+  int limit,
+  float threshold)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(bucket_write.gen)TestHysteBucket");
+     return(PB);
+   }
+
+  if(buck==NULL)
+   {
+     VipPrintfWarning("No bucket in TestHysteBucket");
+     return(PB);
+   }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = TestHysteBucket_GENSTRING(buck,volume,limit,threshold);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN TestHysteBucket_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int TestHysteBucket_GENSTRING(
+  Vip3DBucket_S16BIT *buck,
+  Volume *vol,
+  int limit,
+  float threshold)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  Vip3DPoint_S16BIT *ptr3d;
+  int i;
+  int ok_point;
+
+
+  if (VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketInVolume_GENSTRING");
+      return(PB);
+    }
+
+   vos = VipGetOffsetStructure(vol);
+   ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+   ok_point = 0;
+   ptr3d = buck->data;
+   for(i=buck->n_points;i--;)
+     {
+       if(*(ptr + ptr3d->x + ptr3d->y * vos->oLine + ptr3d->z * vos->oSlice)
+           >= threshold) ok_point++;
+       if (ok_point>=limit) 
+	 {
+	   VipFree(vos);
+           return(VTRUE);
+	 }
+       ptr3d++;
+     }
+
+  VipFree(vos);
+
+  return(VFALSE);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+
+#NONTYPED_FUNC_BEGIN VipWriteCoordBucketListInVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipWriteCoordBucketListInVolume(
+  Vip3DBucket_S16BIT *buck,
+  Volume *volume,
+  int first_value,
+  int increment)
+  /*NB: il faudrait tester les depassements*/
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketListInVolume");
+      return(PB);
+    }
+
+  if(buck==NULL)
+    {
+      /*
+	VipPrintfWarning("No bucket in VipWriteCoordBucketListInVolume");
+	*/
+      return(OK);
+    }
+
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      status = VipWriteCoordBucketListInVolume_GENSTRING( buck, volume, first_value, increment);
+      break;
+    }
+  return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipWriteCoordBucketListInVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipWriteCoordBucketListInVolume_GENSTRING(
+  Vip3DBucket_S16BIT *buck,
+  Volume *vol,
+  int first_value,
+  int increment)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  Vip3DPoint_S16BIT *ptr3d;
+  int i;
+  GENTYPE thevalue;
+
+
+  if ( VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketInVolume_GENSTRING");
+      return(PB);
+    }
+
+   vos = VipGetOffsetStructure(vol);
+   ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+   thevalue = (GENTYPE)first_value;
+   while (buck!=NULL)
+     {
+       ptr3d = buck->data;
+       for(i=buck->n_points;i--;)
+	 {
+	   *(ptr + ptr3d->x + ptr3d->y * vos->oLine + ptr3d->z * vos->oSlice) =thevalue;
+	   ptr3d++;
+	 }
+       buck = buck->next;
+       thevalue += increment;
+     }
+
+  VipFree(vos);
+
+   return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipWriteCoordBucketListInVolumeFromVector
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipWriteCoordBucketListInVolumeFromVector(
+  Vip3DBucket_S16BIT *buck,
+  Volume *volume,
+  VipVector_S32BIT *vec)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long status=0;
+  int l;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketListInVolumeFromVector");
+     return(PB);
+   }
+
+  if(buck==NULL)
+   {
+     VipPrintfWarning("No bucket in VipWriteCoordBucketListInVolumeFromVector");
+     return(PB);
+   }
+
+  if(vec==NULL)
+   {
+     VipPrintfError("No vector in VipWriteCoordBucketListInVolumeFromVector");
+     VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketListInVolumeFromVector");
+     return(PB);
+   }
+
+  l = VipGet3DBucketListLength_S16BIT(buck);
+
+  if(l!=mVipVectorSize(vec))
+     {
+       VipPrintfError("bucket list size and vector do not match in VipWriteCoordBucketListInVolumeFromVector");
+       VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketListInVolumeFromVector");
+       return(PB);
+     }
+
+ switch( mVipVolType( volume ) )
+   {
+   case GENSTRING :
+     status = VipWriteCoordBucketListInVolumeFromVector_GENSTRING( buck, volume, vec);
+     break;
+   }
+ return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipWriteCoordBucketListInVolumeFromVector_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipWriteCoordBucketListInVolumeFromVector_GENSTRING(
+  Vip3DBucket_S16BIT *buck,
+  Volume *vol,
+  VipVector_S32BIT *vec
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  Vip3DPoint_S16BIT *ptr3d;
+  int i,n;
+  int thevalue;
+
+
+  if (VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipWriteCoordBucketListInVolumeFromVector_GENSTRING");
+      return(PB);
+    }
+
+   vos = VipGetOffsetStructure(vol);
+   ptr = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
+
+   n = 0;
+   while (buck!=NULL)
+     {
+       ptr3d = buck->data;
+       thevalue = (int)(vec->data[n++]); /*I should use vec interface...*/
+       for(i=buck->n_points;i--;)
+	 {
+	   *(ptr + ptr3d->x + ptr3d->y * vos->oLine + ptr3d->z * vos->oSlice) = (GENTYPE)thevalue;
+	   ptr3d++;
+	 }
+       buck = buck->next;
+     }
+
+  VipFree(vos);
+
+   return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipDwindleG2DBucketFromVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipDwindleG2DBucketFromVolume(
+  VipG2DBucket *buck,
+  Volume *volume)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipDwindleG2DBucketFromVolume");
+      return(PB);
+    }
+
+  if(buck==NULL)
+    {
+      VipPrintfWarning("No bucket in VipDwindleG2DBucketFromVolume");
+      return(PB);
+    }
+
+  
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      status = VipDwindleG2DBucketFromVolume_GENSTRING( buck, volume);
+      break;
+    }
+  return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipDwindleG2DBucketFromVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipDwindleG2DBucketFromVolume_GENSTRING(
+  VipG2DBucket *buck,
+  Volume *vol
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  VipG2DPoint *ptrread, *ptrsave;
+  int i;
+
+
+  if (VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipDwindleG2DBucketFromVolume_GENSTRING");
+      return(PB);
+    }
+
+  if(!buck)
+   {
+     VipPrintfError("bucket NULL");
+     VipPrintfExit("(bucket_write.gen)VipDwindleG2DBucketFromVolume_GENSTRING");
+     return(PB);
+   }
+
+   vos = VipGetOffsetStructure(vol);
+   ptr = VipGetDataPtr_GENSTRING(vol)+vos->oFirstPoint;
+   ptrread = buck->data;
+   ptrsave = ptrread;
+   for(i=buck->n_points;i--;)
+     {
+	if(*(ptr + ptrread->p.x + ptrread->p.y * vos->oLine + ptrread->p.z * vos->oSlice))
+	  {
+	    ptrsave->p.x  = ptrread->p.x;
+	    ptrsave->p.y  = ptrread->p.y;
+	    ptrsave->p.z  = ptrread->p.z;
+	    ptrsave->g2D.x  = ptrread->g2D.x;
+	    ptrsave->g2D.y  = ptrread->g2D.y;
+	    ptrsave++;
+	    ptrread++;
+	  }
+	else
+	  {
+	    buck->n_points--;
+	    ptrread++;
+	  }
+     }
+
+   if(VipDwindleG2DBucket(buck)==PB) return(PB);
+
+  VipFree(vos);
+
+   return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#NONTYPED_FUNC_BEGIN VipDwindleG3DBucketFromVolume
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipDwindleG3DBucketFromVolume(
+  VipG3DBucket *buck,
+  Volume *volume)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  long status=0;
+
+  if (VipTestExist(volume)==PB || VipTestType(volume,ANY_TYPE)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipDwindleG3DBucketFromVolume");
+      return(PB);
+    }
+
+  if(buck==NULL)
+    {
+      VipPrintfWarning("No bucket in VipDwindleG3DBucketFromVolume");
+      return(PB);
+    }
+
+  
+  switch( mVipVolType( volume ) )
+    {
+    case GENSTRING :
+      status = VipDwindleG3DBucketFromVolume_GENSTRING( buck, volume);
+      break;
+    }
+  return(status);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipDwindleG3DBucketFromVolume_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipDwindleG3DBucketFromVolume_GENSTRING(
+  VipG3DBucket *buck,
+  Volume *vol
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  GENTYPE *ptr;
+  VipOffsetStruct *vos;
+  VipG3DPoint *ptrread, *ptrsave;
+  int i;
+
+
+  if (VipTestType(vol,GENSTRING)==PB)
+    {
+      VipPrintfExit("(bucket_write.gen)VipDwindleG3DBucketFromVolume_GENSTRING");
+      return(PB);
+    }
+
+  if(!buck)
+   {
+     VipPrintfError("bucket NULL");
+     VipPrintfExit("(bucket_write.gen)VipDwindleG3DBucketFromVolume_GENSTRING");
+     return(PB);
+   }
+
+   vos = VipGetOffsetStructure(vol);
+   ptr = VipGetDataPtr_GENSTRING(vol)+vos->oFirstPoint;
+   ptrread = buck->data;
+   ptrsave = ptrread;
+   for(i=buck->n_points;i--;)
+     {
+	if(*(ptr + ptrread->p.x + ptrread->p.y * vos->oLine + ptrread->p.z * vos->oSlice))
+	  {
+	    ptrsave->p.x  = ptrread->p.x;
+	    ptrsave->p.y  = ptrread->p.y;
+	    ptrsave->p.z  = ptrread->p.z;
+	    ptrsave->g3D.x  = ptrread->g3D.x;
+	    ptrsave->g3D.y  = ptrread->g3D.y;
+	    ptrsave->g3D.z  = ptrread->g3D.z;
+	    ptrsave++;
+	    ptrread++;
+	  }
+	else
+	  {
+	    buck->n_points--;
+	    ptrread++;
+	  }
+     }
+
+   if(VipDwindleG3DBucket(buck)==PB) return(PB);
+
+  VipFree(vos);
+
+   return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

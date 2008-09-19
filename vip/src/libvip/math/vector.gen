@@ -1,0 +1,423 @@
+/****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_vector.gen       * TYPE     : Generic
+ * AUTHOR      : POUPON F.            * CREATION : 14/03/1997
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C++                  * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ ****************************************************************************
+ *
+ * DESCRIPTION : Fonctions de calcul vectoriel
+ *
+ ****************************************************************************
+ *
+ * USED MODULES : Vip_math.h
+ *
+ ****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|---------------------------------------
+ *              / /   |              |
+ ****************************************************************************/
+
+#include <vip/math.h>
+
+#TYPED_FUNC_BEGIN VipVectorProduct_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+VipVector_GENSTRING *VipVectorProduct_GENSTRING(VipVector_GENSTRING *A, VipVector_GENSTRING *B)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipVector_GENSTRING *product;
+  GENTYPE *prodptr, *Aptr, *Bptr;
+  int i, n;
+
+  n = mVipVectorSize(A);
+
+  if (n != mVipVectorSize(B))
+  { VipPrintfError("Incompatible vector sizes");
+    VipPrintfExit("(Vip_vector.c)VipVectorProduct");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  product = VipAllocationVector_GENSTRING(n, NULL);
+  if (!product)
+  { VipPrintfError("Error while allocating product vector");
+    VipPrintfExit("(Vip_vector.c)VipVectorProduct");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  prodptr = VipGetVectorPtr_GENSTRING(product);
+  Aptr = VipGetVectorPtr_GENSTRING(A);
+  Bptr = VipGetVectorPtr_GENSTRING(B);
+
+  for (i=0; i<n; i++)  prodptr[i] = Aptr[i]*Bptr[i];
+
+  return(product);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipAddVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+VipVector_GENSTRING *VipAddVector_GENSTRING(VipVector_GENSTRING *A, VipVector_GENSTRING *B)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipVector_GENSTRING *sum;
+  GENTYPE *sumptr, *Aptr, *Bptr;
+  int i, n;
+
+  n = mVipVectorSize(A);
+
+  if (n != mVipVectorSize(B))
+  { VipPrintfError("Incompatible vector sizes");
+    VipPrintfExit("(Vip_vector.c)VipAddVector");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  sum = VipAllocationVector_GENSTRING(n, NULL);
+  if (!sum)
+  { VipPrintfError("Error while allocating sum vector");
+    VipPrintfExit("(Vip_vector.c)VipAddVector");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  sumptr = VipGetVectorPtr_GENSTRING(sum);
+  Aptr = VipGetVectorPtr_GENSTRING(A);
+  Bptr = VipGetVectorPtr_GENSTRING(B);
+
+  for (i=0; i<n; i++)  sumptr[i] = Aptr[i]+Bptr[i];
+
+  return(sum);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipSubVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+VipVector_GENSTRING *VipSubVector_GENSTRING(VipVector_GENSTRING *A, VipVector_GENSTRING *B)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipVector_GENSTRING *sub;
+  GENTYPE *subptr, *Aptr, *Bptr;
+  int i, n;
+
+  n = mVipVectorSize(A);
+
+  if (n != mVipVectorSize(B))
+  { VipPrintfError("Incompatible vector sizes");
+    VipPrintfExit("(Vip_vector.c)VipSubVector");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  sub = VipAllocationVector_GENSTRING(n, NULL);
+  if (!sub)
+  { VipPrintfError("Error while allocating sum vector");
+    VipPrintfExit("(Vip_vector.c)VipSubVector");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  subptr = VipGetVectorPtr_GENSTRING(sub);
+  Aptr = VipGetVectorPtr_GENSTRING(A);
+  Bptr = VipGetVectorPtr_GENSTRING(B);
+
+  for (i=0; i<n; i++)  subptr[i] = Aptr[i]-Bptr[i];
+
+  return(sub);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipVectorPerScalar_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+VipVector_GENSTRING *VipVectorPerScalar_GENSTRING(VipVector_GENSTRING *vector, GENTYPE scalar)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipVector_GENSTRING *scalvec;
+  GENTYPE *scalptr, *vecptr;
+  int i, n;
+
+  n = mVipVectorSize(vector);
+
+  scalvec = VipAllocationVector_GENSTRING(n, NULL);
+  if (!scalvec)
+  { VipPrintfError("Error while allocating scalar vector");
+    VipPrintfExit("(Vip_vector.c)VipVectorPerScalar");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  scalptr = VipGetVectorPtr_GENSTRING(scalvec);
+  vecptr = VipGetVectorPtr_GENSTRING(vector);
+
+  for (i=0; i<n; i++)  scalptr[i] = scalar*vecptr[i];
+
+  return(scalvec);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipInnerProduct_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+GENTYPE VipInnerProduct_GENSTRING(VipVector_GENSTRING *A, VipVector_GENSTRING *B)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ GENTYPE scalar, *Aptr, *Bptr;
+  int i, n;
+  
+  n = mVipVectorSize(A);
+  scalar = (GENTYPE)0.0;
+
+  if (n != mVipVectorSize(B))
+  { VipPrintfError("Incompatible vector sizes");
+    VipPrintfExit("(Vip_vector.c)VipInnerProduct");
+    return((GENTYPE)0.0);
+  }
+
+  Aptr = VipGetVectorPtr_GENSTRING(A);
+  Bptr = VipGetVectorPtr_GENSTRING(B);
+
+  for (i=0; i<n; i++)  scalar += Aptr[i]*Bptr[i];
+
+  return(scalar);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipOuterProduct_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+VipMatrix_GENSTRING *VipOuterProduct_GENSTRING(VipVector_GENSTRING *A, VipVector_GENSTRING *B)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ GENTYPE *Aptr, *Bptr, **matptr;
+  VipMatrix_GENSTRING *matrix;
+  int i, j, n, m;
+  
+  n = mVipVectorSize(A);
+  m = mVipVectorSize(B);
+
+  matrix = VipAllocationMatrix_GENSTRING(n, m, NULL);
+  if (!matrix)
+  { VipPrintfError("Error while allocating outer matrix");
+    VipPrintfExit("(Vip_vector)VipOuterProduct");
+    return((VipMatrix_GENSTRING *)NULL);
+  }
+
+  Aptr = VipGetVectorPtr_GENSTRING(A);
+  Bptr = VipGetVectorPtr_GENSTRING(B);
+  matptr = VipGetMatrixPtr_GENSTRING(matrix);
+
+  for (j=0; j<n; j++)
+    for (i=0; i<m; i++)  matptr[j][i] = Aptr[j]*Bptr[i];
+
+  return(matrix);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipReadVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+VipVector_GENSTRING *VipReadVector_GENSTRING(char *filename, size_t dim)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipVector_GENSTRING *vector;
+  GENTYPE *vecptr;
+  int temp;
+  size_t i, type=GENSTRING;
+  FILE *file;
+
+  file = fopen(filename, VIP_READ_TEXT);
+  if (!file)
+  { VipPrintfError("Unable to open file or file does not exist");
+    VipPrintfExit("(Vip_vector.c)VipReadVector");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  vector = VipAllocationVector_GENSTRING(dim, NULL);
+  if (!vector)
+  { VipPrintfError("Error while allocating vector");
+    VipPrintfExit("(Vip_vector.c)VipReadVector");
+    return((VipVector_GENSTRING *)NULL);
+  }
+
+  vecptr = VipGetVectorPtr_GENSTRING(vector);
+
+  switch(type)
+  { case U8BIT : for (i=0; i<dim; i++)  
+                 { fscanf(file, "%d", &temp);
+                   vecptr[i] = (unsigned char)temp;
+                 }
+                 break;
+    case S8BIT : for (i=0; i<dim; i++)  
+                 { fscanf(file, "%d", &temp);
+                   vecptr[i] = (char)temp;
+                 }
+                 break;
+    case U16BIT : for (i=0; i<dim; i++)
+                    fscanf(file, "%hu",(unsigned short*)&vecptr[i]);
+                  break;
+    case S16BIT : for (i=0; i<dim; i++)
+                    fscanf(file, "%hd",(short*) &vecptr[i]);
+                  break;
+    case U32BIT : for (i=0; i<dim; i++)
+                    fscanf(file, "%lu",(unsigned long*)&vecptr[i]);
+                  break;
+    case S32BIT : for (i=0; i<dim; i++)
+                    fscanf(file, "%ld",(long*)&vecptr[i]);
+                  break;
+    case VFLOAT : for (i=0; i<dim; i++)
+                    fscanf(file, "%f",(float*)&vecptr[i]);
+                 break;
+    case VDOUBLE : for (i=0; i<dim; i++)
+                     fscanf(file, "%lf",(double*)&vecptr[i]);
+                  break;
+  }
+
+  fclose(file);
+
+  return(vector);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipWriteVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipWriteVector_GENSTRING(char *filename, VipVector_GENSTRING *vector)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ GENTYPE *vecptr;
+  int i, dim, type=GENSTRING;
+  FILE *file;
+
+  file = fopen(filename, VIP_WRITE_TEXT);
+  if (!file)
+  { VipPrintfError("Unable to open file");
+    VipPrintfExit("(Vip_vector.c)VipWriteVector");
+    return(PB);
+  }
+
+  dim = mVipVectorSize(vector);
+  vecptr = VipGetVectorPtr_GENSTRING(vector);
+
+  switch(type)
+  { case U8BIT : for (i=0; i<dim; i++)
+                   fprintf(file, "%d ", (int)vecptr[i]);
+                  fprintf(file, "\n");
+                  break;
+    case S8BIT : for (i=0; i<dim; i++)
+                   fprintf(file, "%d ", (int)vecptr[i]);
+                  fprintf(file, "\n");
+                  break;
+    case U16BIT : for (i=0; i<dim; i++)
+                    fprintf(file, "%hu ", (unsigned short)vecptr[i]);
+                  fprintf(file, "\n");
+                  break;
+    case S16BIT : for (i=0; i<dim; i++)
+                    fprintf(file, "%hd ", (short)vecptr[i]);
+                  fprintf(file, "\n");
+                  break;
+    case U32BIT : for (i=0; i<dim; i++)
+                    fprintf(file, "%lu ", (unsigned long)vecptr[i]);
+                  fprintf(file, "\n");
+                  break;
+    case S32BIT : for (i=0; i<dim; i++)
+                    fprintf(file, "%ld ",(long)vecptr[i]);
+                  fprintf(file, "\n");
+                  break;
+    case VFLOAT : for (i=0; i<dim; i++)
+                    fprintf(file, "%f ",(float)vecptr[i]);
+                 fprintf(file, "\n");
+                 break;
+    case VDOUBLE : for (i=0; i<dim; i++)
+                     fprintf(file, "%f ",(double)vecptr[i]);
+                  fprintf(file, "\n");
+                  break;
+  }
+
+
+  fclose(file);
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPrintStreamVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+void VipPrintStreamVector_GENSTRING(FILE *stream, VipVector_GENSTRING *vector)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ GENTYPE *vecptr;
+  int i, dim, type=GENSTRING;
+
+  dim = mVipVectorSize(vector);
+  vecptr = VipGetVectorPtr_GENSTRING(vector);
+
+  switch(type)
+  { case U8BIT : for (i=0; i<dim; i++)
+                   fprintf(stream, "%d ", (int)vecptr[i]);
+                  fprintf(stream, "\n");
+                  break;
+    case S8BIT : for (i=0; i<dim; i++)
+                   fprintf(stream, "%d ", (int)vecptr[i]);
+                  fprintf(stream, "\n");
+                  break;
+    case U16BIT : for (i=0; i<dim; i++)
+                    fprintf(stream, "%hu ", (unsigned short)vecptr[i]);
+                  fprintf(stream, "\n");
+                  break;
+    case S16BIT : for (i=0; i<dim; i++)
+                    fprintf(stream, "%hd ", (short)vecptr[i]);
+                  fprintf(stream, "\n");
+                  break;
+    case U32BIT : for (i=0; i<dim; i++)
+                    fprintf(stream, "%lu ", (unsigned long)vecptr[i]);
+                  fprintf(stream, "\n");
+                  break;
+    case S32BIT : for (i=0; i<dim; i++)
+                    fprintf(stream, "%ld ", (long)vecptr[i]);
+                  fprintf(stream, "\n");
+                  break;
+    case VFLOAT : for (i=0; i<dim; i++)
+                    fprintf(stream, "%f ", (float)vecptr[i]);
+                 fprintf(stream, "\n");
+                 break;
+    case VDOUBLE : for (i=0; i<dim; i++)
+                     fprintf(stream, "%f ",(double)vecptr[i]);
+                  fprintf(stream, "\n");
+                  break;
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipPrintVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+int VipPrintVector_GENSTRING(char *filename, VipVector_GENSTRING *vector)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ FILE *file;
+
+  if (filename == NULL) VipPrintStreamVector_GENSTRING(stdout, vector);
+  else
+  { file = fopen(filename, VIP_WRITE_TEXT);
+    if (!file)
+    { VipPrintfError("Unable to open file");
+      VipPrintfExit("(Vip_vector.c)VipPrintVector");
+      return(PB);
+    }
+    VipPrintStreamVector_GENSTRING(file, vector);
+    fclose(file);
+  }
+
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END

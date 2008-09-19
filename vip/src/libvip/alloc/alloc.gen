@@ -1,0 +1,936 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : alloc.gen            * TYPE     : Generic
+ * AUTHOR      : POUPON F.            * CREATION : 20/11/1996
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : Routines d'allocation 1D, 2D, 3D et 4D
+ *               fpoupon@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <vip/alloc.h>
+
+#H_EXPAND_BEGIN
+#TYPE_LIST_EXTERN ANY
+
+typedef struct
+{ int        size;
+  GENTYPE *data;
+} VipVector_GENSTRING;
+
+typedef struct
+{ int         xsize;
+  int         ysize;
+  GENTYPE **data;
+} VipMatrix_GENSTRING;
+
+typedef struct
+{ int          xsize;
+  int          ysize;
+  int          zsize;
+  GENTYPE ***data;
+} VipTable3D_GENSTRING;
+
+typedef struct
+{ int           xsize;
+  int           ysize;
+  int           zsize;
+  int           tsize;
+  GENTYPE ****data;
+} VipTable4D_GENSTRING;
+
+#H_EXPAND_END
+
+
+#TYPED_FUNC_BEGIN *VipAllocationVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipVector_GENSTRING *VipAllocationVector_GENSTRING(
+  size_t size, 
+  char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipVector_GENSTRING *vec;
+
+  vec = (VipVector_GENSTRING *)VipCalloc(1, sizeof(VipVector_GENSTRING),
+				         "Error while allocating vector structure.");
+  if (vec == NULL)  
+  { if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationVector_GENSTRING");
+    return (VipVector_GENSTRING *)NULL;
+  }
+
+  vec->size = (int)size;
+  vec->data = (GENTYPE *)VipCalloc(size, sizeof(GENTYPE), 
+				   "Error while allocating vector pointer.");
+  if (vec->data == NULL)  
+  { VipFree((void *)vec); 
+    if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationVector_GENSTRING");
+    return (VipVector_GENSTRING *)NULL;
+  }
+
+  return vec;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFreeVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+void VipFreeVector_GENSTRING(
+  VipVector_GENSTRING *vec
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (vec)
+  { if (vec->data)  VipFree(vec->data);
+    VipFree(vec);
+    vec = NULL;
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipCopyVector_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipVector_GENSTRING *VipCopyVector_GENSTRING(
+  VipVector_GENSTRING *vec,
+  char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int x, i;
+  VipVector_GENSTRING *res;
+  GENTYPE *iptr, *optr;
+
+  x = mVipVectorSize( vec );
+
+  res = VipAllocationVector_GENSTRING( x, message );
+  if ( !res )  return (VipVector_GENSTRING *)NULL;
+
+  iptr = VipGetVectorPtr_GENSTRING( vec );
+  optr = VipGetVectorPtr_GENSTRING( res );
+
+  for ( i=0; i<x; i++ ) optr[i] = iptr[i];
+
+  return res;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipAllocationMatrix_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipMatrix_GENSTRING *VipAllocationMatrix_GENSTRING(
+  size_t sizex, 
+  size_t sizey, 
+  char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipMatrix_GENSTRING *mat;
+  int i;
+
+  mat = (VipMatrix_GENSTRING *)VipCalloc(1, sizeof(VipMatrix_GENSTRING),
+				         "Error while allocating matrix structure.");
+  if (mat == NULL)  
+  { if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationMatrix_GENSTRING");
+    return (VipMatrix_GENSTRING *)NULL;
+  }
+
+  mat->xsize = (int)sizex;
+  mat->ysize = (int)sizey; 
+  mat->data = (GENTYPE **)VipCalloc(sizex, sizeof(GENTYPE *), 
+				    "Error while allocating matrix lines.");
+  if (mat->data == NULL)
+  { VipFree((void *)mat);
+    if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationMatrix_GENSTRING");
+    return (VipMatrix_GENSTRING *)NULL;
+  }
+  
+  for (i=0; i<(int)sizex; i++)
+  { mat->data[i] = (GENTYPE *)VipCalloc(sizey, sizeof(GENTYPE), 
+					"Error while allocating columns.");
+    if (mat->data[i] == NULL)
+    { for (;i--;)  VipFree((void *)mat->data[i]);
+      VipFree((void *)mat->data);
+      VipFree((void *)mat);
+      if (message != NULL)  (void)fprintf(stderr, "%s", message);
+      VipPrintfExit("(Vip_alloc.c)VipAllocationMatrix_GENSTRING");
+      return (VipMatrix_GENSTRING *)NULL;
+    }
+  }
+  
+  return mat;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFreeMatrix_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+void VipFreeMatrix_GENSTRING(
+  VipMatrix_GENSTRING *mat
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ int i;
+
+  if (mat)
+  { for (i=0; i<mat->xsize; i++)
+      if (mat->data[i])  VipFree((void *)mat->data[i]);
+    if (mat->data)  VipFree((void *)mat->data);
+    VipFree(mat);
+    mat = NULL;
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipCopyMatrix_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipMatrix_GENSTRING *VipCopyMatrix_GENSTRING(
+  VipMatrix_GENSTRING *mat,
+  char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int x, y, i, j;
+  VipMatrix_GENSTRING *res;
+  GENTYPE **iptr, **optr;
+
+  x = mVipMatrixSizeX( mat );
+  y = mVipMatrixSizeY( mat );
+
+  res = VipAllocationMatrix_GENSTRING( x, y, message );
+  if ( !res )  return (VipMatrix_GENSTRING *)NULL;
+
+  iptr = VipGetMatrixPtr_GENSTRING( mat );
+  optr = VipGetMatrixPtr_GENSTRING( res );
+
+  for ( j=0; j<y; j++ )
+    for ( i=0; i<x; i++ ) optr[i][j] = iptr[i][j];
+
+  return res;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipAllocationTable3D_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipTable3D_GENSTRING *VipAllocationTable3D_GENSTRING(
+  size_t sizex, 
+  size_t sizey, 
+  size_t sizez, 
+char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipTable3D_GENSTRING *table3d;
+  int i, j;
+
+  table3d = (VipTable3D_GENSTRING *)VipCalloc(1, sizeof(VipTable3D_GENSTRING), 
+				             "Error while allocating table3d structure.");
+  if (table3d == NULL)
+  { if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationTable3D_GENSTRING");
+    return (VipTable3D_GENSTRING *)NULL;
+  }
+
+  table3d->xsize = (int)sizex;
+  table3d->ysize = (int)sizey;
+  table3d->zsize = (int)sizez;
+  table3d->data = (GENTYPE ***)VipCalloc(sizex, sizeof(GENTYPE **), 
+					 "Error while allocating table3d lines.");
+  if (table3d->data == NULL)
+  { VipFree((void *)table3d);
+    if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationTable3D_GENSTRING");
+    return (VipTable3D_GENSTRING *)NULL;
+  }
+
+  for (i=0; i<(int)sizex; i++)
+  { table3d->data[i] = (GENTYPE **)VipCalloc(sizey, sizeof(GENTYPE *), 
+					     "Error while allocating table3d columns.");
+    if (table3d->data[i] == NULL)
+    { for (;i--;)  
+      { for (j=0; j<(int)sizey; j++) VipFree((void *)table3d->data[i][j]);
+        VipFree((void *)table3d->data[i]);
+      }
+      VipFree((void *)table3d->data);
+      VipFree((void *)table3d);
+      if (message != NULL)  (void)fprintf(stderr, "%s", message);
+      VipPrintfExit("(Vip_alloc.c)VipAllocationTable3D_GENSTRING");
+      return (VipTable3D_GENSTRING *)NULL;
+    }
+  
+    for (j=0; j<(int)sizey; j++)
+    { table3d->data[i][j] = (GENTYPE *)VipCalloc(sizez, sizeof(GENTYPE),
+					         "Error while allocating table3d planes.");
+      if (table3d->data[i][j] == NULL) 
+      { for (;j--;)  VipFree((void *)table3d->data[i][j]);
+        for (;i--;)
+        { for (j=0; j<(int)sizey; j++)  VipFree((void *)table3d->data[i][j]);
+          VipFree((void *)table3d->data[i]);
+        }
+        VipFree((void *)table3d->data);
+        VipFree((void *)table3d);
+        if (message != NULL)  (void)fprintf(stderr, "%s", message);
+        VipPrintfExit("(Vip_alloc.c)VipAllocationTable3D_GENSTRING");
+        return (VipTable3D_GENSTRING *)NULL;
+      }
+    }
+  }
+
+  return table3d;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFreeTable3D_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+void VipFreeTable3D_GENSTRING(
+  VipTable3D_GENSTRING *table3d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ int i, j;
+
+  if (table3d)
+  { for (i=0; i<table3d->xsize; i++)
+    { for (j=0; j<table3d->ysize; j++)
+        if (table3d->data[i][j])  VipFree((void *)table3d->data[i][j]);
+      if (table3d->data[i])  VipFree((void *)table3d->data[i]);
+    }
+    if (table3d->data)  VipFree((void *)table3d->data);
+    VipFree(table3d);
+    table3d = NULL;
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipCopyTable3D_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipTable3D_GENSTRING *VipCopyTable3D_GENSTRING(
+  VipTable3D_GENSTRING *table,
+  char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int x, y, z, i, j, k;
+  VipTable3D_GENSTRING *res;
+  GENTYPE ***iptr, ***optr;
+
+  x = mVipTable3DSizeX( table );
+  y = mVipTable3DSizeY( table );
+  z = mVipTable3DSizeZ( table );
+
+  res = VipAllocationTable3D_GENSTRING( x, y, z, message );
+  if ( !res )  return (VipTable3D_GENSTRING *)NULL;
+
+  iptr = VipGetTable3DPtr_GENSTRING( table );
+  optr = VipGetTable3DPtr_GENSTRING( res );
+
+  for ( k=0; k<z; k++ )
+    for ( j=0; j<y; j++ )
+      for ( i=0; i<x; i++ ) optr[i][j][k] = iptr[i][j][k];
+
+  return res;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipAllocationTable4D_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipTable4D_GENSTRING *VipAllocationTable4D_GENSTRING(
+  size_t sizex, 
+  size_t sizey, 
+  size_t sizez,
+  size_t sizet, 
+  char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ VipTable4D_GENSTRING *table4d;
+  int i, j, k;
+
+  table4d = (VipTable4D_GENSTRING *)VipCalloc(1, sizeof(VipTable4D_GENSTRING),
+					      "Error while allocating table4d structure.");
+  if (table4d == NULL)
+  { if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationTable4D_GENSTRING");
+    return (VipTable4D_GENSTRING *)NULL;
+  }
+  
+  table4d->xsize = (int)sizex;
+  table4d->ysize = (int)sizey;
+  table4d->zsize = (int)sizez;
+  table4d->tsize = (int)sizet;
+  table4d->data = (GENTYPE ****)VipCalloc(sizex, sizeof(GENTYPE ***),
+					  "Error while allocating table4d lines.");
+  if (table4d->data == NULL)
+  { VipFree((void *)table4d);
+    if (message != NULL)  (void)fprintf(stderr, "%s", message);
+    VipPrintfExit("(Vip_alloc.c)VipAllocationTable4D_GENSTRING");
+    return (VipTable4D_GENSTRING *)NULL;
+  }
+
+  for (i=0; i<(int)sizex; i++)
+  { table4d->data[i] = (GENTYPE ***)VipCalloc(sizey, sizeof(GENTYPE **),
+					      "Error while allocating table4d columns.");
+    if (table4d->data[i] == NULL)
+    { for (;i--;)  
+      { for (j=0; j<(int)sizey; j++) 
+        { for (k=0; k<(int)sizez; k++)  VipFree((void *)table4d->data[i][j][k]);
+          VipFree((void *)table4d->data[i][j]);
+        }
+        VipFree((void *)table4d->data[i]);
+      }
+      VipFree((void *)table4d->data);
+      VipFree((void *)table4d);
+      if (message != NULL)  (void)fprintf(stderr, "%s", message);
+      VipPrintfExit("(Vip_alloc.c)VipAllocationTable4D_GENSTRING");
+      return (VipTable4D_GENSTRING *)NULL;
+    }
+  
+    for (j=0; j<(int)sizey; j++)
+    { table4d->data[i][j] = (GENTYPE **)VipCalloc(sizez, sizeof(GENTYPE *),
+					          "Error while allocating table4d planes.");
+      if (table4d->data[i][j] == NULL)
+      { for (;j--;)  
+          for (k=0; k<(int)sizez; k++)  VipFree((void *)table4d->data[i][j][k]);
+        VipFree((void *)table4d->data[i][j]);
+        for (;i--;)
+        { for (j=0; j<(int)sizey; j++)  
+	  { for (k=0; k<(int)sizez; k++)  VipFree((void *)table4d->data[i][j][k]);
+            VipFree((void *)table4d->data[i][j]);
+          }
+          VipFree((void *)table4d->data[i]);
+        }
+        VipFree((void *)table4d->data);
+        VipFree((void *)table4d);
+        if (message != NULL)  (void)fprintf(stderr, "%s", message);
+        VipPrintfExit("(Vip_alloc.c)VipAllocationTable4D_GENSTRING");
+        return (VipTable4D_GENSTRING *)NULL;
+      }
+
+      for (k=0; k<(int)sizez; k++)
+      { table4d->data[i][j][k] = (GENTYPE *)VipCalloc(sizet, sizeof(GENTYPE), 
+			  			      "Error while allocating table3d volumes.");
+        if (table4d->data[i][j][k] == NULL)
+	{ for (;k--;)  VipFree((void *)table4d->data[i][j][k]);
+          for (;j--;)
+	  { for (k=0; k<(int)sizez; k++)  VipFree((void *)table4d->data[i][j][k]);
+            VipFree((void *)table4d->data[i][j]);
+	  }
+          for (;i--;)
+	  { for (j=0; j<(int)sizey; j++)
+	    { for (k=0; k<(int)sizez; k++) VipFree((void *)table4d->data[i][j][k]);
+              VipFree((void *)table4d->data[i][j]);
+            }
+            VipFree((void *)table4d->data[i]);
+	  }
+          VipFree((void *)table4d->data);
+          VipFree((void *)table4d);
+          if (message != NULL)  (void)fprintf(stderr, "%s", message);
+          VipPrintfExit("(Vip_alloc.c)VipAllocationTable4D_GENSTRING");
+          return (VipTable4D_GENSTRING *)NULL;
+	}
+      }
+    }
+  }  
+
+  return table4d;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFreeTable4D_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+void VipFreeTable4D_GENSTRING(
+  VipTable4D_GENSTRING *table4d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ int i, j, k;
+
+  if (table4d)
+  { for (i=0; i<table4d->xsize; i++)
+    { for (j=0; j<table4d->ysize; j++)
+      { for (k=0; k<table4d->zsize; k++)  VipFree((void *)table4d->data[i][j][k]); 
+        if (table4d->data[i][j])  VipFree((void *)table4d->data[i][j]);
+      }
+      if (table4d->data[i])  VipFree((void *)table4d->data[i]);
+    }
+    if (table4d->data)  VipFree((void *)table4d->data);
+    VipFree(table4d);
+    table4d = NULL;
+  }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipCopyTable4D_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+VipTable4D_GENSTRING *VipCopyTable4D_GENSTRING(
+  VipTable4D_GENSTRING *table,
+  char *message
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int x, y, z, t, i, j, k, l;
+  VipTable4D_GENSTRING *res;
+  GENTYPE ****iptr, ****optr;
+
+  x = mVipTable4DSizeX( table );
+  y = mVipTable4DSizeY( table );
+  z = mVipTable4DSizeZ( table );
+  t = mVipTable4DSizeT( table );
+
+  res = VipAllocationTable4D_GENSTRING( x, y, z, t, message );
+  if ( !res )  return (VipTable4D_GENSTRING *)NULL;
+
+  iptr = VipGetTable4DPtr_GENSTRING( table );
+  optr = VipGetTable4DPtr_GENSTRING( res );
+
+  for ( l=0; l<t; l++ )
+    for ( k=0; k<z; k++ )
+      for ( j=0; j<y; j++ )
+        for ( i=0; i<x; i++ ) optr[i][j][k][l] = iptr[i][j][k][l];
+
+  return res;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN *VipGetVectorPtr_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE *VipGetVectorPtr_GENSTRING(
+  VipVector_GENSTRING *vec
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!vec || (vec->data == NULL))
+  { VipPrintfError("Vector not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetVectorPtr_GENSTRING");
+    return (GENTYPE *)NULL;
+  }
+
+  return (GENTYPE *)vec->data;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetVectorSize_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetVectorSize_GENSTRING(
+  VipVector_GENSTRING *vec
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!vec || (vec->data == NULL))
+  { VipPrintfError("Vector not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetVectorSize_GENSTRING");
+    return PB;
+  }
+
+  return vec->size;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN **VipGetMatrixPtr_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE **VipGetMatrixPtr_GENSTRING(
+  VipMatrix_GENSTRING *mat
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!mat || (mat->data == NULL))
+  { VipPrintfError("Matrix not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetMatrixPtr_GENSTRING");
+    return (GENTYPE **)NULL;
+  }
+
+  return (GENTYPE **)mat->data;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetMatrixSizeX_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetMatrixSizeX_GENSTRING(
+  VipMatrix_GENSTRING *mat
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!mat || (mat->data == NULL))
+  { VipPrintfError("Matrix not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetMatrixSizeX_GENSTRING");
+    return PB;
+  }
+
+  return mat->xsize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetMatrixSizeY_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetMatrixSizeY_GENSTRING(
+  VipMatrix_GENSTRING *mat
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!mat || (mat->data == NULL))
+  { VipPrintfError("Matrix not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetMatrixSizeY_GENSTRING");
+    return PB;
+  }
+
+  return mat->ysize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetMatrixSize_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetMatrixSize_GENSTRING(
+  VipMatrix_GENSTRING *mat, 
+  int *sizeX, 
+  int *sizeY
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!mat || (mat->data == NULL))
+  { VipPrintfError("Matrix not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetMatrixSize_GENSTRING");
+    return PB;
+  }
+ 
+  *sizeX = mat->xsize;
+  *sizeY = mat->ysize;
+
+  return OK;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN ***VipGetTable3DPtr_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE ***VipGetTable3DPtr_GENSTRING(
+  VipTable3D_GENSTRING *table3d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table3d || (table3d->data == NULL))
+  { VipPrintfError("Table3D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable3DPtr_GENSTRING");
+    return (GENTYPE ***)NULL;
+  }
+  
+  return (GENTYPE ***)table3d->data;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable3DSizeX_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable3DSizeX_GENSTRING(
+  VipTable3D_GENSTRING *table3d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table3d || (table3d->data == NULL))
+  { VipPrintfError("Table3D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable3DSizeX_GENSTRING");
+    return PB;
+  }
+
+  return table3d->xsize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable3DSizeY_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable3DSizeY_GENSTRING(
+  VipTable3D_GENSTRING *table3d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table3d || (table3d->data == NULL))
+  { VipPrintfError("Table3D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable3DSizeY_GENSTRING");
+    return PB;
+  }
+
+  return table3d->ysize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable3DSizeZ_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable3DSizeZ_GENSTRING(
+  VipTable3D_GENSTRING *table3d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table3d || (table3d->data == NULL))
+  { VipPrintfError("Table3D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable3DSizeZ_GENSTRING");
+    return PB;
+  }
+
+  return table3d->zsize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable3DSize_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable3DSize_GENSTRING(
+  VipTable3D_GENSTRING *table3d, 
+  int *sizeX, 
+  int *sizeY, 
+  int *sizeZ
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table3d || (table3d->data == NULL))
+  { VipPrintfError("Table3D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable3DSize_GENSTRING");
+    return PB;
+  }
+ 
+  *sizeX = table3d->xsize;
+  *sizeY = table3d->ysize;
+  *sizeZ = table3d->zsize;
+
+  return OK;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN ****VipGetTable4Ptr_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE ****VipGetTable4DPtr_GENSTRING(
+  VipTable4D_GENSTRING *table4d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table4d || (table4d->data == NULL))
+  { VipPrintfError("Table4D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable4DPtr_GENSTRING");
+    return (GENTYPE ****)NULL;
+  }
+  
+  return (GENTYPE ****)table4d->data;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable4SizeX_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable4DSizeX_GENSTRING(
+  VipTable4D_GENSTRING *table4d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table4d || (table4d->data == NULL))
+  { VipPrintfError("Table4D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable4DSizeX_GENSTRING");
+    return PB;
+  }
+
+  return table4d->xsize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable4SizeY_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable4DSizeY_GENSTRING(
+  VipTable4D_GENSTRING *table4d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table4d || (table4d->data == NULL))
+  { VipPrintfError("Table4D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable4DSizeY_GENSTRING");
+    return PB;
+  }
+
+  return table4d->ysize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable4SizeZ_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable4DSizeZ_GENSTRING(
+  VipTable4D_GENSTRING *table4d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table4d || (table4d->data == NULL))
+  { VipPrintfError("Table4D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable4DSizeZ_GENSTRING");
+    return PB;
+  }
+
+  return table4d->zsize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable4SizeT_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable4DSizeT_GENSTRING(
+  VipTable4D_GENSTRING *table4d
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table4d || (table4d->data == NULL))
+  { VipPrintfError("Table4D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable4DSizeT_GENSTRING");
+    return PB;
+  }
+
+  return table4d->tsize;
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetTable4Size_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipGetTable4DSize_GENSTRING(
+  VipTable4D_GENSTRING *table4d, 
+  int *sizeX, 
+  int *sizeY, 
+  int *sizeZ, 
+  int *sizeT
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (!table4d || (table4d->data == NULL))
+  { VipPrintfError("Table4D not allocated.");
+    VipPrintfExit("(Vip_alloc.c)VipGetTable4DSize_GENSTRING");
+    return PB;
+  }
+ 
+  *sizeX = table4d->xsize;
+  *sizeY = table4d->ysize;
+  *sizeZ = table4d->zsize;
+  *sizeT = table4d->tsize;
+
+  return OK;
+}
+#FUNCTION_END
+#TYPED_FUNC_END

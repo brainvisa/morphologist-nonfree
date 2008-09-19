@@ -1,0 +1,13 @@
+
+class T1MRIComponent( GenericMakerModuleComponent ):
+  _name = 't1mri'
+  def dependencies( self ):
+    return ['vip']
+  
+currentComponentDirectory = os.path.dirname( currentComponentFile )
+c = options.setdefault( 'vip', {} )
+c[ 'source' ] = os.path.join( currentComponentDirectory, 'vip' )
+c[ 'version' ] = '4.0'
+
+
+

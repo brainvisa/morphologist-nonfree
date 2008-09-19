@@ -1,0 +1,329 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_3Dconnex.gen     * TYPE     : Generic
+ * AUTHOR      : MANGIN J.F.          * CREATION : 02/01/1997
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : tout ce qui concerne l'extraction des composantes connexes 3D
+ *               jfmangin@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <errno.h>
+#include <math.h>
+
+#include <vip/util.h>
+#include <vip/volume.h>
+#include <vip/bucket.h>
+#include <vip/connex.h>
+#include <vip/connex_static.h>
+
+
+
+/*----------------------------------------------------------------------------*/
+#NONTYPED_FUNC_BEGIN *VipGet3DConnex
+#TYPE_LIST ANY
+#PROTOTYPE_BEGIN
+/*NB: cette procedure herite de choses passees, elle serait plus rapide
+en ne gerant que des offsets dans les cas ou les buckets ne sont pas
+necessaire et plus efficace sans doute pour ce qui est de
+la gestion de la memoire avec une propagation d'etiquettes de type
+Tivoli...*/
+Vip3DBucket_S16BIT *VipGet3DConnex(
+  Volume *vol,
+  int connectivity)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip3DBucket_S16BIT *result=NULL;
+
+  if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
+   {
+     VipPrintfExit("(3Dconnex.gen)VipGet3DConnex");
+     return(PB);
+   }
+
+  switch( mVipVolType( vol ) )
+   {
+   case GENSTRING :
+     result = VipGet3DConnex_GENSTRING( vol, connectivity );
+     break;
+   }
+ return(result);
+}
+#FUNCTION_END
+#NONTYPED_FUNC_END
+
+/*----------------------------------------------------------------------------*/
+#TYPED_FUNC_BEGIN *VipGet3DConnex_GENSTRING
+#TYPE_LIST_STATIC ANY
+#PROTOTYPE_BEGIN
+/*NB: cette procedure herite de choses passees, elle serait plus rapide
+en ne gerant que des offsets dans les cas ou les buckets ne sont pas
+necessaire et plus efficace sans doute pour ce qui est de
+la gestion de la memoire avec une propagation d'etiquettes de type
+Tivoli...*/
+Vip3DBucket_S16BIT *VipGet3DConnex_GENSTRING(
+  Volume *vol,
+  int connectivity)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int flag_first_bucket;
+  Vip3DPoint_S16BIT *temp_last, *courant_last;
+  int x, y, z;
+  int i;
+  int xjumper, yjumper, zjumper;
+  Vip3DPoint_S16BIT *regxyzoffset;
+  int *regoffset;
+
+  Volume *The_flag_volume;
+  Vip_U8BIT *flag_volume_first, *flag_volume_raster;
+  GENTYPE *in_first, *in_raster;
+  Vip3DBucket_S16BIT *temp, *courant;
+  Vip3DBucket_S16BIT *bucket_list, *last_bucket;
+  int jump;
+  int saut;
+  int loopsize;
+  int bucketsizemax;
+  int xsize, ysize, zsize;
+  int x_realsize, slice_realsize;
+  VipConnectivityStruct *vcs;
+  int borderset;
+  Vip_U8BIT BORDER = 255;
+  int testborder;
+
+  VipOffsetStruct *vos;
+
+  /* NB, en cas de pb de memoire, on peut se dispenser de
+     l'image de flag en ecrivant dans l'image initiale */
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
+    {
+      VipPrintfExit("(3Dconnex.c)VipGet3DConnex_S16BIT");
+      return(PB);
+    }
+
+  bucketsizemax = VipGetNumberNonZeroPoints( vol);
+  if( bucketsizemax == 0 )
+    {
+      VipPrintfWarning("Empty volume in VipGet3DConnex");
+      return(PB);
+    }
+
+  xsize = mVipVolSizeX(vol);
+  ysize = mVipVolSizeY(vol);
+  zsize = mVipVolSizeZ(vol);
+
+  x_realsize = VipOffsetLine(vol);
+  slice_realsize = VipOffsetSlice(vol);
+
+  bucket_list = last_bucket = NULL;
+
+  /* NB. in fact temp is a LIFO oriented stack.
+    Anyway, encapsulation could be more expensive in C
+    than this direct implementation */
+  temp = VipMalloc3DBucket_S16BIT( bucketsizemax +1 );
+  if(temp==NULL) return(PB);
+  /* En supposant que les composantes 3D
+     ne seront pas plus grandes  */
+
+  vcs = VipGetConnectivityStruct( vol, connectivity );
+  if(vcs==NULL) return(PB);
+
+  vos = VipGetOffsetStructure(vol);
+  if(vos==NULL) return (PB);
+
+
+  regoffset = vcs->offset;
+  regxyzoffset = vcs->xyz_offset; 		
+
+  The_flag_volume=VipDuplicateVolumeStructure(vol,"flag");
+  if(The_flag_volume==NULL) return(PB);
+  VipSetType(The_flag_volume,U8BIT);
+  if(VipAllocateVolumeData(The_flag_volume)==PB) return(PB);
+  flag_volume_first = VipGetDataPtr_U8BIT(The_flag_volume) + vos->oFirstPoint;
+  VipSet3DImageLevel(The_flag_volume,0,0); /*calloc...*/
+
+  in_first = VipGetDataPtr_GENSTRING(vol) + vos->oFirstPoint;
+
+  flag_first_bucket = VTRUE;
+  loopsize = vcs->nb_neighbors;
+	
+  /* Balayage du volume avec determination des composantes par propagation */
+
+  if(mVipVolBorderWidth(vol)==0) /*test on coordinates*/
+    borderset=VFALSE;
+  else
+    {
+      borderset=VTRUE;
+      VipSetBorderLevel(The_flag_volume,BORDER);
+    }
+
+  in_raster = in_first;
+  flag_volume_raster = flag_volume_first;
+
+  for( z=0; z<zsize; z++ )
+    {
+    for( y=0; y<ysize; y++ )
+      {
+      for( x=0; x<xsize; x++ )
+	{
+	  if( !(*(flag_volume_raster)) && (*(in_raster)) )
+	    {
+	      *(flag_volume_raster)=VTRUE;
+	      courant = VipMalloc3DBucket_S16BIT( bucketsizemax + 1 );
+	      if(courant==NULL) return(PB); /*requires a better Freeing...*/
+	      courant_last = courant->data;
+	      temp_last=temp->data;
+	      temp_last->x = x;		
+	      temp_last->y = y;
+	      temp_last->z = z;
+	      (temp->n_points)++;
+	      do
+		{
+		  courant_last->x = temp_last->x;
+		  courant_last->y = temp_last->y;
+		  courant_last->z = temp_last->z;
+		  jump = courant_last->x + (courant_last->y)*x_realsize
+		    + (courant_last->z)*slice_realsize;
+		  (temp->n_points)--;
+                  if (temp_last != temp->data) /* test rajoute le 30/03/1999 F. Poupon */
+		    (temp_last)--;
+		  (courant->n_points)++;
+		  if(courant->n_points>=courant->size)
+		    {
+		      VipPrintfError("To small bucket");
+		      VipPrintfExit("VipGet3DConnexe");
+		      return(PB);
+		    }
+		  if(borderset==VFALSE)
+		    {
+		      for( i=0; i<loopsize; i++)
+			{
+			  xjumper = courant_last->x + regxyzoffset[i].x;
+			  yjumper = courant_last->y + regxyzoffset[i].y;
+			  zjumper = courant_last->z + regxyzoffset[i].z;
+
+			  /* Si le voisin(non nul) est bien dans l'image et s'il
+			     n'a pas encore ete traite, il est mis dans
+			     la liste des points a examiner */
+				
+			  if( (xjumper >=0) && (yjumper >=0) &&(zjumper>=0)
+			      && (xjumper <xsize) && (yjumper<ysize) 
+			      && (zjumper< zsize))
+			    {
+			      saut = jump+regoffset[i];
+			      if( !(*(flag_volume_first+saut)) )
+				{
+				  if(*(in_first+saut))
+				    {
+				      (temp_last)++;
+				      temp_last->x = xjumper;		
+				      temp_last->y = yjumper;
+				      temp_last->z = zjumper;
+				      (temp->n_points)++;
+				      if(temp->n_points>=temp->size)
+					{
+					  VipPrintfError("To small bucket");
+					  VipPrintfExit("VipGet3DConnexe");
+					  return(NULL);
+					}		
+				    }
+				  *(flag_volume_first+saut) = VTRUE;
+				}
+			    }
+			}
+		    }
+		  else
+		    {
+		      for( i=0; i<loopsize; i++)
+			{
+			  saut = jump+regoffset[i];
+			  testborder = *(flag_volume_first+saut);
+			  if(testborder!=BORDER)
+			    {
+			      if( !(testborder) )
+				{
+				  if(*(in_first+saut))
+				    {
+				      xjumper = courant_last->x + regxyzoffset[i].x;
+				      yjumper = courant_last->y + regxyzoffset[i].y;
+				      zjumper = courant_last->z + regxyzoffset[i].z;
+				      (temp_last)++;
+				      temp_last->x = xjumper;		
+				      temp_last->y = yjumper;
+				      temp_last->z = zjumper;
+				      (temp->n_points)++;
+				      if(temp->n_points>=temp->size)
+					{
+					  VipPrintfError("To small bucket");
+					  VipPrintfExit("VipGet3DConnexe");
+					  return(NULL);						
+					}		
+				    }
+				  *(flag_volume_first+saut) = VTRUE;
+				}
+			    }
+			}
+		    }				
+		  
+		  (courant_last)++;
+			    
+		} while( temp->n_points );
+	      VipDwindle3DBucket_S16BIT( courant );
+	      bucketsizemax -= courant->n_points;
+	      if(flag_first_bucket)
+		{
+		  bucket_list = last_bucket = courant;
+		  flag_first_bucket = VFALSE;
+		}
+	      else
+		{
+		  last_bucket->next=courant;
+		  last_bucket=courant;
+		}
+	    }
+	  else *(flag_volume_raster)=VTRUE;
+	  flag_volume_raster++;
+	  in_raster++;
+	}
+        flag_volume_raster += vos->oPointBetweenLine;
+        in_raster += vos->oPointBetweenLine;
+      }
+    flag_volume_raster += vos->oLineBetweenSlice;
+    in_raster += vos->oLineBetweenSlice;
+    }
+
+  VipFreeVolume(The_flag_volume);
+  VipFree(The_flag_volume);
+  VipFree3DBucket_S16BIT(temp);
+
+  VipFreeConnectivityStruct(vcs);
+  VipFree(vos);
+	    
+  return(bucket_list);
+}	
+#FUNCTION_END
+#TYPED_FUNC_END
+
+/****************************************************************/

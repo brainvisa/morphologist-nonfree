@@ -1,0 +1,6 @@
+
+LIBS =	@libBuildLine@
+linux:LIBS	+= -lm
+solaris:LIBS	+= -lm
+irix:LIBS	+= -lm
+tru64:LIBS	+= -lm

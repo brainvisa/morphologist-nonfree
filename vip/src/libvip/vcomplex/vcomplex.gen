@@ -1,0 +1,173 @@
+/*****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : Vip_vcomplex.gen     * TYPE     : Generic
+ * AUTHOR      : POUPON F.            * CREATION : 20/11/1996
+ * VERSION     : 0.1                  * REVISION :
+ * LANGUAGE    : C                    * EXAMPLE  :
+ * DEVICE      : Sun SPARC Station 5
+ *****************************************************************************
+ *
+ * DESCRIPTION : Calcul sur des complexes
+ *               fpoupon@cea.fr
+ *
+ *****************************************************************************
+ *
+ * USED MODULES : 
+ *
+ *****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|----------------------------------------
+ *              / /   |              |
+ *****************************************************************************/
+
+
+#include <vip/vcomplex.h>
+
+#H_EXPAND_BEGIN
+#TYPE_LIST_EXTERN ANY
+
+typedef struct
+{ GENTYPE re;
+  GENTYPE im;
+} Complex_GENSTRING;
+
+#H_EXPAND_END
+
+#TYPED_FUNC_BEGIN VipComplexProduct_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Complex_GENSTRING VipComplexProduct_GENSTRING(
+  Complex_GENSTRING c1, 
+  Complex_GENSTRING c2, 
+  GENTYPE fact
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Complex_GENSTRING res;
+
+  res.re = fact*(c1.re*c2.re-c1.im*c2.im);
+  res.im = fact*(c1.re*c2.im+c1.im*c2.re);
+
+  return(res);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipComplexSq_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Complex_GENSTRING VipComplexSq_GENSTRING(
+  Complex_GENSTRING c,
+  GENTYPE fact
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ return(VipComplexProduct_GENSTRING(c, c, fact));
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipComplexSum_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+Complex_GENSTRING VipComplexSum_GENSTRING(
+  Complex_GENSTRING c1, 
+  Complex_GENSTRING c2
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ Complex_GENSTRING res;
+ 
+  res.re = c1.re+c2.re;
+  res.im = c1.im+c2.im;
+
+  return(res);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipComplexModule_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE VipComplexModule_GENSTRING(
+  Complex_GENSTRING c
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ return((GENTYPE)mVipHypotenuse((double)c.re, (double)c.im));  
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipComplexArgumentInRadian_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE VipComplexArgumentInRadian_GENSTRING(
+  Complex_GENSTRING c
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ if (c.re == (GENTYPE)0.0)  return((GENTYPE)(M_PI/2.0));
+  else if (c.im == (GENTYPE)0.0)  return((GENTYPE)0.0);
+  else return((GENTYPE)atan((double)c.im/(double)c.re));
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipComplexArgumentInDegree_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE VipComplexArgumentInDegree_GENSTRING(
+  Complex_GENSTRING c
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ GENTYPE result;
+
+  result = VipComplexArgumentInRadian_GENSTRING(c);
+  return((GENTYPE)((double)result*180.0/M_PI));
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetComplexRealPart_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE VipGetComplexRealPart_GENSTRING(
+  Complex_GENSTRING c
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ return(c.re);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipGetComplexImaginaryPart_GENSTRING
+#TYPE_LIST_EXTERN ANY
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+GENTYPE VipGetComplexImaginaryPart_GENSTRING(
+  Complex_GENSTRING c
+)
+/*----------------------------------------------------------------------------*/
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ return(c.im);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
