@@ -90,7 +90,8 @@ int VipMkdir( const char *dirname )
 #if defined( _WIN32 )
       if( mkdir( dirname ) )
 #else
-      if( mkdir( dirname, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) )
+      if( mkdir( dirname, S_IRWXU | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
+            | S_IWOTH | S_IXOTH ) )
 #endif
         return 0;
       return 1;
