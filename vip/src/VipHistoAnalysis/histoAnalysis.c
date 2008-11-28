@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
                         "plot [:%d] [0:%d] \"%s%c%s.his\" notitle w l lw 5\n", 
                         xmax,hmax, VipTmpDirectory(), VipFileSeparator(), 
                         input);
-	    fprintf(gpfile,"pause -1\n");
+	    fprintf(gpfile,"pause mouse any\n");
 	    fclose(gpfile);
 	    strcpy(systemcommand, "gnuplot ");
 	    strcat(systemcommand,tmphisto);
@@ -744,7 +744,8 @@ int main(int argc, char *argv[])
 	{
 	    sprintf(systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(), 
                     VipFileSeparator(), stripped_input );
-	    if(system(systemcommand))
+            printf( "%s\n", systemcommand );
+            if(system(systemcommand))
 		VipPrintfError("Can not use gnuplot here (or use \"return\" to quit gnuplot), sorry...\n");
 	}
 #if 0

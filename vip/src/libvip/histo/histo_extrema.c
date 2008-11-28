@@ -2522,7 +2522,7 @@ int VipCreateGnuplotFileFromExtrema(
     fprintf(fcommand,"\n");
 
   fprintf(fcommand,"cd \"..\"\n");
-  fprintf(fcommand,"pause -1\n");
+  fprintf(fcommand,"pause mouse any\n");
   fclose(fcommand);
  
   if(psfile==VTRUE)
