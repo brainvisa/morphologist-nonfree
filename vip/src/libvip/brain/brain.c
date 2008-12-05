@@ -220,8 +220,8 @@ Volume *ridge
       {
 	 VipPrintfInfo("Debug mode: writing white matter"); 
 	 VipWriteVolume(white,"white");
+         VipWriteTivoliVolume(white,"white");
       }
-  VipWriteTivoliVolume(white,"white");
 
   if(dumb!=VTRUE)
     {
@@ -257,7 +257,6 @@ Volume *ridge
 
   VipSingleThreshold( volcopy, GREATER_OR_EQUAL_TO, 1 , BINARY_RESULT );
   VipMerge(volcopy,white,VIP_MERGE_ONE_TO_ONE,255,512);
-  VipWriteTivoliVolume(volcopy,"volcopy");
 
   VipChangeIntLabel(volcopy,0,-2);
   if(VipComputeFrontPropagationChamferDistanceMap(volcopy,255,-2,VIP_PUT_LIMIT_TO_LIMIT,(int)(threshold_dist+1))==PB) return(PB);
@@ -273,7 +272,6 @@ Volume *ridge
 
    VipDoubleThreshold( vol, VIP_BETWEEN_OR_EQUAL_TO,1, T_GRAY_WHITE_SECUREGRAY, BINARY_RESULT );
   if( VipMerge( vol, white, VIP_MERGE_ONE_TO_ONE, 255, 255 )== PB) return(PB);
-  VipWriteTivoliVolume(vol,"before_opening");
 
   if(VipOpening(vol,CHAMFER_BALL_3D,little_opening_size)==PB) return(PB);
 
@@ -299,8 +297,8 @@ int iterative_erosion
 /*---------------------------------------------------------------------------*/
 /*
 
-NEW 10-9-2003, je vais tenter de supprimer le masque de la matière blanche,
-qui crée des problème avec les images buitée,
+NEW 10-9-2003, je vais tenter de supprimer le masque de la matiï¿½re blanche,
+qui crï¿½e des problï¿½me avec les images buitï¿½e,
 cette procedure est un clone de: VipGetBrainCustomized
 
 

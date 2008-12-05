@@ -8,7 +8,7 @@
  *****************************************************************************
  *
  * DESCRIPTION : Creation de 'Vip_volume.c' fortement inspire des 
- *               entrees/sorties de la librairie Tivoli du département image
+ *               entrees/sorties de la librairie Tivoli du dï¿½partement image
  *               de Telecom Paris de maniere a pouvoir utiliser le meme format
  *               d'images en memoire. Le but escompte est la possibilite de 
  *               link simultane avec Tivoli (ENST) et Vip (Volumic Image 
@@ -3450,10 +3450,14 @@ Volume	    *VipReadTivoliVolume
 	const char    *ima_name
 )
 {
+#ifdef VIP_CARTO_VOLUME_WRAPPING
+  return VipReadVolume( ima_name );
+#else
   VIP_DEC_VOLUME(vol);
 
   vol = VipReadTivoliVolumeWithBorder(ima_name,0);
   return(vol);
+#endif
 }
 /*----------------------------------------------------------------------------*/
 
@@ -3780,7 +3784,7 @@ int VipWriteTivoliVolume
 {
 
 #ifdef VIP_CARTO_VOLUME_WRAPPING
-  return VipVolumeCartoWrite( volume, ima_name, TIVOLI );
+  return VipVolumeCartoWrite( volume, ima_name, ANY_FORMAT /* TIVOLI */ );
 #else
 
 #ifdef TIVOLI_LIB

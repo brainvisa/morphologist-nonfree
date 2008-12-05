@@ -46,7 +46,9 @@ VipT1HistoAnalysis *VipReadT1HistoAnalysis(char *name)
 	}
 
     strncpy(filename,name,245);
-    strcat(filename,".han");
+    if( strlen( filename ) < 4
+        || strcmp( filename + strlen( filename ) - 4, ".han" ) != 0 )
+      strcat(filename,".han");
 
     f = fopen(filename,"r");
     if(f==PB)
@@ -146,6 +148,8 @@ int VipWriteT1HistoAnalysis(VipT1HistoAnalysis *ana, char *name)
 	    return(PB);
 	}
     strncpy(filename,name,245);
+    if( strlen( filename ) < 4
+        || strcmp( filename + strlen( filename ) - 4, ".han" ) != 0 )
     strcat(filename,".han");
 
     f = fopen(filename,"w");

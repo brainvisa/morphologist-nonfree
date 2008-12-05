@@ -29,6 +29,7 @@
 #include <vip/util/file.h>
 #include <vip/connex.h>
 #include <vip/deriche.h>
+#include <unistd.h>
 
 static int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
 Volume *VipComputeCrestAverageIntensity(Volume *crest, Volume *vol);
@@ -93,6 +94,7 @@ int main(int argc, char *argv[])
     int connectivity=CONNECTIVITY_26;
     Volume *edges=NULL;
     Volume *discard=NULL;
+    int hasgnuplotfile = 0;
     /*    char mask_name[256], temp_string[256];*/
 
     readlib = ANY_FORMAT;
@@ -408,14 +410,7 @@ int main(int argc, char *argv[])
 		    printf("Reading volume...\n");
                     if(variance_threshold==-1 && variance_pourcentage==-1)
                       {
-                        if (readlib == TIVOLI)
-                          vol = VipReadTivoliVolumeWithBorder(input,0);
-                        else if (readlib == SPM)
-                          vol = VipReadSPMVolumeWithBorder(input,0);
-                        else if (readlib == VIDA)
-                          vol = VipReadVidaVolumeWithBorder(input,0);
-                        else
-                          vol = VipReadVolumeWithBorder(input,0);
+                        vol = VipReadVolumeWithBorder(input,0);
                       }
                     else
                       vol = VipReadVolumeWithBorder(input,1);
@@ -501,7 +496,7 @@ int main(int argc, char *argv[])
 		    if(mode!='e')
 			{
 			    printf("Writing histogram\n");
-			    if(VipWriteHisto(shorthisto,input,WRITE_HISTO_ASCII)==PB)
+			    if(VipWriteHisto(shorthisto,output,WRITE_HISTO_ASCII)==PB)
 				VipPrintfWarning("I can not write the histogram but I am going further");
 			}
 		}
@@ -568,6 +563,7 @@ int main(int argc, char *argv[])
 	    strcat(systemcommand,tmphisto);
 	    if(system(systemcommand))
 		VipPrintfError("Can not use gnuplot here (or use \"return\" to quit gnuplot), sorry...\n");
+            unlink( tmphisto );
 	    return(VIP_CL_ERROR);
 	}
       if(mode=='s')
@@ -721,6 +717,7 @@ int main(int argc, char *argv[])
 		    if(VipCreateGnuplotFileFromExtrema(volstruct,stripped_input,SS_CASCADE_EXTREMUM,gnuplotpsfile,
 						       gnuplot_title,
 						       D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE)==PB) return(VIP_CL_ERROR);
+                    hasgnuplotfile = 1;
 		}
 	}
     else
@@ -730,6 +727,7 @@ int main(int argc, char *argv[])
 		    if(VipCreateGnuplotFileFromExtrema(volstruct,stripped_input,SS_TRACKED_EXTREMUM,gnuplotpsfile,
 						       gnuplot_title,
 						       D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE)==PB) return(VIP_CL_ERROR);
+                    hasgnuplotfile = 1;
 		}
 	}
 
@@ -748,16 +746,13 @@ int main(int argc, char *argv[])
             if(system(systemcommand))
 		VipPrintfError("Can not use gnuplot here (or use \"return\" to quit gnuplot), sorry...\n");
 	}
-#if 0
-    /* denis 04/11/2003, the actual system() was already commented... */
-    if(gnuplot!='n')
-      {
-        sprintf( systemcommand, "%s%cgpdir_%s/*", VipTmpDirectory(), 
-                 VipFileSeparator(), input );
-        VipRm( systemcommand, VipRecursive );
-      }
-#endif
-    
+    if( hasgnuplotfile )
+    {
+      sprintf(systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(),
+              VipFileSeparator(), stripped_input );
+      unlink( systemcommand );
+    }
+
     if(ridgename && ana)
       {
         vol = VipReadVolume(input);
@@ -766,7 +761,7 @@ int main(int argc, char *argv[])
         printf("Refining ridges [%d,%d]\n",mVipMin(ana->gray->mean +1*ana->gray->sigma,ana->white->mean -1*ana->white->sigma), ana->white->mean +3*ana->white->sigma);
         VipDoubleThreshold(vol,VIP_BETWEEN_OR_EQUAL_TO,mVipMin(ana->gray->mean +1*ana->gray->sigma,ana->white->mean -1*ana->white->sigma) ,ana->white->mean +2*ana->white->sigma,GREYLEVEL_RESULT);
         if (VipConnexVolumeFilter (vol, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
-        VipWriteTivoliVolume(vol,ridgename);
+        VipWriteVolume(vol,ridgename);
         
       }
     

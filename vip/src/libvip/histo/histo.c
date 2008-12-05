@@ -1067,6 +1067,10 @@ int VipWriteHisto(VipHisto *histo, char *name, int mode)
       return(PB);
     }
   strcpy(filename,name);
+  if( strlen( filename ) >= 4
+      && ( strcmp( filename + strlen( filename ) - 4, ".his" ) == 0
+      || strcmp( filename + strlen( filename ) - 4, ".han" ) == 0 ) )
+    filename[ strlen( filename ) - 4 ] = '\0';
   if(mode==WRITE_HISTO_ASCII) strcat(filename,".his");
   else strcat(filename,".his_bin");
   f = fopen(filename,"w");

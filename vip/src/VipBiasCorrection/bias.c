@@ -356,14 +356,7 @@ int main(int argc, char *argv[])
       return(VIP_CL_ERROR);
     }
 
-  if (readlib == TIVOLI)
-    vol = VipReadTivoliVolumeWithBorder(input,0);
-  else if (readlib == SPM)
-    vol = VipReadSPMVolumeWithBorder(input,0);
-  else if (readlib == VIDA)
-    vol = VipReadVidaVolumeWithBorder(input,0);
-  else
-    vol = VipReadVolumeWithBorder(input,0);
+  vol = VipReadVolumeWithBorder(input,0);
 
   if(vol==NULL) return(VIP_CL_ERROR);
 
@@ -458,14 +451,7 @@ int main(int argc, char *argv[])
         }
       if (variance_threshold!=-1 || variance_pourcentage!=-1)
         {                            
-          if (readlib == TIVOLI)
-            voltemp = VipReadTivoliVolumeWithBorder(input,1);
-          else if (readlib == SPM)
-            voltemp = VipReadSPMVolumeWithBorder(input,1);
-          else if (readlib == VIDA)
-            voltemp = VipReadVidaVolumeWithBorder(input,1);
-          else
-            voltemp = VipReadVolumeWithBorder(input,1);
+          voltemp = VipReadVolumeWithBorder(input,1);
 
           if(voltemp==NULL) return(VIP_CL_ERROR);
 
@@ -505,7 +491,7 @@ int main(int argc, char *argv[])
   if(fullresult==PB) return(VIP_CL_ERROR);
   if(writefield==VTRUE)
       {
-	  if(VipWriteTivoliVolume(fullresult,fieldname)==PB) return(VIP_CL_ERROR);
+	  if(VipWriteVolume(fullresult,fieldname)==PB) return(VIP_CL_ERROR);
       }
 
   printf("Correcting volume...\n");
@@ -515,15 +501,7 @@ int main(int argc, char *argv[])
 
   VipFreeVolume(fullresult);
 
-  if (writelib == TIVOLI)
-    {
-      if(VipWriteTivoliVolume(vol,output)==PB) return(VIP_CL_ERROR);
-    }
-  else if (writelib==SPM)
-      {
-	  if(VipWriteSPMVolume( vol,output )==PB) return(VIP_CL_ERROR);
-      }
-  else if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
+  if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
 
   return(0);
 

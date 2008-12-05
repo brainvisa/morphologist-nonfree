@@ -604,7 +604,7 @@ int main(int argc, char *argv[])
       VipFreeVolume(thresholdedvol);
 
       VipResizeBorder( deriche, 3 );
-      if (writeedges==VTRUE) VipWriteTivoliVolume( deriche, edgesname);
+      if (writeedges==VTRUE) VipWriteVolume( deriche, edgesname);
 
       printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
       thresholdlowset=VTRUE;
@@ -649,7 +649,7 @@ int main(int argc, char *argv[])
       variance_brute = VipComputeVarianceVolume(vol);
       if (variance_brute==PB) return(VIP_CL_ERROR);
 
-      if (writevariance==VTRUE) VipWriteTivoliVolume( variance_brute, variancename);
+      if (writevariance==VTRUE) VipWriteVolume( variance_brute, variancename);
       /*
       VipComputeStatInMaskVolume(variance,variance, &mean, &sigma, VTRUE);
       printf("variance in tissues: mean: %f; sigma: %f\n", mean, sigma);
@@ -750,7 +750,7 @@ int main(int argc, char *argv[])
 
       smooth = VipDeriche3DGaussian( vol, 1., NEW_FLOAT_VOLUME);
       mc = Vip3DGeometry(smooth,MEAN_CURVATURE);
-      if (writemeancurvature==VTRUE) VipWriteTivoliVolume( mc, meancurvaturename);
+      if (writemeancurvature==VTRUE) VipWriteVolume( mc, meancurvaturename);
 
       VipSingleFloatThreshold(mc,LOWER_OR_EQUAL_TO,-0.4,BINARY_RESULT);    
       white_crest = VipTypeConversionToS16BIT( mc , RAW_TYPE_CONVERSION); 
@@ -874,7 +874,7 @@ int main(int argc, char *argv[])
       if(arrow) VipFreeVolume(arrow);
       if(target) VipFreeVolume(target);
 
-      if (writeridges==VTRUE) VipWriteTivoliVolume(gradient,wridgesname);
+      if (writeridges==VTRUE) VipWriteVolume(gradient,wridgesname);
       if (edges)
         {
           VipMaskVolume(gradient,edges);
@@ -882,7 +882,7 @@ int main(int argc, char *argv[])
     }
   else
     {
-      gradient = VipReadTivoliVolumeWithBorder(wridgesname,0);
+      gradient = VipReadVolumeWithBorder(wridgesname,0);
       if (!gradient)  return(VIP_CL_ERROR);
 
       variance_threshold = VipPourcentageLowerThanThreshold(variance_brute, 1, variance_pourcentage);
@@ -922,7 +922,7 @@ int main(int argc, char *argv[])
   if (writehfiltered==VTRUE)
     {
       VipSingleThreshold( compressed, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
-      VipWriteTivoliVolume(compressed,hfilteredname);
+      VipWriteVolume(compressed,hfilteredname);
 
     }
   VipFreeVolume(compressed);
@@ -933,7 +933,7 @@ int main(int argc, char *argv[])
   if(fullresult==PB) return(VIP_CL_ERROR);
   if(writefield==VTRUE)
       {
-	  if(VipWriteTivoliVolume(fullresult,fieldname)==PB) return(VIP_CL_ERROR);
+	  if(VipWriteVolume(fullresult,fieldname)==PB) return(VIP_CL_ERROR);
       }
 
   printf("Correcting volume...\n");
@@ -941,15 +941,7 @@ int main(int argc, char *argv[])
 
   VipFreeVolume(fullresult);
 
-  if (writelib == TIVOLI)
-    {
-      if(VipWriteTivoliVolume(vol,output)==PB) return(VIP_CL_ERROR);
-    }
-  else if (writelib==SPM)
-      {
-	  if(VipWriteSPMVolume( vol,output )==PB) return(VIP_CL_ERROR);
-      }
-  else if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
+  if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
   /*
   compressed = VipComputeCompressedVolume( vol, compression);
   gradient = VipComputeCrestGrad(white_crest, compressed);
