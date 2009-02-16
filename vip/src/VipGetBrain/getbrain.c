@@ -89,6 +89,8 @@ int main(int argc, char *argv[])
   char point_filename[VIP_NAME_MAXLEN]="";
   VipTalairach tal, *talptr=NULL;
   int talset = VFALSE;
+  int layer = 0;
+  int l;
 
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -273,6 +275,18 @@ int main(int argc, char *argv[])
 	  else
 	    {
 	      VipPrintfError("fill option is a y/n switch");
+	      VipPrintfExit("(commandline)VipGetBrain");
+	      return(VIP_CL_ERROR);
+	    }
+	}
+        else if (!strncmp (argv[i], "-layer", 2)) 
+	{
+	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+	  layer = atoi(argv[i]);
+
+	  if(layer<0 || layer>5) 
+	    {
+	      VipPrintfError("layer option: 0 to 5 iterations");
 	      VipPrintfExit("(commandline)VipGetBrain");
 	      return(VIP_CL_ERROR);
 	    }
@@ -656,6 +670,17 @@ int main(int argc, char *argv[])
       VipPrintfError("Not implemented yet\n");
       return(VIP_CL_ERROR);
     }
+    
+    /*2009 Try to add a hack to fill up some  partial volume voxels in order to get result stable to the variability
+      of the histogram analysis*/
+     
+   if (layer>0)
+   {
+   	printf("Reading volume once again for partial volume tuning...\n");
+   	vol2 = VipReadVolumeWithBorder(input,1);  
+	for (l=layer;l--;)  
+     	   if(VipDilateInPartialVolume(vol2, vol)==PB) return(VIP_CL_ERROR); 
+   } 
         
   if(fillwhite=='y' && ana)
     {
@@ -808,6 +833,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-n[iter] {int nb iteration of classif. regularization (def:1)}]\n"); 
   (void)fprintf(stderr,"        [-p[atho] {pathology binary mask, default:no}]\n");
   (void)fprintf(stderr,"        [-f[ill] {char y/n: fill white cavities ,default:y}]\n");
+  (void)fprintf(stderr,"        [-l[ayer] {int nb of extension into partial volume (def:0, max 5)}]\n");
   (void)fprintf(stderr,"        [-c[olor] {char b/g: binary/graylevel, default:b}]\n");
   (void)fprintf(stderr,"        [-Cl[ose] {char y/n: close the brain ,default:n}]\n");
   (void)fprintf(stderr,"        [-Cs[ize] {float: closing size ,default:10mm}]\n");
@@ -884,6 +910,8 @@ static int Help()
   (void)printf("The aim is to get rid of MR ghost effect disturbing morphomath\n");
   (void)printf("BE carefull, the default is related to SHFJ ordering (the neck is in last slices)\n");
   (void)printf("WARNING: if your image is spm normalized, put this setting to zero!!!\n");
+  (void)printf("        [-l[ayer] {int nb of extension into partial volume (def:0, max 5)}]\n");
+  (void)printf("Add layers of voxels (6-neighbors) if it is improving contrast at mask contour\n");
   (void)printf("        [-f[ill] {char y/n: fill white cavities ,default:y}]\n");
   (void)printf("fill in 6-connected cavities of mask which are mainly above white matter mean\n");
   (void)printf("        [-C[lose] {char y/n: close the brain , default:n}]\n");

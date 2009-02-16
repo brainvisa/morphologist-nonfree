@@ -51,6 +51,72 @@ int GetSinusBucket(  Volume *vol, Volume *brain,
 
 
 
+/*---------------------------------------------------------------------------*/
+int VipDilateInPartialVolume(Volume *vol, Volume *mask)
+{
+
+  Vip_S16BIT *vol_ptr;
+  Vip_S16BIT *mask_ptr, *voisin;
+  int mask_val, partial_val, next_val;
+  VipOffsetStruct *vos;
+  VipConnectivityStruct *vcs6;
+  int icon;
+  int ix, iy, iz;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(mask)==PB)
+    {
+      VipPrintfExit("(VipDilateInPartialVolume");
+      return(PB);
+    }
+    
+          vos = VipGetOffsetStructure(vol);
+	  vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
+	  
+	  vol_ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+	  mask_ptr = VipGetDataPtr_S16BIT( mask ) + vos->oFirstPoint;	  
+	  
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+		{
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if(!(*mask_ptr)) 
+			{
+			   for ( icon = 0;icon<vcs6->nb_neighbors;icon++)
+			  	{
+			            voisin = mask_ptr + vcs6->offset[icon];
+				    if (*voisin==255)
+				     {	        
+			                mask_val = *(vol_ptr + vcs6->offset[icon]);
+			                partial_val = *vol_ptr;
+					next_val = *(vol_ptr - vcs6->offset[icon]);
+					if ((partial_val - next_val)>(mask_val-partial_val))
+					{
+					   *mask_ptr=512;
+					   break;
+					}
+						
+				    }
+				 }
+			   }
+						
+		      mask_ptr++;
+		      vol_ptr++;
+		    }
+		  mask_ptr += vos->oPointBetweenLine;  /*skip border points*/
+		  vol_ptr += vos->oPointBetweenLine;  /*skip border points*/
+		}
+	      mask_ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      vol_ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+		
+    return(OK);
+		
+}
+/*---------------------------------------------------------------------------*/
+
+
 
 /*---------------------------------------------------------------------------*/
 int VipGetBrain2005(
@@ -70,7 +136,7 @@ Volume *ridge
 
  */
 {
-  Volume *brain=NULL, *mask=NULL, *classif=NULL, *white=NULL, *volcopy=NULL;
+  Volume *mask=NULL, *classif=NULL, *white=NULL, *volcopy=NULL;
   float erosion_size;
   float dilation_size;
   float threshold_dist;
