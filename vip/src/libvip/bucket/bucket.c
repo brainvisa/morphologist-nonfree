@@ -23,6 +23,9 @@
 
 
 #include <vip/bucket.h>
+#if defined( _WIN32 ) || defined( __APPLE__ )
+#define _VIP_AVOID_REALLOC
+#endif
 
 /*------------------------------------------------------------------*/
 VipG2DBucket *VipAllocG2DBucket(int size)
@@ -59,6 +62,10 @@ int VipDwindleG2DBucket(VipG2DBucket *vec)
 {
   VipG2DPoint *newb;
 
+#ifdef _VIP_AVOID_REALLOC
+  size_t size, oldsize;
+#endif
+
   if(vec==NULL)
     {
       VipPrintfExit("VipDwindleG2DBucket");
@@ -71,6 +78,36 @@ int VipDwindleG2DBucket(VipG2DBucket *vec)
     }
   else
     {
+#ifdef _VIP_AVOID_REALLOC
+      size = vec->n_points * sizeof(VipG2DPoint);
+      oldsize = vec->size * sizeof(VipG2DPoint);
+      if( size < oldsize ) /* shrink: avoid windows bug... */
+      {
+        newb = (VipG2DPoint *)VipMalloc( size, "");
+        if (newb==NULL)
+        {
+          VipPrintfError("Memory pb in realloc");
+          VipPrintfExit("VipDwindleG2DBucket");
+          return(PB);
+        }
+        if( vec->data != NULL )
+        {
+          memcpy( newb, vec->data, size <= oldsize ? size : oldsize );
+          VipFree( vec->data );
+        }
+      }
+      else
+      {
+        newb = (VipG2DPoint *)VipRealloc((void *)(vec->data),
+                vec->n_points * sizeof(VipG2DPoint), "");
+      	if (newb==NULL)
+        {
+          VipPrintfError("Memory pb in realloc");
+          VipPrintfExit("VipDwindleG2DBucket");
+          return(PB);
+        }
+      }
+#else
 	newb = (VipG2DPoint *)VipRealloc((void *)(vec->data),
 					vec->n_points * sizeof(VipG2DPoint),
 					"");
@@ -80,7 +117,8 @@ int VipDwindleG2DBucket(VipG2DBucket *vec)
       	  VipPrintfExit("VipDwindleG2DBucket");
           return(PB);
     	}
-	vec->data = newb;
+#endif
+        vec->data = newb;
 	vec->size = vec->n_points;
     }
   return(OK);
@@ -162,6 +200,10 @@ int VipDwindleG3DBucket(VipG3DBucket *vec)
 {
   VipG3DPoint *newb;
 
+#ifdef _VIP_AVOID_REALLOC
+  size_t size, oldsize;
+#endif
+
   if(vec==NULL)
     {
       VipPrintfExit("VipDwindleG3DBucket");
@@ -174,6 +216,36 @@ int VipDwindleG3DBucket(VipG3DBucket *vec)
     }
   else
     {
+#ifdef _VIP_AVOID_REALLOC
+      size = vec->n_points * sizeof(VipG3DPoint);
+      oldsize = vec->size * sizeof(VipG3DPoint);
+      if( size < oldsize ) /* shrink: avoid windows bug... */
+      {
+        newb = (VipG3DPoint *)VipMalloc( size, "");
+        if (newb==NULL)
+        {
+          VipPrintfError("Memory pb in realloc");
+          VipPrintfExit("VipDwindleG3DBucket");
+          return(PB);
+        }
+        if( vec->data != NULL )
+        {
+          memcpy( newb, vec->data, size <= oldsize ? size : oldsize );
+          VipFree( vec->data );
+        }
+      }
+      else
+      {
+        newb = (VipG3DPoint *)VipRealloc((void *)(vec->data),
+                vec->n_points * sizeof(VipG3DPoint), "");
+      	if (newb==NULL)
+        {
+          VipPrintfError("Memory pb in realloc");
+          VipPrintfExit("VipDwindleG3DBucket");
+          return(PB);
+        }
+      }
+#else
 	newb = (VipG3DPoint *)VipRealloc((void *)(vec->data),
 					vec->n_points * sizeof(VipG3DPoint),
 					"");
@@ -183,7 +255,8 @@ int VipDwindleG3DBucket(VipG3DBucket *vec)
       	  VipPrintfExit("VipDwindleG3DBucket");
           return(PB);
     	}
-	vec->data = newb;
+#endif
+        vec->data = newb;
 	vec->size = vec->n_points;
     }
   return(OK);
