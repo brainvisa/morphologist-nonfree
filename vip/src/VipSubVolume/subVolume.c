@@ -35,7 +35,6 @@
 static void Usage()
 { (void)fprintf(stderr,"Usage: VipSubVolume\n");
   (void)fprintf(stderr,"\t\t-i[nput] {image name}\n");
-  (void)fprintf(stderr,"\t\t-f[loat] y/n {default:no}\n");
   (void)fprintf(stderr,"\t\t[-o[utput] {image name (default:\"subvolume\")}]\n");
   (void)fprintf(stderr,"\t\t[-x {first X coordinate}] (default:0)\n");
   (void)fprintf(stderr,"\t\t[-y {first Y coordinate}] (default:0)\n");
@@ -46,8 +45,6 @@ static void Usage()
   (void)fprintf(stderr,"\t\t[-Z {last Z coordinate or sub-volume Z-dimension}] (default:SizeZ)\n");
   (void)fprintf(stderr,"\t\t[-T {last T coordinate or sub-volume T-dimension}] (default:SizeT)\n");
   (void)fprintf(stderr,"\t\t[-l] {take X,Y,Z and T as dimensions instead of coordinates}\n");
-  (void)fprintf(stderr,"\t\t[-r[eadformat] {char: v or t (default:t)}]\n");
-  (void)fprintf(stderr,"\t\t[-w[riteformat] {char: v or t (default:t)}]\n");
   (void)fprintf(stderr,"\t\t[-h[elp]]\n");
   exit(-1);
 }
@@ -80,9 +77,8 @@ int main(int argc, char *argv[])
 { VIP_DEC_VOLUME(vol);
   VIP_DEC_VOLUME(volout);
   char output[VIP_NAME_MAXLEN]="subvolume";
-  int scalefactors = VFALSE;
   char *input=NULL;
-  int i, xd=0, yd=0, zd=0, td=0, dx=-1, dy=-1, dz=-1, dt=-1, isDim=0, readlib=TIVOLI, writelib=TIVOLI;  
+  int i, xd=0, yd=0, zd=0, td=0, dx=-1, dy=-1, dz=-1, dt=-1, isDim=0;  
 
   /***** gestion des arguments *****/
   for (i=1; i<argc; i++)
@@ -131,36 +127,6 @@ int main(int argc, char *argv[])
       dt = atoi(argv[i]);
     }
     else if (!strncmp(argv[i], "-l", 2))  isDim = 1;
-    else if (!strncmp(argv[i], "-float", 2)) 
-    { if ((++i >= argc) || !strncmp(argv[i],"-",1))  Usage();
-      if (argv[i][0] == 'y')  scalefactors = VTRUE;
-      else if (argv[i][0] == 'n')  scalefactors = VFALSE;
-      else
-      { VipPrintfError("float flag asks for yes or no answer");
-        VipPrintfExit("(commandline)VipSubVolume");
-        Usage();
-      }
-    }
-    else if (!strncmp(argv[i], "-readformat", 2)) 
-    { if ((++i >= argc) || !strncmp(argv[i],"-",1))  Usage();
-      if (argv[i][0] == 't')  readlib = TIVOLI;
-      else if (argv[i][0] == 'v')  readlib = VIDA;
-      else
-      { VipPrintfError("This format is not implemented for reading");
-        VipPrintfExit("(commandline)VipSubVolume");
-        Usage();
-      }
-    }
-    else if (!strncmp(argv[i], "-writeformat", 2)) 
-    { if ((++i >= argc) || !strncmp(argv[i],"-",1))  Usage();
-      if (argv[i][0] == 't')  writelib = TIVOLI;
-      else if (argv[i][0] == 'v')  writelib = VIDA;
-      else
-      { VipPrintfError("This format is not implemented for writing");
-        VipPrintfExit("(commandline)VipSubVolume");
-        Usage();
-      }
-    }
     else if (!strncmp(argv[i], "-help", 2))  Help();
     else Usage();
   }
@@ -170,12 +136,6 @@ int main(int argc, char *argv[])
     Usage();
   }
 
-  /***** supprime les extensions des noms si elles existent  *****/
-  if (strstr(input, ".vimg") != NULL)  *strstr(input, ".vimg") = '\0';
-  if (strstr(input, ".ima") != NULL)  *strstr(input, ".ima") = '\0';
-  if (strstr(output, ".vimg") != NULL)  *strstr(output, ".vimg") = '\0';
-  if (strstr(output, ".ima") != NULL)  *strstr(output, ".ima") = '\0';
-
   if (VipTestImageFileExist(input)==PB)
    {
       (void)fprintf(stderr,"Can not open this image: %s\n",input);
@@ -183,24 +143,11 @@ int main(int argc, char *argv[])
    }
 
   printf("\nReading initial volume : %s ...\n", input);
-  if(scalefactors==VTRUE)
+  if ( ( vol = VipReadVolume(input) ) == (Volume *)PB)
     {
-      vol = VipReadVidaFloatVolume(input);
-      if(!vol)
-	{
-	  VipPrintfError("Error while reading volume.");
-	  VipPrintfExit("(commandline)VipSubVolume.");
-	  exit(EXIT_FAILURE);
-	}
-    }
-  else
-    {
-      if ((vol = (readlib == VIDA) ? VipReadVolume(input) : VipReadTivoliVolume(input)) == (Volume *)PB)
-	{
-	  VipPrintfError("Error while reading volume.");
-	  VipPrintfExit("(commandline)VipSubVolume.");
-	  exit(EXIT_FAILURE);
-	}
+      VipPrintfError("Error while reading volume.");
+      VipPrintfExit("(commandline)VipSubVolume.");
+      exit(EXIT_FAILURE);
     }
 
   if (dx == -1)  dx = mVipVolSizeX(vol)-1*(!isDim);
@@ -220,15 +167,7 @@ int main(int argc, char *argv[])
 
   printf("Saving sub-volume : %s ...\n", output);
 
-  if(scalefactors==VTRUE)
-    {
-      VipWriteVidaScaledVolume(volout,output);      
-    }
-  else
-    {
-      if (writelib == VIDA)  VipWriteVolume(volout, output);
-      else VipWriteTivoliVolume(volout, output);
-    }
+  VipWriteVolume(volout, output);
 
   VipFreeVolume(vol);
   VipFreeVolume(volout);
