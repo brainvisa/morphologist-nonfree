@@ -52,6 +52,95 @@ int GetSinusBucket(  Volume *vol, Volume *brain,
 
 
 /*---------------------------------------------------------------------------*/
+
+int VipDilateInPartialVolumeFar(Volume *vol, Volume *mask, int layer)
+{
+
+  Vip_S16BIT *vol_ptr;
+  Vip_S16BIT *mask_ptr, *voisin;
+  int mask_val, partial_val, next_val, next_val2;
+  VipOffsetStruct *vos;
+  VipConnectivityStruct *vcs6;
+  int icon;
+  int ix, iy, iz;
+
+  if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(mask)==PB)
+    {
+      VipPrintfExit("(VipDilateInPartialVolume");
+      return(PB);
+    }
+    
+   if (layer>2)
+   {
+      VipPrintfExit("(VipDilateInPartialVolumeFar, layer not implemented beyond 2 voxels");
+      return(PB);
+    }
+          vos = VipGetOffsetStructure(vol);
+	  vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
+	  
+	  vol_ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+	  mask_ptr = VipGetDataPtr_S16BIT( mask ) + vos->oFirstPoint;	  
+	  
+	  for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+	    {
+	      for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+		{
+		  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+		    {
+		      if(!(*mask_ptr)) 
+			{
+			   for ( icon = 0;icon<vcs6->nb_neighbors;icon++)
+			  	{
+			            voisin = mask_ptr + vcs6->offset[icon];
+				    if (*voisin==255)
+				     {	        
+			                mask_val = *(vol_ptr + vcs6->offset[icon]);
+			                partial_val = *vol_ptr;
+                                        if (layer==1)
+					{
+						next_val = *(vol_ptr - vcs6->offset[icon]);
+						if ((partial_val - next_val)>(mask_val-partial_val))
+						{
+					   		*mask_ptr=512;
+					   		break;
+						}
+					}
+                                        else if (layer==2)
+					{
+						next_val = *(vol_ptr - vcs6->offset[icon]);
+						next_val2 = *(vol_ptr - 2*vcs6->offset[icon]);
+						if ((partial_val - next_val)>(mask_val-partial_val) && 
+							(next_val-next_val2)<(partial_val - next_val))
+						{
+					   		*mask_ptr=512;
+					   		break;
+						}
+						else if ((next_val-next_val2)>2*(mask_val-partial_val) && 
+							(next_val-next_val2)>2*(partial_val - next_val))
+						{
+					   		*mask_ptr=512;
+                                                        *(mask_ptr- vcs6->offset[icon]) = 512;
+					   		break;
+						}
+					}
+				    }
+				 }
+			   }
+						
+		      mask_ptr++;
+		      vol_ptr++;
+		    }
+		  mask_ptr += vos->oPointBetweenLine;  /*skip border points*/
+		  vol_ptr += vos->oPointBetweenLine;  /*skip border points*/
+		}
+	      mask_ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	      vol_ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	    }
+		
+    return(OK);
+		
+}
+
 int VipDilateInPartialVolume(Volume *vol, Volume *mask)
 {
 
@@ -110,6 +199,9 @@ int VipDilateInPartialVolume(Volume *vol, Volume *mask)
 	      mask_ptr += vos->oLineBetweenSlice; /*skip border lines*/
 	      vol_ptr += vos->oLineBetweenSlice; /*skip border lines*/
 	    }
+
+      VipSingleThreshold( mask, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
+
 		
     return(OK);
 		

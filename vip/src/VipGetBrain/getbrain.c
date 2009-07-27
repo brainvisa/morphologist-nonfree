@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
   int talset = VFALSE;
   int layer = 0;
   int l;
+  char layeronly = 'n';
 
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -275,6 +276,18 @@ int main(int argc, char *argv[])
 	  else
 	    {
 	      VipPrintfError("fill option is a y/n switch");
+	      VipPrintfExit("(commandline)VipGetBrain");
+	      return(VIP_CL_ERROR);
+	    }
+	}
+       else if (!strncmp (argv[i], "-lonly", 3)) 
+	{
+	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+	  if(argv[i][0]=='n') layeronly = 'n';
+	  else if(argv[i][0]=='y') layeronly = 'y';
+	  else
+	    {
+	      VipPrintfError("lonly option is a y/n switch");
 	      VipPrintfExit("(commandline)VipGetBrain");
 	      return(VIP_CL_ERROR);
 	    }
@@ -499,6 +512,7 @@ int main(int argc, char *argv[])
   if(brainflag==VFALSE) strcat(brainname,input);
   if(closedflag==VFALSE) strcat(closedname,input);
   
+  if (layeronly=='y') analyse='n';
   if(analyse=='y')
      {
        ana = VipGetT1HistoAnalysisCustomized(vol,track,dscale);
@@ -556,7 +570,7 @@ int main(int argc, char *argv[])
 	  ana->white->right_sigma = ana->white->sigma;
 	}
     }
-  else
+  else if (layeronly=='n')
     {
         ana = VipCalloc(1,sizeof(VipT1HistoAnalysis),"(commandLine)(VipGetBrain");
 	if(ana==PB) return(VIP_CL_ERROR);
@@ -566,22 +580,25 @@ int main(int argc, char *argv[])
 	if(ana->white==PB) return(VIP_CL_ERROR);
     }
   
-  if(gmean>0 && ana->gray) ana->gray->mean = gmean;
-  if(wmean>0 && ana->white) ana->white->mean = wmean;
-  if(gsigma>0 && ana->gray)
+  if(layeronly=='n')
+  {
+  	if(gmean>0 && ana->gray) ana->gray->mean = gmean;
+ 	 if(wmean>0 && ana->white) ana->white->mean = wmean;
+  	if(gsigma>0 && ana->gray)
     {
       ana->gray->left_sigma = gsigma;
       ana->gray->sigma = gsigma;
       ana->gray->right_sigma = gsigma;
     }
-  if(wsigma>0 && ana->white)
+  	if(wsigma>0 && ana->white)
     {
       ana->white->left_sigma = wsigma;
       ana->white->sigma = wsigma;
       ana->white->right_sigma = wsigma;
     }
+  
 
-  if(mode=='f')
+    if(mode=='f')
     {
       if(Tlow<=0) 
 	{
@@ -620,7 +637,7 @@ int main(int argc, char *argv[])
 	}
     }
   
-  if(strcmp(pathoname,""))
+    if(strcmp(pathoname,""))
     {
       printf("Reading pathology mask...\n");
       patho = VipReadVolumeWithBorder(pathoname,1);
@@ -630,7 +647,7 @@ int main(int argc, char *argv[])
       VipFreeVolume(patho);
     }
 
-  if(ana && (strcmp(point_filename,"")||talset==VTRUE))
+    if(ana && (strcmp(point_filename,"")||talset==VTRUE))
     {
       vol2=NULL;
       if(GetCommissureCoordinates(vol, point_filename, &tal,
@@ -642,7 +659,7 @@ int main(int argc, char *argv[])
       talptr = &tal;
     }
 
-  if (ridgename!=NULL)
+    if (ridgename!=NULL)
     {
       if(mode!='5')
         VipPrintfWarning("Ridge image useless without mode 5");
@@ -670,6 +687,7 @@ int main(int argc, char *argv[])
       VipPrintfError("Not implemented yet\n");
       return(VIP_CL_ERROR);
     }
+ }
     
     /*2009 Try to add a hack to fill up some  partial volume voxels in order to get result stable to the variability
       of the histogram analysis*/
@@ -678,8 +696,9 @@ int main(int argc, char *argv[])
    {
    	printf("Reading volume once again for partial volume tuning...\n");
    	vol2 = VipReadVolumeWithBorder(input,1);  
-	for (l=layer;l--;)  
-     	   if(VipDilateInPartialVolume(vol2, vol)==PB) return(VIP_CL_ERROR); 
+        if(layeronly=='y')
+   		vol = VipReadVolumeWithBorder(brainname,1);  
+     	if(VipDilateInPartialVolumeFar(vol2, vol,layer)==PB) return(VIP_CL_ERROR); 
    } 
         
   if(fillwhite=='y' && ana)
@@ -833,7 +852,8 @@ static int Usage()
   (void)fprintf(stderr,"        [-n[iter] {int nb iteration of classif. regularization (def:1)}]\n"); 
   (void)fprintf(stderr,"        [-p[atho] {pathology binary mask, default:no}]\n");
   (void)fprintf(stderr,"        [-f[ill] {char y/n: fill white cavities ,default:y}]\n");
-  (void)fprintf(stderr,"        [-l[ayer] {int nb of extension into partial volume (def:0, max 5)}]\n");
+  (void)fprintf(stderr,"        [-l[ayer] {int nb of extension into partial volume (def:0, max 2)}]\n");
+  (void)fprintf(stderr,"        [-lo[nly] {char y/n default:n, with yes do only layer processing (reading mask)]\n");
   (void)fprintf(stderr,"        [-c[olor] {char b/g: binary/graylevel, default:b}]\n");
   (void)fprintf(stderr,"        [-Cl[ose] {char y/n: close the brain ,default:n}]\n");
   (void)fprintf(stderr,"        [-Cs[ize] {float: closing size ,default:10mm}]\n");
@@ -894,7 +914,6 @@ static int Help()
   (void)printf("        [-p[atho] {pathology binary mask, default:no}]\n");
   (void)printf("add a mask of the lesion to the binary mask before erosion to get brain seed\n");
   (void)printf("This can solve bad morphological process\n");
-
   (void)printf("        [-n[iter] {int nb iteration of classif. regularization (def:1)}]\n"); 
   (void)printf("The binary classification is regularized using Markov random field and\n");
   (void)printf("ICM minimization (nb iter). This maily prevents the opening effect\n");
@@ -910,8 +929,10 @@ static int Help()
   (void)printf("The aim is to get rid of MR ghost effect disturbing morphomath\n");
   (void)printf("BE carefull, the default is related to SHFJ ordering (the neck is in last slices)\n");
   (void)printf("WARNING: if your image is spm normalized, put this setting to zero!!!\n");
-  (void)printf("        [-l[ayer] {int nb of extension into partial volume (def:0, max 5)}]\n");
+  (void)printf("        [-l[ayer] {int nb of extension into partial volume (def:0, max 2)}]\n");
   (void)printf("Add layers of voxels (6-neighbors) if it is improving contrast at mask contour\n");
+  (void)printf("        [-lo[nly] {char y/n default:n, with yes do only layer processing (reading mask)]\n");
+  (void)printf("This is for postprocessing of bad quality mask images\n");
   (void)printf("        [-f[ill] {char y/n: fill white cavities ,default:y}]\n");
   (void)printf("fill in 6-connected cavities of mask which are mainly above white matter mean\n");
   (void)printf("        [-C[lose] {char y/n: close the brain , default:n}]\n");
