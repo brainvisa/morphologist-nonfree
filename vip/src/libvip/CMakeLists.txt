@@ -12,14 +12,8 @@ BRAINVISA_GET_FILE_LIST_FROM_PRO( ${CMAKE_CURRENT_SOURCE_DIR}/libvip.pro
 #------------------------------------------------------------------------------
 #SET( _doxygenInput )
 SET( _headersDir vip )
-# Copy static headers in build directory but do not install them
-FOREACH( _currentHeader ${_headersStatic} )
-  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/${_currentHeader}
-                  ${CMAKE_BINARY_DIR}/include/${_headersDir}/${_currentHeader}
-                  COPYONLY )
-ENDFOREACH( _currentHeader ${_proHeaders} )
 # Copy headers in build directory and install them
-BRAINVISA_COPY_AND_INSTALL_HEADERS( _headers vip )
+BRAINVISA_COPY_AND_INSTALL_HEADERS( _headers vip headersTarget )
 
 
 #------------------------------------------------------------------------------
@@ -53,6 +47,7 @@ ENDFOREACH( _currentGeneric ${_generics} )
 # Define vip library
 #------------------------------------------------------------------------------
 ADD_LIBRARY( vip SHARED ${_sources} )
+add_dependencies( vip ${headersTarget} )
 set_property( TARGET vip PROPERTY VERSION ${${PROJECT_NAME}_VERSION} )
 TARGET_LINK_LIBRARIES( vip ${AIMS-FREE_LIBRARIES} )
 BRAINVISA_INSTALL( TARGETS vip DESTINATION lib COMPONENT vip )
