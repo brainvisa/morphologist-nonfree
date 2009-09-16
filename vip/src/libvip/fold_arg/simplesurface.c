@@ -891,7 +891,7 @@ int VipComputeTmtkTriangulation( Volume *skeleton, FoldArg *arg)
     strcpy(shortname,root1);   
 
     printf("----------------------------------------------\n");
-    printf("Computing triangulations using Tmtk library...\n");
+    printf("Computing triangulations using AIMS library...\n");
     printf("----------------------------------------------\n");
 
     sprintf(filename,"%s.data",arg->name);

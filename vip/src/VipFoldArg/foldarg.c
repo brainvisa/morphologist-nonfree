@@ -176,6 +176,12 @@ int main(int argc, char *argv[])
       VipWriteOldFoldArg( arg, output);
   else if(write=='g')
     {
+      if( strlen( argname ) >= 4 && !strcmp( argname + strlen(arg->name) - 4,
+          ".arg" ) )
+      {
+        argname[ strlen(argname) - 4 ] = '\0';
+      }
+
       if( argname != NULL && strcmp(output,argname))
 	{
 	  sprintf(buffer,"%s.data",output);

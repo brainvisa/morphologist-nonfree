@@ -317,6 +317,12 @@ int main(int argc, char *argv[])
   arg = VipReadOldFoldArg(argname);
   if(arg==PB) return(VIP_CL_ERROR);
 
+  if( strlen( arg->name ) >= 4 && !strcmp( arg->name + strlen(arg->name) - 4,
+      ".arg" ) )
+  {
+    arg->name[ strlen(arg->name) - 4 ] = '\0';
+  }
+
   if(Talairach=='y'&& triangulation!='o')
       {
 	  arg->CA.x = tal.AC.x;

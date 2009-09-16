@@ -1390,29 +1390,57 @@ sain que le format intermediaire Vip disparaisse*/
             sprintf( dstfilename, "%s.data/Tmtk/%s-tmt%d.mesh", name, 
                      shortname, ssptr->index );
             VipMv( buckfilename, dstfilename );
-	    
+
+            sprintf( buckfilename, "%s.data/Tmtk/*tmt%d.gii", name,
+                     ssptr->index );
+            sprintf( dstfilename, "%s.data/Tmtk/%s-tmt%d.gii", name,
+                     shortname, ssptr->index );
+            VipMv( buckfilename, dstfilename );
+
+            sprintf( buckfilename, "%s.data/Tmtk/*tmt%d.tri", name,
+                     ssptr->index );
+            sprintf( dstfilename, "%s.data/Tmtk/%s-tmt%d.tri", name,
+                     shortname, ssptr->index );
+            VipMv( buckfilename, dstfilename );
+
 	    sprintf( buckfilename, "%s.data/Tmtk/%s-tmt%d.tri", name, 
                      shortname, ssptr->index );
 	    testf = fopen(buckfilename,"r");
 	    if(testf)
-		{
-		    fclose(testf);
-		    sprintf(buckfilename,"Tmtk/%s-tmt%d.tri",shortname,ssptr->index);
-		    fprintf(f,"Tmtktri_filename %s\n",buckfilename);
-		}
+            {
+              fclose(testf);
+              sprintf(buckfilename,"Tmtk/%s-tmt%d.tri",shortname,ssptr->index);
+              fprintf(f,"Tmtktri_filename %s\n",buckfilename);
+            }
 	    else
-	      {
-		sprintf(buckfilename,"%s.data/Tmtk/%s-tmt%d.mesh",name,shortname,ssptr->index);
-		testf = fopen(buckfilename,"r");
-		if(testf)
-		  {
-		    fclose(testf);
-		    sprintf(buckfilename,"Tmtk/%s-tmt%d.mesh",shortname,ssptr->index);
-		    fprintf(f,"Tmtktri_filename %s\n",buckfilename);
-		  }
-	      }
+            {
+              sprintf( buckfilename, "%s.data/Tmtk/%s-tmt%d.gii", name,
+                        shortname, ssptr->index );
+              testf = fopen(buckfilename,"r");
+              if(testf)
+              {
+                fclose(testf);
+                sprintf(buckfilename,"Tmtk/%s-tmt%d.gii",shortname,
+                        ssptr->index);
+                fprintf(f,"Tmtktri_filename %s\n",buckfilename);
+              }
+              else
+              {
+                sprintf(buckfilename,"%s.data/Tmtk/%s-tmt%d.mesh",name,
+                        shortname,ssptr->index);
+                testf = fopen(buckfilename,"r");
+                if(testf)
+                {
+                  fclose(testf);
+                  sprintf(buckfilename,"Tmtk/%s-tmt%d.mesh",shortname,
+                          ssptr->index);
+                  fprintf(f,"Tmtktri_filename %s\n",buckfilename);
+                }
+              }
+            }
 
-	    sprintf(buckfilename,"%s.data%css%c%s-ss%d.bck",name,sep,sep,shortname,ssptr->index);
+	    sprintf(buckfilename,"%s.data%css%c%s-ss%d.bck",name,sep,sep,
+                    shortname,ssptr->index);
 	    fflush(stdout);
 	    buckf = fopen(buckfilename,"w");
 	    if (!buckf)
