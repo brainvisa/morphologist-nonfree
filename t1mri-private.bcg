@@ -5,12 +5,18 @@ class T1MRIPrivateComponent( GenericMakerModuleComponent ):
   def dependencies( self ):
     return ['vip']
 
+  def weakDependencies( self ):
+    if weakDependency( 'tms' ):
+      return [ 'tms' ]
+    else:
+      return []
+
   def libraries( self ):
     return []
 
 currentComponentDirectory = os.path.dirname( currentComponentFile )
 opts = options.setdefault( 't1mri-private' )
-for component in ['vip']:
+for component in ['vip', 'tms' ]:
   oldop = options.setdefault( component, {} )
   options[ component ] = copy.copy( opts )
   options[ component ].update( oldop )
