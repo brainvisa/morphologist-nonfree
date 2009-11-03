@@ -176,7 +176,8 @@ int main(int argc, char *argv[])
       VipWriteOldFoldArg( arg, output);
   else if(write=='g')
     {
-      if( strlen( argname ) >= 4 && !strcmp( argname + strlen(arg->name) - 4,
+      
+      if( argname != NULL && strlen( argname ) >= 4 && !strcmp( argname + strlen(argname) - 4,
           ".arg" ) )
       {
         argname[ strlen(argname) - 4 ] = '\0';
