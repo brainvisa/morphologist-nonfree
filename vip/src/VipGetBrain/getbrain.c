@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  if(argv[i][0]=='n') layeronly = 'n';
-	  else if(argv[i][0]=='y') layeronly = 'y';
+	  else if(argv[i][0]=='y') { layeronly = 'y'; layer=1; }
 	  else
 	    {
 	      VipPrintfError("lonly option is a y/n switch");
@@ -687,7 +687,7 @@ int main(int argc, char *argv[])
       VipPrintfError("Not implemented yet\n");
       return(VIP_CL_ERROR);
     }
- }
+ }	
     
     /*2009 Try to add a hack to fill up some  partial volume voxels in order to get result stable to the variability
       of the histogram analysis*/
@@ -697,11 +697,16 @@ int main(int argc, char *argv[])
    	printf("Reading volume once again for partial volume tuning...\n");
    	vol2 = VipReadVolumeWithBorder(input,1);  
         if(layeronly=='y')
-   		vol = VipReadVolumeWithBorder(brainname,1);  
-     	if(VipDilateInPartialVolumeFar(vol2, vol,layer)==PB) return(VIP_CL_ERROR); 
+        {
+   		vol = VipReadVolumeWithBorder(brainname,1); 
+                VipWriteVolume(vol,"brain");
+                VipWriteVolume(vol2,"nobias");
+	} 
+     	if(VipDilateInPartialVolumeFar(vol2, vol,layer)==PB) return(VIP_CL_ERROR);
+        VipSingleThreshold( vol, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT ); 
    } 
         
-  if(fillwhite=='y' && ana)
+  if(fillwhite=='y' && ana &&layeronly!='y')
     {
       if(vol2==NULL)
 	{
