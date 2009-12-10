@@ -24,6 +24,7 @@
 #include <vip/histo.h>	
 #include <vip/histo_static.h>	
 #include <vip/util/file.h>
+#include <vip/util/shelltools.h>
 
 /*---------------------------------------------------------------------------*/
 static int DetectLengthExtrema(
@@ -2104,6 +2105,26 @@ int VipCreateGnuplotFileFromExtrema(
   int writeD3,
   int writeD4
 )
+{
+  return VipCreatePlotFileFromExtrema( 0, volstruct, name, tracked, psfile,
+                                       title, writeD0, writeD1, writeD2,
+                                       writeD3, writeD4 );
+}
+
+/*---------------------------------------------------------------------------*/
+int VipCreatePlotFileFromExtrema(
+  int plottype,
+  Vip1DScaleSpaceStruct *volstruct,
+  char *name,
+  int tracked,
+  int psfile,
+  int title,
+  int writeD0,
+  int writeD1,
+  int writeD2,
+  int writeD3,
+  int writeD4
+)
 /*---------------------------------------------------------------------------*/
 
 {
@@ -2130,7 +2151,7 @@ int VipCreateGnuplotFileFromExtrema(
   if(name==NULL || volstruct==NULL)
     {
       VipPrintfError("NULL arg");
-      VipPrintfExit("VipCreateGnuplotFileFromExtrema");
+      VipPrintfExit("VipCreatePlotFileFromExtrema");
       return(PB);
     }
 
@@ -2153,7 +2174,7 @@ int VipCreateGnuplotFileFromExtrema(
 
   sprintf( gpdir, "%s%cgpdir_%s", VipTmpDirectory(), VipFileSeparator(), name );
   VipMkdir( gpdir );
-  
+
   xmax = 0;
   ymax = 0;
   for(i=mVipHistoRangeMin(volstruct->histo);i<=mVipHistoRangeMax(volstruct->histo);i++)   
@@ -2169,17 +2190,20 @@ int VipCreateGnuplotFileFromExtrema(
   */
   hmax = (int)(log10((double)volstruct->itermax*0.01+1)*100);
   hmin = -(int)(0.5*hmax);
-    
+
   ratio = -hmin / (float)ymax;
 
   sprintf(fcommandname,"%s%c", VipTmpDirectory(), VipFileSeparator() );
   strcat(fcommandname,name);
-  strcat(fcommandname,".gp");
+  if( plottype == 0 )
+    strcat(fcommandname,".gp");
+  else
+    strcat( fcommandname, ".py" );
   fcommand = fopen(fcommandname,"w");
   if(!fcommand)
     {
       fprintf(stderr,"can not open %s for writing\n", fcommandname);
-      VipPrintfExit("VipCreateGnuplotFileFromExtrema");
+      VipPrintfExit("VipCreatePlotFileFromExtrema");
       return(PB);
     }
 
@@ -2187,19 +2211,44 @@ int VipCreateGnuplotFileFromExtrema(
     {
       sprintf(fcommandpsname,"%s%c", VipTmpDirectory(), VipFileSeparator() );
       strcat(fcommandpsname,name);
-      strcat(fcommandpsname,".gpps");
-      
-      fcommandps= fopen(fcommandpsname,"w");
-      if(!fcommandps)
-	{
-	  fprintf(stderr,"can not open %s for writing\n", fcommandpsname);
-	  VipPrintfExit("VipCreateGnuplotFileFromExtrema");
-	  return(PB);
-	}
+      if( plottype == 0 )
+      {
+        strcat(fcommandpsname,".gpps");
 
-      fprintf(fcommandps,"set terminal post default color\n"); 
-      fprintf(fcommandps,"set output \"%s.ps\"\n",name);
-      fclose(fcommandps);
+        fcommandps= fopen(fcommandpsname,"w");
+        if(!fcommandps)
+        {
+          fprintf(stderr,"can not open %s for writing\n", fcommandpsname);
+          VipPrintfExit("VipCreatePlotFileFromExtrema");
+          return(PB);
+        }
+
+        fprintf(fcommandps,"set terminal post default color\n");
+        fprintf(fcommandps,"set output \"%s.ps\"\n",name);
+        fclose(fcommandps);
+      }
+      else
+      {
+        /* matplotlib ps output */
+        strcat(fcommandpsname,"_ps.py");
+
+        fcommandps= fopen(fcommandpsname,"w");
+        if(!fcommandps)
+        {
+          fprintf(stderr,"can not open %s for writing\n", fcommandpsname);
+          VipPrintfExit("VipCreatePlotFileFromExtrema");
+          return(PB);
+        }
+        fprintf( fcommandps, "#!/usr/bin/env python\n" );
+        fprintf( fcommandps, "import matplotlib, os\n" );
+        fprintf( fcommandps, "matplotlib.use( 'ps' )\n" );
+        fprintf( fcommandps, "import pylab\n" );
+        fprintf( fcommandps, "def show():\n" );
+        fprintf( fcommandps, "  pylab.savefig( os.path.join( '%s', '%s.ps' ) )\n", VipTmpDirectory(), name );
+        fprintf( fcommandps, "pylab.show = show\n" );
+        fprintf( fcommandps, "execfile( '%s' )\n", fcommandname );
+        fclose( fcommandps );
+      }
     }
  
  
@@ -2212,17 +2261,49 @@ int VipCreateGnuplotFileFromExtrema(
   t1000 = (float)log10((double)1000/volstruct->dscale*0.01+1)*100;
   t2000 = (float)log10((double)2000/volstruct->dscale*0.01+1)*100;
 
- fprintf(fcommand,"#gnuplot command file to look at %s histogram and primal sketch analysis result\n",name);
- fprintf(fcommand,"cd \"%s%cgpdir_%s\"\n", VipTmpDirectory(), VipFileSeparator(), name );
-  fprintf(fcommand,"set xtics (\"0\" 0, \"\" 10, \"\" 20, \"\" 30, \"\"40, \"50\" 50,\"\" 60,\"\" 70,\"\" 80,\"\" 90,\"100\" 100,\"\" 110,\"\" 120,\"\" 130,\"\" 140,\"150\" 150,\"\" 160,\"\" 170,\"\" 180,\"\" 190,\"200\" 200,\"\" 210,\"\" 220,\"\" 230,\"\" 240,\"250\" 250,\"\" 260,\"\" 270,\"\" 280,\"\" 290,\"300\" 300,\"\" 310,\"\" 320,\"\" 330,\"\" 340,\"350\" 350)\n");
-  fprintf(fcommand,"set ytics (\"10\" %f,\"20\" %f, \"50\" %f, \"100\" %f, \"200\" %f,\"500\" %f, \"1000\" %f, \"2000\" %f)\n",t10,t20,t50,t100,t200,t500,t1000,t2000);
-  fprintf(fcommand,"p(x)=%d+%f*x\n",hmin,ratio);
-  if(title==VTRUE)
+  switch( plottype )
+  {
+  case 0:
+    /* gnuplot*/
+    fprintf(fcommand,"#gnuplot command file to look at %s histogram and primal sketch analysis result\n",name);
+    fprintf(fcommand,"cd \"%s%cgpdir_%s\"\n", VipTmpDirectory(),
+            VipFileSeparator(), name );
+    fprintf(fcommand,"set xtics (\"0\" 0, \"\" 10, \"\" 20, \"\" 30, \"\"40, \"50\" 50,\"\" 60,\"\" 70,\"\" 80,\"\" 90,\"100\" 100,\"\" 110,\"\" 120,\"\" 130,\"\" 140,\"150\" 150,\"\" 160,\"\" 170,\"\" 180,\"\" 190,\"200\" 200,\"\" 210,\"\" 220,\"\" 230,\"\" 240,\"250\" 250,\"\" 260,\"\" 270,\"\" 280,\"\" 290,\"300\" 300,\"\" 310,\"\" 320,\"\" 330,\"\" 340,\"350\" 350)\n");
+    fprintf(fcommand,"set ytics (\"10\" %f,\"20\" %f, \"50\" %f, \"100\" %f, \"200\" %f,\"500\" %f, \"1000\" %f, \"2000\" %f)\n",t10,t20,t50,t100,t200,t500,t1000,t2000);
+    fprintf(fcommand,"p(x)=%d+%f*x\n",hmin,ratio);
+    if(title==VTRUE)
       fprintf(fcommand,"plot [%d:%d] [%d:%d] \"%s_offset.his\" thru p(x) w l lw 5",0,xmax,hmin,hmax,name);
-  else
+    else
       fprintf(fcommand,"plot [%d:%d] [%d:%d] \"%s_offset.his\" thru p(x) notitle w l lw 5",0,xmax,hmin,hmax,name);
-
- 
+    break;
+  case 1:
+    /* matplotlib */
+    fprintf( fcommand, "#!/usr/bin/env python\n" );
+    fprintf( fcommand, "#matplotlib command file to look at %s histogram and "
+      "primal sketch analysis result\n\n", name );
+    fprintf( fcommand, "import pylab, numpy, os\n\n" );
+    /* fprintf( fcommand, "pylab.yscale( 'log' )\n" ); */
+    fprintf( fcommand, "name = '%s'\n", name );
+    fprintf( fcommand, "tmpdir = os.path.join( '%s', 'gpdir_' + name )\n",
+             VipTmpDirectory() );
+    fprintf( fcommand, "his_offset_name = os.path.join( tmpdir, "
+      "name + '_offset.his' )\n" );
+    fprintf( fcommand, "tab = open( his_offset_name ).readlines()\n" );
+    fprintf( fcommand, "his_offset = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+    if( title == VTRUE )
+    {
+      fprintf( fcommand, "pylab.title( name )\n" );
+      fprintf( fcommand, "kw = { 'label': name + '_offset' }\n" );
+    }
+    else
+      fprintf( fcommand, "kw = {}\n" );
+    fprintf( fcommand, "pylab.plot( his_offset[0], %d + %f * his_offset[1], lw=5, **kw )\n", hmin, ratio );
+    fprintf( fcommand, "pylab.yticks( [ %f, %f, %f, %f, %f, %f, %f, %f ], [ 10, 20, 50, 100, 200, 500, 1000, 2000 ] )\n",
+             t10, t20, t50, t100, t200, t500, t1000, t2000 );
+    break;
+  default:
+    break;
+  }
 
  
   sprintf(histoname,"%s%cgpdir_%s%c", VipTmpDirectory(), VipFileSeparator(),name, 
@@ -2254,8 +2335,8 @@ int VipCreateGnuplotFileFromExtrema(
     }
   if(writeD0==VTRUE)
       {
-	  strcat(filename[D0m],".D0m");
-	  strcat(filename[D0M],".D0M");
+	  strcat(filename[D0m],".D0min");
+	  strcat(filename[D0M],".D0Max");
       }
   else
       {
@@ -2264,8 +2345,8 @@ int VipCreateGnuplotFileFromExtrema(
       }
   if(writeD1==VTRUE)
       {
-	  strcat(filename[D1m],".D1m");
-	  strcat(filename[D1M],".D1M");
+	  strcat(filename[D1m],".D1min");
+	  strcat(filename[D1M],".D1Max");
       }
   else
       {
@@ -2274,8 +2355,8 @@ int VipCreateGnuplotFileFromExtrema(
       }
   if(writeD2==VTRUE)
       {
-	  strcat(filename[D2m],".D2m");
-	  strcat(filename[D2M],".D2M");
+	  strcat(filename[D2m],".D2min");
+	  strcat(filename[D2M],".D2Max");
       }
   else
       {
@@ -2284,8 +2365,8 @@ int VipCreateGnuplotFileFromExtrema(
       }
   if(writeD3==VTRUE)
       {
-	  strcat(filename[D3m],".D3m");
-	  strcat(filename[D3M],".D3M");
+	  strcat(filename[D3m],".D3min");
+	  strcat(filename[D3M],".D3Max");
       }
   else
       {
@@ -2294,8 +2375,8 @@ int VipCreateGnuplotFileFromExtrema(
       }
   if(writeD4==VTRUE)
       {
-	  strcat(filename[D4m],".D4m");
-	  strcat(filename[D4M],".D4M");
+	  strcat(filename[D4m],".D4min");
+	  strcat(filename[D4M],".D4Max");
       }
   else
       {
@@ -2436,100 +2517,208 @@ int VipCreateGnuplotFileFromExtrema(
       }
   fclose(minimafile);
 
- if(writeD0==VTRUE)
-      {
-	  if(title==VTRUE)
-	      {
-		  fprintf(fcommand,", \"%s.D0M\" w p pt 6",name); 
-		  fprintf(fcommand,", \"%s.D0m\" w p pt 6",name);
-	      }
-	  else
-	      {
-		  fprintf(fcommand,", \"%s.D0M\" notitle w p pt 6",name); 
-		  fprintf(fcommand,", \"%s.D0m\" notitle w p pt 6",name);
-	      }
-      }
-  if(writeD1==VTRUE)
-      {
-	  if(title==VTRUE)
-	      {
-                if (some_D1M==VTRUE)  fprintf(fcommand,", \"%s.D1M\" w p pt 6",name); 
-		if (some_D1m==VTRUE)  fprintf(fcommand,", \"%s.D1m\" w p pt 6",name); 
-	      }
-	  else
-	      {
-		 if (some_D1M==VTRUE) fprintf(fcommand,", \"%s.D1M\" notitle w p pt 6",name); 
-		 if (some_D1m==VTRUE) fprintf(fcommand,", \"%s.D1m\" notitle w p pt 6",name);
-	      }
-      }
-  if(writeD2==VTRUE)
-      {
-	  if(title==VTRUE)
-	      {
-                  fprintf(fcommand,", \"%s.D2M\" w p pt 6",name); 
-		  fprintf(fcommand,", \"%s.D2m\" w p pt 6",name);
-	      }
-	  else
-	      {
-		  fprintf(fcommand,", \"%s.D2M\" notitle w p pt 6",name); 
-		  fprintf(fcommand,", \"%s.D2m\" notitle w p pt 6",name);
-	      }
-      }
-  if(writeD3==VTRUE)
-      {
-	  if(title==VTRUE)
-	      {
-		  fprintf(fcommand,", \"%s.D3M\" w p pt 6",name); 
-		  fprintf(fcommand,", \"%s.D3m\" w p pt 6",name);
-	      }
-	  else
-	      {
-		  fprintf(fcommand,", \"%s.D3M\" notitle w p pt 6",name); 
-		  fprintf(fcommand,", \"%s.D3m\" notitle w p pt 6",name);
-	      }
-      }
-  if(writeD4==VTRUE)
-      {
-	  if(title==VTRUE)
-	      {
-		  fprintf(fcommand,", \"%s.D4m\" w p pt 6",name);
-		  fprintf(fcommand,", \"%s.D4M\" w p pt 6",name); 
-	      }
-	  else
-	      {
-		  fprintf(fcommand,", \"%s.D4m\" notitle w p pt 6",name);
-		  fprintf(fcommand,", \"%s.D4M\" notitle w p pt 6",name); 
-	      }
-      }
-
-  if (some_minima==VTRUE)
+  switch( plottype )
+  {
+  case 0:
+    /* gnuplot */
+    if(writeD0==VTRUE)
     {
       if(title==VTRUE)
-        {
-          fprintf(fcommand,", \"%s.smin\" w p pt 1 ps 5\n",name);
-        }
+      {
+        fprintf(fcommand,", \"%s.D0Max\" w p pt 6",name);
+        fprintf(fcommand,", \"%s.D0min\" w p pt 6",name);
+      }
       else
-        {
-          fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 5",name);
-          /*
-            fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 4",name);
-            fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 3",name);
-            fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 2",name);
-            fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 1\n",name);*/
-        }
+      {
+        fprintf(fcommand,", \"%s.D0Max\" notitle w p pt 6",name);
+        fprintf(fcommand,", \"%s.D0min\" notitle w p pt 6",name);
+      }
     }
-  else
-    fprintf(fcommand,"\n");
-
-  fprintf(fcommand,"cd \"..\"\n");
-  fprintf(fcommand,"pause mouse any\n");
-  fclose(fcommand);
- 
-  if(psfile==VTRUE)
+    if(writeD1==VTRUE)
     {
+      if(title==VTRUE)
+      {
+        if (some_D1M==VTRUE)  fprintf(fcommand,", \"%s.D1Max\" w p pt 6",name);
+        if (some_D1m==VTRUE)  fprintf(fcommand,", \"%s.D1min\" w p pt 6",name);
+      }
+      else
+      {
+        if (some_D1M==VTRUE) fprintf(fcommand,", \"%s.D1Max\" notitle w p pt 6",name);
+        if (some_D1m==VTRUE) fprintf(fcommand,", \"%s.D1min\" notitle w p pt 6",name);
+      }
+    }
+    if(writeD2==VTRUE)
+    {
+      if(title==VTRUE)
+      {
+        fprintf(fcommand,", \"%s.D2Max\" w p pt 6",name);
+        fprintf(fcommand,", \"%s.D2min\" w p pt 6",name);
+      }
+      else
+      {
+        fprintf(fcommand,", \"%s.D2Max\" notitle w p pt 6",name);
+        fprintf(fcommand,", \"%s.D2min\" notitle w p pt 6",name);
+      }
+    }
+    if(writeD3==VTRUE)
+    {
+      if(title==VTRUE)
+      {
+        fprintf(fcommand,", \"%s.D3Max\" w p pt 6",name);
+        fprintf(fcommand,", \"%s.D3min\" w p pt 6",name);
+      }
+      else
+      {
+        fprintf(fcommand,", \"%s.D3Max\" notitle w p pt 6",name);
+        fprintf(fcommand,", \"%s.D3min\" notitle w p pt 6",name);
+      }
+    }
+    if(writeD4==VTRUE)
+    {
+      if(title==VTRUE)
+      {
+        fprintf(fcommand,", \"%s.D4min\" w p pt 6",name);
+        fprintf(fcommand,", \"%s.D4Max\" w p pt 6",name);
+      }
+      else
+      {
+        fprintf(fcommand,", \"%s.D4min\" notitle w p pt 6",name);
+        fprintf(fcommand,", \"%s.D4Max\" notitle w p pt 6",name);
+      }
+    }
+
+    if (some_minima==VTRUE)
+    {
+      if(title==VTRUE)
+      {
+        fprintf(fcommand,", \"%s.smin\" w p pt 1 ps 5\n",name);
+      }
+      else
+      {
+        fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 5",name);
+        /*
+          fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 4",name);
+          fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 3",name);
+          fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 2",name);
+          fprintf(fcommand,", \"%s.smin\" notitle w p pt 1 ps 1\n",name);*/
+      }
+    }
+    else
+      fprintf(fcommand,"\n");
+
+    fprintf(fcommand,"cd \"..\"\n");
+    fprintf(fcommand,"pause mouse any\n");
+    break;
+
+  case 1: /* matplotlib */
+    fprintf( fcommand, "kw = {}\n" );
+    if(writeD0==VTRUE)
+    {
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D0Max' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D0M'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D0min' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D0m'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+    }
+
+    if(writeD1==VTRUE)
+    {
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D1Max' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D1M'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D1min' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D1m'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+    }
+
+    if(writeD2==VTRUE)
+    {
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D2Max' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D2M'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D2min' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D2m'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+    }
+
+    if(writeD3==VTRUE)
+    {
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D3Max' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D3M'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D3min' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D3m'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+    }
+
+    if(writeD4==VTRUE)
+    {
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D4Max' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D4M'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.D4min' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.D4m'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], '.', **kw )\n" );
+    }
+
+    if (some_minima==VTRUE)
+    {
+      fprintf( fcommand, "tab = open( os.path.join( tmpdir, name + '.smin' ) ).readlines()\n" );
+      fprintf( fcommand, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+      if( title == VTRUE )
+        fprintf( fcommand, "kw[ 'label' ] = name + '.smin'\n" );
+      fprintf( fcommand, "pylab.plot( arr[0], arr[1], 'o', **kw )\n" );
+    }
+
+    fprintf( fcommand, "pylab.xlim( xmin=%d, xmax=%d )\n", 0, xmax );
+    fprintf( fcommand, "pylab.ylim( ymin=%d, ymax=%d )\n", hmin, hmax );
+    if( title == VTRUE )
+      fprintf( fcommand, "pylab.legend()\n" );
+    fprintf( fcommand, "pylab.show()\n" );
+  }
+  fclose(fcommand);
+
+  if(psfile==VTRUE)
+  {
+    switch( plottype )
+    {
+    case 0: /* gnuplot */
       sprintf(command,"gnuplot %s %s", fcommandpsname, fcommandname);
       system(command);
+      break;
+    case 1: /* matplotlib */
+      sprintf(command,"python %s", fcommandpsname );
+      printf( "%s\n", command );
+      system(command);
     }
+    VipRm( fcommandpsname, 0 );
+  }
 
 
   return(OK);

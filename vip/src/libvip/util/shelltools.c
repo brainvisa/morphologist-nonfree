@@ -437,7 +437,10 @@ void VipRm( const char* pattern, int flags )
                 }
             }
         }
-      unlink( item->string );
+      if( VipIsDirectory( item->string ) )
+        rmdir( item->string );
+      else
+        unlink( item->string );
     }
 
   VipFreeStringList( files );

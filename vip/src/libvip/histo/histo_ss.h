@@ -258,6 +258,21 @@ extern int VipCreateGnuplotFileFromExtrema(
   int writeD4
 );
 /*---------------------------------------------------------------------------*/
+/** if plottype=0: gnuplot; 1: matplotlib */
+extern int VipCreatePlotFileFromExtrema(
+  int plottype,
+  Vip1DScaleSpaceStruct *volstruct,
+  char *name,
+  int tracked,
+  int psfile,
+  int title,
+  int writeD0,
+  int writeD1,
+  int writeD2,
+  int writeD3,
+  int writeD4
+);
+/*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
 extern int VipFree1DScaleSpaceStruct( Vip1DScaleSpaceStruct *ssstruct);

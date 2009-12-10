@@ -27,6 +27,7 @@
 
 #include <vip/histo.h>
 #include <vip/util/file.h>
+#include <vip/util/shelltools.h>
 #include <vip/connex.h>
 #include <vip/deriche.h>
 #include <unistd.h>
@@ -39,8 +40,113 @@ static int Usage();
 static int Help();
 /*-----------------------------------------------------------------*/
 
+int plotGnuplot( char *histofile, int xmax, int hmax, int gnuplot_title )
+{
+  char gpfilename[1024];
+  char stripped_input[1024];
+  FILE *gpfile;
+  char *root1, *root2;
+  char systemcommand[1024];
+
+  root2 = histofile;
+  root1 = histofile;
+  while(root2!=NULL)
+  {
+    root2 = strstr(root1,"/");
+    if(root2!=NULL) root1 = root2+1;
+  }
+  strcpy(stripped_input,root1);
+
+  strcpy(gpfilename,VipTmpDirectory());
+  strcat(gpfilename,"/");
+  strcat(gpfilename,stripped_input);
+  strcat(gpfilename,".gp");
+  gpfile = fopen(gpfilename,"w");
+  if(gpfile==NULL)
+  {
+    VipPrintfWarning("I can not write the command for gp in: ...ciao");
+    printf("%s\n",VipTmpDirectory());
+    return(PB);
+  }
+
+  if(xmax<0)
+    fprintf(gpfile,"plot [:] [0:%d] \"%s.his\" w l lw 5\n",
+            hmax, histofile );
+  else if(gnuplot_title==VTRUE)
+    fprintf(gpfile,"plot [:%d] [0:%d] \"%s.his\" w l lw 5\n",
+            xmax,hmax, histofile );
+  else if(gnuplot_title==VFALSE)
+    fprintf(gpfile,
+            "plot [:%d] [0:%d] \"%s.his\" notitle w l lw 5\n",
+            xmax,hmax, histofile );
+  fprintf(gpfile,"pause mouse any\n");
+  fclose(gpfile);
+  strcpy(systemcommand, "gnuplot ");
+  strcat(systemcommand,gpfilename);
+  printf( "%s\n", systemcommand );
+  if(system(systemcommand))
+  {
+    unlink( gpfilename );
+    return PB;
+  }
+  unlink( gpfilename );
+  return OK;
+}
+
+
+int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
+{
+  char gpfilename[1024];
+  char stripped_input[1024];
+  FILE *gpfile;
+  char *root1, *root2;
+  char systemcommand[1024];
+
+  root2 = histofile;
+  root1 = histofile;
+  while(root2!=NULL)
+  {
+    root2 = strstr(root1,"/");
+    if(root2!=NULL) root1 = root2+1;
+  }
+  strcpy(stripped_input,root1);
+
+  strcpy(gpfilename,VipTmpDirectory());
+  strcat(gpfilename,"/");
+  strcat(gpfilename,stripped_input);
+  strcat(gpfilename,".py");
+  gpfile = fopen(gpfilename,"w");
+  fprintf( gpfile, "#!/usr/bin/env python\n\n" );
+  fprintf( gpfile, "import pylab\n" );
+  fprintf( gpfile, "import numpy\n" );
+  fprintf( gpfile, "import os\n" );
+  fprintf( gpfile, "histo = '%s.his'\n", histofile );
+  fprintf( gpfile, "tab = open( histo ).readlines()\n" );
+  fprintf( gpfile, "arr = numpy.array( [[float(x) for x in l.split()] for l in tab ] ).transpose()\n" );
+  fprintf( gpfile, "pylab.plot( arr[0], arr[1], lw=5 )\n" );
+  if( xmax >= 0 )
+    fprintf( gpfile, "pylab.xlim( xmax=%d )\n", xmax );
+  if( hmax >= 0 )
+    fprintf( gpfile, "pylab.ylim( ymax=%d )\n", hmax );
+  if( gnuplot_title != VFALSE )
+    fprintf( gpfile, "pylab.title( os.path.basename( histo ) )\n" );
+  fprintf( gpfile, "pylab.show()\n" );
+  fclose(gpfile);
+  strcpy(systemcommand, "python ");
+  strcat(systemcommand,gpfilename);
+  printf( "%s\n", systemcommand );
+  if(system(systemcommand))
+  {
+    unlink( gpfilename );
+    return PB;
+  }
+  unlink( gpfilename );
+  return OK;
+}
+
+
 int main(int argc, char *argv[])
-{     
+{
     char *input = NULL;
     char *ridgename = NULL;
     char *maskname = NULL;
@@ -69,7 +175,6 @@ int main(int argc, char *argv[])
     VipT1HistoAnalysis *ana = 0;
     char gnuplot = 'n';
     int gnuplotpsfile = VFALSE;
-    FILE *gpfile;
     int nderivative = 2;
     int D0WRITE = VFALSE;
     int D1WRITE = VTRUE;
@@ -95,6 +200,9 @@ int main(int argc, char *argv[])
     Volume *edges=NULL;
     Volume *discard=NULL;
     int hasgnuplotfile = 0;
+    enum RenderMode { GnuPlot, MatPlotlib };
+    int renderMode = GnuPlot;
+    int renderRes;
     /*    char mask_name[256], temp_string[256];*/
 
     readlib = ANY_FORMAT;
@@ -306,7 +414,7 @@ int main(int argc, char *argv[])
 		{
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 		    dscale = atof(argv[i]);
-		}  
+		}
 	    else if (!strncmp (argv[i], "-gnuplot", 2)) 
 		{
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -321,7 +429,22 @@ int main(int argc, char *argv[])
 			    return(VIP_CL_ERROR);
 			}
 		}    
-	    else if (!strncmp (argv[i], "-readformat", 2)) 
+            else if (!strcmp (argv[i], "--matplotlib"))
+                {
+                    renderMode = MatPlotlib;
+                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+                    if(argv[i][0]=='n') gnuplot = 'n';
+                    else if(argv[i][0]=='s') gnuplot = 's';
+                    else if(argv[i][0]=='f') gnuplot = 'f';
+                    else if(argv[i][0]=='p') gnuplot = 'p';
+                    else
+                        {
+                            VipPrintfError("This gnuplot option is unknown");
+                            VipPrintfExit("(commandline)VipHistoAnalysis");
+                            return(VIP_CL_ERROR);
+                        }
+                }
+	    else if (!strncmp (argv[i], "-readformat", 2))
 		{
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 		    if(argv[i][0]=='t') readlib = TIVOLI;
@@ -522,51 +645,29 @@ int main(int argc, char *argv[])
 	    return(0);
 	}
     if(mode=='v')
-	{
-          strcpy(tmphisto,VipTmpDirectory());
-          strcat(tmphisto,"/");
-          /*            strcpy(tmphisto,"/tmp/");*/
-	    strcat(tmphisto,stripped_input);
-	    if(VipWriteHisto(shorthisto,tmphisto,WRITE_HISTO_ASCII)==PB)
-		{
-		    VipPrintfWarning("I can not write the histogram in /tmp...ciao");
-		    return(VIP_CL_ERROR);
-		}
-          strcpy(tmphisto,VipTmpDirectory());
-          strcat(tmphisto,"/");
-          /*strcpy(tmphisto,"/tmp/");*/
-	    strcat(tmphisto,stripped_input);
-	    strcat(tmphisto,".gp");
-	    gpfile = fopen(tmphisto,"w");
-	    if(gpfile==NULL)
-		{
-		    VipPrintfWarning("I can not write the command for gp in: ...ciao");
-                    printf("%s\n",VipTmpDirectory());
-		    return(VIP_CL_ERROR);
-		}
+    {
+      strcpy(tmphisto,VipTmpDirectory());
+      strcat(tmphisto,"/");
+      strcat(tmphisto,stripped_input);
+      if(VipWriteHisto(shorthisto,tmphisto,WRITE_HISTO_ASCII)==PB)
+      {
+        VipPrintfWarning("I can not write the histogram in /tmp...ciao");
+        return(VIP_CL_ERROR);
+      }
+      if( renderMode == GnuPlot )
+        renderRes = plotGnuplot( tmphisto, xmax, hmax, gnuplot_title );
+      else
+        renderRes = plotMatplotlib( tmphisto, xmax, hmax, gnuplot_title );
+      if( renderRes != OK )
+      {
+        VipPrintfError("Can not use gnuplot/matplotlib here (or use \"return\" to quit gnuplot), sorry...\n");
+      }
 
-	    if(xmax<0)
-		fprintf(gpfile,"plot [:] [0:%d] \"%s%c%s.his\" w l lw 5\n",
-                        hmax, VipTmpDirectory(), VipFileSeparator(), input);
-	    else if(gnuplot_title==VTRUE)
-		fprintf(gpfile,"plot [:%d] [0:%d] \"%s%c%s.his\" w l lw 5\n",
-                        xmax,hmax, VipTmpDirectory(), VipFileSeparator(), 
-                        input);
-	    else if(gnuplot_title==VFALSE)
-		fprintf(gpfile, 
-                        "plot [:%d] [0:%d] \"%s%c%s.his\" notitle w l lw 5\n", 
-                        xmax,hmax, VipTmpDirectory(), VipFileSeparator(), 
-                        input);
-	    fprintf(gpfile,"pause mouse any\n");
-	    fclose(gpfile);
-	    strcpy(systemcommand, "gnuplot ");
-	    strcat(systemcommand,tmphisto);
-	    if(system(systemcommand))
-		VipPrintfError("Can not use gnuplot here (or use \"return\" to quit gnuplot), sorry...\n");
-            unlink( tmphisto );
-	    return(VIP_CL_ERROR);
-	}
-      if(mode=='s')
+      strcat( tmphisto, ".his" );
+      unlink( tmphisto );
+      return(VIP_CL_ERROR);
+    }
+    if(mode=='s')
       {
         vol = VipReadVolumeWithBorder(input,1);
         histo_surface = VipGetHistoSurface(shorthisto, vol);
@@ -711,25 +812,27 @@ int main(int argc, char *argv[])
 	}
   
     if(mode!='f')
-	{
-	    if(gnuplot!='n')
-		{
-		    if(VipCreateGnuplotFileFromExtrema(volstruct,stripped_input,SS_CASCADE_EXTREMUM,gnuplotpsfile,
-						       gnuplot_title,
-						       D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE)==PB) return(VIP_CL_ERROR);
-                    hasgnuplotfile = 1;
-		}
-	}
+    {
+      if(gnuplot!='n')
+      {
+        if( VipCreatePlotFileFromExtrema( renderMode, volstruct, stripped_input,
+            SS_CASCADE_EXTREMUM, gnuplotpsfile, gnuplot_title, D0WRITE, D1WRITE,
+            D2WRITE, D3WRITE, D4WRITE ) == PB )
+          return(VIP_CL_ERROR);
+        hasgnuplotfile = 1;
+      }
+    }
     else
-	{
-	    if(gnuplot!='n')
-		{
-		    if(VipCreateGnuplotFileFromExtrema(volstruct,stripped_input,SS_TRACKED_EXTREMUM,gnuplotpsfile,
-						       gnuplot_title,
-						       D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE)==PB) return(VIP_CL_ERROR);
-                    hasgnuplotfile = 1;
-		}
-	}
+    {
+      if(gnuplot!='n')
+      {
+        if( VipCreatePlotFileFromExtrema( renderMode, volstruct,
+            stripped_input, SS_TRACKED_EXTREMUM, gnuplotpsfile, gnuplot_title,
+            D0WRITE, D1WRITE, D2WRITE, D3WRITE, D4WRITE ) == PB )
+          return(VIP_CL_ERROR);
+        hasgnuplotfile = 1;
+      }
+    }
 
     VipFree1DScaleSpaceStruct(volstruct);
 
@@ -739,18 +842,39 @@ int main(int argc, char *argv[])
   
     fflush(stdout);
     if(gnuplot=='s')
-	{
-	    sprintf(systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(), 
-                    VipFileSeparator(), stripped_input );
-            printf( "%s\n", systemcommand );
-            if(system(systemcommand))
-		VipPrintfError("Can not use gnuplot here (or use \"return\" to quit gnuplot), sorry...\n");
-	}
+    {
+      switch( renderMode )
+      {
+      case GnuPlot:
+        sprintf( systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(), 
+                 VipFileSeparator(), stripped_input );
+        break;
+      case MatPlotlib:
+        sprintf( systemcommand, "python %s%c%s.py", VipTmpDirectory(),
+                 VipFileSeparator(), stripped_input );
+        break;
+      }
+      printf( "%s\n", systemcommand );
+      if( system(systemcommand) )
+        VipPrintfError("Can not use gnuplot/matplotlib here (or use \"return\" to quit gnuplot), sorry...\n");
+    }
     if( hasgnuplotfile )
     {
-      sprintf(systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(),
-              VipFileSeparator(), stripped_input );
+      switch( renderMode )
+      {
+      case GnuPlot:
+        sprintf( systemcommand, "%s%c%s.gp", VipTmpDirectory(),
+                 VipFileSeparator(), stripped_input );
+        break;
+      case MatPlotlib:
+        sprintf( systemcommand, "%s%c%s.py", VipTmpDirectory(),
+                 VipFileSeparator(), stripped_input );
+      }
       unlink( systemcommand );
+      sprintf( systemcommand, "%s%cgpdir_%s", VipTmpDirectory(),
+               VipFileSeparator(), stripped_input );
+      printf( "rm -r %s\n", systemcommand );
+      VipRm( systemcommand, VipRecursive );
     }
 
     if(ridgename && ana)
@@ -800,6 +924,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-3[extrema] {y/n (default:n)}]\n");  
   (void)fprintf(stderr,"        [-4[extrema] {y/n (default:n)}]\n");    
   (void)fprintf(stderr,"        [-g[nuplot] {char: n[o], s[creen], f[ile], p[ostscript], default:n}]\n"); 
+  (void)fprintf(stderr,"        [--matplotlib {char: n[o], s[creen], f[ile], p[ostscript], default:n}]\n");
   (void)fprintf(stderr,"        [-T[itle] {char y/n (default:y)}]\n"); 
   (void)fprintf(stderr,"        [-r[eadformat] {char: v, s, t, or a (default:a)}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
@@ -826,7 +951,7 @@ static int Help()
   (void)printf("        [-m[ode] {char: e[ntropy], v[isu], f[ree], c[ascade], C[ascade], a[nalyse], m[axima], default:v}\n");
   (void)printf("e: computes some kind of entropy...\n");
   (void)printf("m: give n maxima the most significative...\n");
-  (void)printf("v: visu mode send histogram to gnuplot\n");
+  (void)printf("v: visu mode send histogram to gnuplot or matplotlib (see -g and --matplotlib options)\n");
   (void)printf("c: cascade mode detects D1/D2 n largest cascades\n");
   (void)printf("C: cascade mode detects D1/D2 n highest cascades\n");
   (void)printf("a: analyse mode according to contrast\n");
@@ -862,6 +987,8 @@ static int Help()
   (void)printf("        [-4[extrema] {y/n (default:n)}]\n");    
   (void)printf("        [-g[nuplot] {char: n[o], s[creen], f[ile], p[ostscript], default:n}]\n");
   (void)printf("allows you to look at scalespace and histogram using gnuplot\n");
+  (void)printf("        [--matplotlib {char: n[o], s[creen], f[ile], p[ostscript], default:n}]\n");
+  (void)printf("same as gnuplot, but uses MatPlotlib instead of GnuPlot\n");
   (void)printf("        [-T[itle] {char y/n (default:y)}]\n"); 
   (void)printf("put title in gnuplot drawings\n"); 
   (void)printf("        [-r[eadformat] {char: v, s, t or a (default:a)}]\n");
