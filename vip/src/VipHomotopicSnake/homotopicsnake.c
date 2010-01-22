@@ -375,7 +375,7 @@ static int Help()
   (void)printf("        [-R[idge] {White ridge image name (default: not used)}]\n");
   (void)printf("        [-li[nside] {int:label<290 (default:0)}]\n");
   (void)printf("        [-lo[utside] {int:label<290 (default:11)}]\n");
-  (void)printf("        [-p[ressure] {int [0:100] (default:0)}]\n");
+  (void)printf("        [-p[ressure] {int [0:150] (default:0)}]\n");
   (void)printf("Partial volume effect and topological constraints may prevent the snake to perfectly recover the highest parts of gyri, especially if the slice thickness is larger than 1 mm. In such case, adding some pressure inside the baloon lead to better results. The 0 to 100 parameter allows you to move the interface definition from (Grey-mean+2Gsigma/White-mean-2Wsigma) to (Grey-mean+1*Gsigma/White-mean-3*Wsigma). No pressure is used by default because for some cases, the grey matter of the primary motor area, which is often whiter than standard grey matter because of more myelin around motor axon (cf thalamus), is taken for white matter, which leads to a bad detection of central sulcus.\n");
   (void)printf("        [-mg[ray] {float (default:?.ana)}]\n");
   (void)printf("        [-sg[ray] {float (default:?.ana)}]\n");
