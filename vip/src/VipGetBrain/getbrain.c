@@ -36,6 +36,7 @@
 /*------------------------------------------------------------------*/
 static int Usage();
 static int Help();
+static int VipCheckBrainMask( Volume* vol );
 /*-----------------------------------------------------------------*/
 
 int main(int argc, char *argv[])
@@ -90,7 +91,6 @@ int main(int argc, char *argv[])
   VipTalairach tal, *talptr=NULL;
   int talset = VFALSE;
   int layer = 0;
-  int l;
   char layeronly = 'n';
 
   readlib = ANY_FORMAT;
@@ -724,6 +724,11 @@ int main(int argc, char *argv[])
       VipFreeVolume(vol2);		    
       vol2 = NULL; 
     }
+
+  /* check if the mask is empty or fills the whole volume */
+  if( VipCheckBrainMask( vol ) == PB )
+    return VIP_CL_ERROR;
+
   if(close=='y')
     {
       if(color=='g')
@@ -841,6 +846,39 @@ int main(int argc, char *argv[])
   
 }
 
+
+/*---------------------------------------------------------------------------*/
+
+int VipCheckBrainMask( Volume* vol )
+{
+  VipOffsetStruct *vos;
+  int ix, iy, iz; /*, it;*/
+  short *ptr;
+  unsigned long nonnull, size;
+  float ratio;
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+  nonnull = 0;
+  size = mVipVolSizeZ(vol) * mVipVolSizeY(vol) * mVipVolSizeX(vol);
+
+  /*for( it = mVipVolSizeT(vol); it-- ; ) */     /* loop on volumes */
+  for( iz = mVipVolSizeZ(vol); iz-- ; )        /* loop on slices */
+    for( iy = mVipVolSizeY(vol); iy-- ; )    /* loop on lines */
+      for( ix = mVipVolSizeX(vol); ix-- ; )
+      {
+        if( *ptr != 0 )
+          nonnull++;
+        ptr++;
+      }
+  ratio = ((double) nonnull) / size;
+  if( ratio < 0.02 || ratio > 0.9 )
+  {
+    VipPrintfError( "Brain mask extraction failed: the result mask is empty "
+        "or fills the whole volume\n" );
+    return PB;
+  }
+  return OK;
+}
 
 /*-----------------------------------------------------------------------------------------*/
 
