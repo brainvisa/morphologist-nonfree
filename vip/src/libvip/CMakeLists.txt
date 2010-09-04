@@ -44,7 +44,7 @@ FOREACH( _currentGeneric ${_generics} )
   # Add the generated *.c file to the list of sources for the library
   SET( _sources ${_sources} "${_g}_gen.c" )
   # Install non static generated headers
-  INSTALL( FILES "${_tmpincdir}/${_f}_gen.h" DESTINATION include/${_headersDir}/${_d} COMPONENT vip-devel )
+  INSTALL( FILES "${_tmpincdir}/${_f}_gen.h" DESTINATION include/${_headersDir}/${_d} COMPONENT vip-dev )
 #  SET( _doxygenInput ${_doxygenInput} "${_g}_gen.h" )
 ENDFOREACH( _currentGeneric ${_generics} )
 
