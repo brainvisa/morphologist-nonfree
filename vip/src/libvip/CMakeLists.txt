@@ -57,7 +57,7 @@ ADD_LIBRARY( vip SHARED ${_sources} )
 add_dependencies( vip ${headersTarget} ${headersTarget2} ${_genericsGenerated} )
 set_property( TARGET vip PROPERTY VERSION ${${PROJECT_NAME}_VERSION} )
 TARGET_LINK_LIBRARIES( vip ${AIMS-FREE_LIBRARIES} )
-BRAINVISA_INSTALL( TARGETS vip DESTINATION lib COMPONENT vip )
+BRAINVISA_INSTALL( TARGETS vip DESTINATION lib COMPONENT ${PROJECT_NAME} )
 
 #FILE( WRITE "${DOXYGEN_BINARY_DIR}/doxygenInput" " ${_doxygenInput}" )
 
