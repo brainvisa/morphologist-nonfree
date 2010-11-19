@@ -593,7 +593,7 @@ int connectivity
         VipSingleThreshold( mask, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
     }
     VipPropagationConnectivity(mask, vol1, vol2, mode, seuil_vol1, seuil_vol2, connectivity);
-    VipWriteVolume(mask,"maskwhite");
+//     VipWriteVolume(mask,"maskwhite");
     if(VipMerge( mask, copymask, VIP_MERGE_ONE_TO_ONE, 255, 0 ) == PB) return(VIP_CL_ERROR);
 
     VipChangeIntLabel( mask, 0, -100 );
@@ -714,7 +714,7 @@ int yCP
   VipExtedge(skin,EXTEDGE2D_ALL,SAME_VOLUME);
   if(VipConnexVolumeFilter( skin, CONNECTIVITY_26, 100, CONNEX_BINARY ) == PB) return(PB);
   VipDilation( skin, CHAMFER_BALL_2D, 5 );
-  VipWriteVolume(skin,"skin");
+//   VipWriteVolume(skin,"skin");
   VipFreeVolume(classif);
   classif=NULL;
 
@@ -813,7 +813,7 @@ int yCP
   if( VipMerge( white, mask2, VIP_MERGE_ONE_TO_ONE, 255, 512 )== PB) return(PB);
   VipChangeIntLabel( white, 0, -2 );
   if(VipComputeFrontPropagationChamferDistanceMap(white,255,-2,VIP_PUT_LIMIT_TO_LIMIT,10)==PB) return(PB);
-  VipWriteVolume(white,"distWhiteMatterbis");
+//   VipWriteVolume(white,"distWhiteMatterbis");
 
   VipFreeVolume(mask);
   mask = NULL;
@@ -841,17 +841,17 @@ int yCP
   VipChangeIntLabel(classif,0,-2);
   if(VipComputeFrontPropagationChamferDistanceMap(classif,255,-2,VIP_PUT_LIMIT_TO_LIMIT,10)==PB) return(PB);
 
-  VipWriteVolume(classif,"distWhiteMatter"); 
+//   VipWriteVolume(classif,"distWhiteMatter"); 
   VipFreeVolume(mask);
   mask = NULL;
   
     /**/
-  strcpy(histoname, "/volatile/cfischer/Histo/adni/histogramborder");
-  histo = VipCreateHistogram(variance, classif, edges, CONNECTIVITY_26);
-  if(histo==PB) return(PB);
-  printf("Writing histogram of the border...\n");
-  if(VipWriteHisto(histo,histoname,WRITE_HISTO_ASCII)==PB)
-      VipPrintfWarning("I can not write the histogram but I am going further");
+//   strcpy(histoname, "/volatile/cfischer/Histo/adni/histogramborder");
+//   histo = VipCreateHistogram(variance, classif, edges, CONNECTIVITY_26);
+//   if(histo==PB) return(PB);
+//   printf("Writing histogram of the border...\n");
+//   if(VipWriteHisto(histo,histoname,WRITE_HISTO_ASCII)==PB)
+//       VipPrintfWarning("I can not write the histogram but I am going further");
     /**/
   
 //   mask = VipCreateSingleThresholdedVolume( brain, GREATER_OR_EQUAL_TO, (int)(6*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT);
@@ -911,7 +911,7 @@ int yCP
   
   VipMerge( skin, brainball, VIP_MERGE_ONE_TO_ONE, 255, 255 );
   
-  VipWriteVolume(skin,"ball2");
+//   VipWriteVolume(skin,"ball2");
   VipMerge( classif, skin, VIP_MERGE_ONE_TO_ONE, 0, 0 );
   
   var = VipCreateSingleThresholdedVolume( variance, LOWER_THAN, 30, BINARY_RESULT );
@@ -1060,7 +1060,7 @@ int yCP
   if(VipMerge( mask, mask2, VIP_MERGE_ONE_TO_ONE, 255, 0 ) == PB) return(VIP_CL_ERROR);
   VipChangeIntLabel(mask,0,-100);
   if(VipComputeFrontPropagationConnectivityDistanceMap(mask,255,-100,VIP_NO_LIMIT_IN_PROPAGATION,6,CONNECTIVITY_26)==PB) return(PB);
-  VipWriteVolume(mask,"brainmaskb");
+//   VipWriteVolume(mask,"brainmaskb");
   VipSingleThreshold( mask, GREATER_OR_EQUAL_TO, 10000, BINARY_RESULT );
   if( VipMerge( mask, mask2, VIP_MERGE_ONE_TO_ONE, 255, 255 )== PB) return(VIP_CL_ERROR);
   if( VipConnexVolumeFilter( mask, CONNECTIVITY_26, -1, CONNEX_BINARY ) == PB) return(PB);
@@ -1092,7 +1092,7 @@ int yCP
 
   if(VipComputeFrontPropagationChamferDistanceMap(brain,255,-100,VIP_PUT_LIMIT_TO_LIMIT,6)==PB) return(PB);
 
-  VipWriteVolume(brain,"variancedistmapfinal");
+//   VipWriteVolume(brain,"variancedistmapfinal");
 
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO, (int)(2*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT );
   
