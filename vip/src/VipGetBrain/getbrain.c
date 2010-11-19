@@ -31,6 +31,9 @@
 #include "vip/bucket.h"
 #include "vip/distmap.h"
 #include "vip/connex.h"
+/**/
+#include <vip/deriche.h>
+#include <vip/gaussian.h>
 
 /*----------------------------------------------------------------------------*/
 /*------------------------------------------------------------------*/
@@ -42,7 +45,11 @@ static int VipCheckBrainMask( Volume* vol );
 int main(int argc, char *argv[])
 {     
   char *ridgename = NULL;
+  char *variancename = NULL;
+  char *edgesname = NULL;
   Volume *ridge=NULL;
+  Volume *variance = NULL;
+  Volume *edges = NULL;
   char *input = NULL;
   int readlib, writelib;
   float dscale = 0.5;
@@ -56,6 +63,7 @@ int main(int argc, char *argv[])
   float werosion = 2.1;
   float brecover = 3.;
   float wrecover = 30.;
+  int vthreshold = 14;
   VipT1HistoAnalysis *ana;
   char mode = 'S';
   char brainname[1024];
@@ -88,10 +96,18 @@ int main(int argc, char *argv[])
   int xCP=0, yCP=0, zCP=0;
   int xP=0, yP=0, zP=0;
   char point_filename[VIP_NAME_MAXLEN]="";
-  VipTalairach tal, *talptr=NULL;
+  VipTalairach tal, *talptr=NULL, *coord=NULL;
   int talset = VFALSE;
   int layer = 0;
   char layeronly = 'n';
+  /**/
+  VipHisto *histo;
+  char histoname[1024];
+  char stripped_input[1024];
+  char *root1, *root2;
+  Volume *var = NULL;
+  int Seuil_Gray_White = 0;
+  /**/
 
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -118,6 +134,16 @@ int main(int argc, char *argv[])
        {
          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
          ridgename = argv[i];
+       }
+     else if (!strncmp (argv[i], "-Variance", 2)) 
+       {
+         if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+         variancename = argv[i];
+       }
+     else if (!strncmp (argv[i], "-Edges", 2)) 
+       {
+         if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+         edgesname = argv[i];
        }
      else if (!strncmp (argv[i], "-hname", 3)) 
 	{
@@ -223,6 +249,11 @@ int main(int argc, char *argv[])
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  wrecover = atof(argv[i]);
 	}
+     else if (!strncmp (argv[i], "-vthreshold", 3))
+     {
+         if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+         vthreshold = atof(argv[i]);
+     }
      else if (!strncmp (argv[i], "-mode", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -231,6 +262,8 @@ int main(int argc, char *argv[])
 	  else if(argv[i][0]=='R') mode = 'R';
 	  else if(argv[i][0]=='f') mode = 'f';
 	  else if(argv[i][0]=='5') mode = '5';
+	  else if(argv[i][0]=='v') mode = 'v';
+	  else if(argv[i][0]=='V') mode = 'V';
 	  else if(argv[i][0]=='r') mode = 'r';
 	  else
 	    {
@@ -425,7 +458,7 @@ int main(int argc, char *argv[])
 	      VipPrintfExit("(commandline)VipGetBrain");
 	      return(VIP_CL_ERROR);
 	    }
-	}    
+	}
       else if (!strncmp(argv[i], "-help",2)) return(Help());
       else return(Usage());
     }
@@ -655,6 +688,9 @@ int main(int argc, char *argv[])
 			      xCP, yCP, zCP, 
 			      xP, yP, zP, talset)==PB) return(VIP_CL_ERROR);
 
+      coord = &tal;
+      xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+      xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
       VipComputeTalairachTransformation(vol,&tal);
       talptr = &tal;
     }
@@ -669,8 +705,31 @@ int main(int argc, char *argv[])
           if(!ridge) return(VIP_CL_ERROR);
         }
     }
+    if (variancename!=NULL)
+    {
+      if(mode!='V')
+        VipPrintfWarning("Variance image useless without mode 2010");
+      else
+        {
+          variance = VipReadVolumeWithBorder(variancename,1);
+          if(!variance) return(VIP_CL_ERROR);
+        }
+    }
+    if (edgesname!=NULL)
+    {
+      if(mode!='V')
+        VipPrintfWarning("Edges image useless without mode 2010");
+      else
+        {
+          edges = VipReadVolumeWithBorder(edgesname,1);
+          if(!edges) return(VIP_CL_ERROR);
+        }
+    }
+
   switch(mode)
     {
+    case 'V': if(VipGetBrain2010(vol,variance,edges,ana,NO,debugflag,berosion,vthreshold,niterations,xCP,yCA,yCP)==PB) return(VIP_CL_ERROR);
+      break;    
     case '5': if(VipGetBrain2005(vol,ana,NO,debugflag,1.6,5,berosion,10,niterations,ridge)==PB) return(VIP_CL_ERROR);
       break;    
     case 'S': if(VipGetBrainStandard(vol,ana,NO,debugflag,berosion,brecover,niterations,VTRUE)==PB) return(VIP_CL_ERROR);
@@ -691,21 +750,55 @@ int main(int argc, char *argv[])
     
     /*2009 Try to add a hack to fill up some  partial volume voxels in order to get result stable to the variability
       of the histogram analysis*/
-     
+
+//    if (layer>0)
+//    {
+// 	printf("Reading volume once again for partial volume tuning...\n");
+// 	vol2 = VipReadVolumeWithBorder(input,1);
+//      if(layeronly=='y')
+//      {
+// 		vol = VipReadVolumeWithBorder(brainname,1); 
+// 		VipWriteVolume(vol,"brain");
+//         	VipWriteVolume(vol2,"nobias");
+// 	}
+// 	if(VipDilateInPartialVolumeFar(vol2, vol,layer)==PB) return(VIP_CL_ERROR);
+//      VipSingleThreshold( vol, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
+//    }
+
+
+   /**/
+   strcpy(histoname, "/volatile/cfischer/Histo/adni/");
+   root2 = input;
+   root1 = input;
+   while(root2!=NULL)
+   {
+	root2 = strstr(root1,"/");
+	if(root2!=NULL) root1 = root2+1;
+   }
+   strcpy(stripped_input,root1);
+   strcat(histoname, stripped_input);
+
    if (layer>0)
    {
-   	printf("Reading volume once again for partial volume tuning...\n");
-   	vol2 = VipReadVolumeWithBorder(input,1);  
-        if(layeronly=='y')
-        {
-   		vol = VipReadVolumeWithBorder(brainname,1); 
-                VipWriteVolume(vol,"brain");
-                VipWriteVolume(vol2,"nobias");
-	} 
-     	if(VipDilateInPartialVolumeFar(vol2, vol,layer)==PB) return(VIP_CL_ERROR);
-        VipSingleThreshold( vol, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT ); 
-   } 
-        
+	printf("Reading volume once again for partial volume tuning...\n");
+	vol2 = VipReadVolumeWithBorder(input,1);
+
+// 	var = VipReadVolumeWithBorder("/volatile/cfischer/base/prtocole1/AB070075/t1mri/default_acquisition/default_analysis/variance_AB070075.ima", 1);
+	VipSingleThreshold( variance, LOWER_THAN, 20, BINARY_RESULT );
+// 	VipExtedge(variance,EXTEDGE2D_ALL,SAME_VOLUME);
+// 	VipConnexVolumeFilter( variance, CONNECTIVITY_6, 100, CONNEX_BINARY );
+// 	VipDilation(variance,CHAMFER_BALL_2D,5);
+	VipWriteVolume(variance,"skinlayerbis");
+   }
+
+//    histo = VipCreateHistogram(vol2, vol3, edges, mc);
+//    if(histo==PB) printf("Erreur\n");
+//    printf("Writing histogram\n");
+//    if(VipWriteHisto(histo,histoname,WRITE_HISTO_ASCII)==PB)
+//    VipPrintfWarning("I can not write the histogram but I am going further");
+   /**/
+ 
+
   if(fillwhite=='y' && ana &&layeronly!='y')
     {
       if(vol2==NULL)
@@ -891,7 +984,9 @@ static int Usage()
   (void)fprintf(stderr,"        [-L[ast] {int (default:3)}]\n");
   (void)fprintf(stderr,"        [-F[irst] {int (default:1)}]\n");
   (void)fprintf(stderr,"        [-R[idge] {White ridge image name (default: not used)}]\n");
-  (void)fprintf(stderr,"        [-m[ode] {char: 5[2005], S[tandard], R[obust], s[tandard], r[obust], f[ast], default:S}]\n");
+  (void)fprintf(stderr,"        [-V[ariance] {Variance image name (default: not used)}]\n");
+  (void)fprintf(stderr,"        [-E[dges] {Edges image name (default: not used)}]\n");
+  (void)fprintf(stderr,"        [-m[ode] {char: V[2010], 5[2005], S[tandard], R[obust], s[tandard], r[obust], f[ast], default:S}]\n");
   (void)fprintf(stderr,"        [-n[iter] {int nb iteration of classif. regularization (def:1)}]\n"); 
   (void)fprintf(stderr,"        [-p[atho] {pathology binary mask, default:no}]\n");
   (void)fprintf(stderr,"        [-f[ill] {char y/n: fill white cavities ,default:y}]\n");
@@ -948,7 +1043,9 @@ static int Help()
   (void)printf("        [-b[rain] {char y/n: write segmented brain, default:y}]\n");
   (void)printf("        [-bn[ame] {brain image name, default:brain_input}]\n");
   (void)printf("        [-R[idge] {White ridge image name (default: not used)}]\n");
-  (void)printf("        [-m[ode] {char: 5[2005], S[tandard], R[obust], s[tandard], r[obust], f[ast], default:S}]\n");
+  (void)printf("        [-V[ariance] {Variance image name (default: not used)}]\n");
+  (void)printf("        [-E[dges] {Edges image name (default: not used)}]\n");
+  (void)printf("        [-m[ode] {char: V[2010], 5[2005], S[tandard], R[obust], s[tandard], r[obust], f[ast], default:S}]\n");
   (void)printf("Standard: iterative approach to choose best erosion size...\n");
   (void)printf("standard: fixed erosion size...\n");
   (void)printf("Robust: try to deal with meninge, sinus, Gibbs effect + iterative erosion...\n");

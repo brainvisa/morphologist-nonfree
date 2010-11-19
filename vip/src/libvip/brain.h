@@ -57,6 +57,73 @@ int VipDilateInPartialVolume(Volume *vol, Volume *mask);
 /*---------------------------------------------------------------------------*/
 int VipDilateInPartialVolumeFar(Volume *vol, Volume *mask, int layer); 
 /*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+VipHisto *VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivity);
+// int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivity);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+int VipDilateVolumeBorder(Volume *vol, Volume *mask, int T_GRAY_CSF, int T_WHITE_FAT, int connectivity);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+int VipVolumeEdges(Volume *edges, Vip_S16BIT *edges_ptr, int seuil);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+int VipCreateBrainSeed(
+Volume *vol,
+Volume *var,
+VipT1HistoAnalysis *ana,
+int T_GRAY_WHITE,
+int T_WHITE_FAT,
+int SEUIL_VAR
+);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+int VipPropagationConnectivity(
+Volume *mask,
+Volume *vol1,
+Volume *vol2,
+int mode,
+int seuil_vol1,
+int seuil_vol2,
+int connectivity
+);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+int VipPropagationReflux(
+Volume *mask,
+Volume *vol1,
+Volume *vol2,
+int nb_iterations,
+int mode,
+int seuil_vol1,
+int seuil_vol2,
+int connectivity
+);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+int VipGetBrain2010(
+Volume *vol,
+Volume *variance,
+Volume *edges,
+VipT1HistoAnalysis *ana,
+int dumb,
+int debug,
+float brain_erosion_size,
+int variance_threshold,
+int nb_iterations,
+int xCP,
+int yCA,
+int yCP
+);
+/*---------------------------------------------------------------------------*/
+
 /*---------------------------------------------------------------------------*/
 int VipGetBrain2005(
 Volume *vol,
