@@ -220,6 +220,9 @@ int VipDilateVolumeBorder(Volume *vol, Volume *mask, int T_GRAY_CSF, int T_WHITE
         return(PB);
     }
 
+    vos = VipGetOffsetStructure(vol);
+    vcs = VipGetConnectivityStruct( vol, connectivity );
+
     vol_ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
     mask_ptr = VipGetDataPtr_S16BIT( mask ) + vos->oFirstPoint;
 
@@ -790,6 +793,7 @@ int yCP
           VipFreeVolume(mask2);
           mask2 = NULL;
           printf("Applied variance seuil:%d\n",var_seuil);
+          fflush(stdout);
       }
       else
       {
@@ -841,7 +845,7 @@ int yCP
   VipChangeIntLabel(classif,0,-2);
   if(VipComputeFrontPropagationChamferDistanceMap(classif,255,-2,VIP_PUT_LIMIT_TO_LIMIT,10)==PB) return(PB);
 
-//   VipWriteVolume(classif,"distWhiteMatter"); 
+//   VipWriteVolume(classif,"distWhiteMatter");
   VipFreeVolume(mask);
   mask = NULL;
   
@@ -1013,7 +1017,7 @@ int yCP
   VipFreeVolume(classif);
 
 //----Premiere dilatation dans le masque erode
-  classif = VipCreateSingleThresholdedVolume( distmap, GREATER_OR_EQUAL_TO, (int)(1.3*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT );
+  classif = VipCreateSingleThresholdedVolume( distmap, GREATER_OR_EQUAL_TO, (int)((brain_erosion_size-0.5)*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT );
   VipConnexVolumeFilter( classif, CONNECTIVITY_26, -1, CONNEX_BINARY );
   
   if( VipConnexVolumeFilter( mask, CONNECTIVITY_26, -1, CONNEX_BINARY ) == PB) return(PB);
@@ -1077,10 +1081,10 @@ int yCP
   VipFreeVolume(mask);
   mask = NULL;
   
-  if(VipComputeFrontPropagationChamferDistanceMap(brain,255,-2,VIP_PUT_LIMIT_TO_LIMIT,5)==PB) return(PB);
+  if(VipComputeFrontPropagationChamferDistanceMap(brain,255,-2,VIP_PUT_LIMIT_TO_LIMIT,(brain_erosion_size+4))==PB) return(PB);
 //   VipWriteVolume(brain,"distseedfinal");
   
-  mask = VipCreateSingleThresholdedVolume( brain, GREATER_OR_EQUAL_TO, (int)(2.5*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT);
+  mask = VipCreateSingleThresholdedVolume( brain, GREATER_OR_EQUAL_TO, (int)((brain_erosion_size+3)*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT);
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
   
   if( VipMerge( brain, mask, VIP_MERGE_ONE_TO_ONE, 255, 512 )== PB) return(PB);
@@ -1090,11 +1094,11 @@ int yCP
 
   VipChangeIntLabel(brain,0,-100);
 
-  if(VipComputeFrontPropagationChamferDistanceMap(brain,255,-100,VIP_PUT_LIMIT_TO_LIMIT,6)==PB) return(PB);
+  if(VipComputeFrontPropagationChamferDistanceMap(brain,255,-100,VIP_PUT_LIMIT_TO_LIMIT,5)==PB) return(PB);
 
 //   VipWriteVolume(brain,"variancedistmapfinal");
 
-  VipSingleThreshold( brain, GREATER_OR_EQUAL_TO, (int)(2*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT );
+  VipSingleThreshold( brain, GREATER_OR_EQUAL_TO, (int)(3*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT );
   
   VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY);
   
@@ -1141,6 +1145,7 @@ int yCP
   }
   T_GRAY_CSF /= nb_total;
   printf("T_GRAY_CSF=%d\n", T_GRAY_CSF);
+  fflush(stdout);
   
   var = VipCreateSingleThresholdedVolume( variance, LOWER_THAN, 30, BINARY_RESULT );
   VipOpening( var, CHAMFER_BALL_3D, little_opening_size );
@@ -1180,29 +1185,17 @@ int yCP
   if( VipMerge( brain, mask2, VIP_MERGE_ONE_TO_ONE, 255, 255 )== PB) return(VIP_CL_ERROR);
   if( VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY ) == PB) return(PB);
 
-
 //----Ouverture sur le masque final
-  VipErosion( brain, CHAMFER_BALL_3D, little_opening_size );
-//   if( VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY ) == PB) return(PB);
-  VipDilation( brain, CHAMFER_BALL_3D, little_opening_size );
+  if( VipErosion( brain, CHAMFER_BALL_3D, little_opening_size ) == PB) return(PB);
+  if( VipDilation( brain, CHAMFER_BALL_3D, little_opening_size ) == PB) return(PB);
   if( VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY ) == PB) return(PB);
-//   VipWriteVolume(copyvol,"brain");
+//   VipWriteVolume(brain,"brain");
 
 //----Affinement de la frontiere
-  //Histogramme de la frontiere
-//   T_GRAY_CSF = VipCreateHistogram(copyvol, brain, edges, CONNECTIVITY_26, 1);
-//   strcpy(histoname, "/volatile/cfischer/Histo/adni/histogramborder");
-//   histo = VipCreateHistogram(copyvol, brain, edges, CONNECTIVITY_26, 1);
-//   if(histo==PB) return(PB);
-//   printf("Writing histogram of the border...\n");
-//   if(VipWriteHisto(histo,histoname,WRITE_HISTO_ASCII)==PB)
-//       VipPrintfWarning("I can not write the histogram but I am going further");
-
-//   printf("T_GRAY_CSF=%d\n", T_GRAY_CSF);
   //Rajout des voxels de la frontiere ayant ete declare appartenant a la matiere grise
-  VipDilateVolumeBorder( copyvol, brain, T_GRAY_CSF, T_WHITE_FAT_LOW_1, CONNECTIVITY_6);
+//   VipDilateInPartialVolumeFar(copyvol, brain, 1);
+  if(VipDilateVolumeBorder(copyvol, brain, T_GRAY_CSF, T_WHITE_FAT_LOW_1, CONNECTIVITY_6) == PB) return(PB);
 //   VipWriteVolume(brain,"finalbrain");
-//   VipDilateInPartialVolumeFar( copyvol, brain, 1 );
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
 
   return(OK);
