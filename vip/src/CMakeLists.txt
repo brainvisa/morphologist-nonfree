@@ -1,7 +1,7 @@
 
 add_subdirectory(preprocessor)
 add_subdirectory(libvip)
-
+set(HEADERS ${LIBVIP_HEADERS} PARENT_SCOPE)
 #------------------------------------------------------------------------------
 # Build targets for commands by looking into "Vip*" directories
 #------------------------------------------------------------------------------

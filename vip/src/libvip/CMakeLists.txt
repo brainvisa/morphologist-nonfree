@@ -7,6 +7,7 @@ BRAINVISA_GET_FILE_LIST_FROM_PRO( ${CMAKE_CURRENT_SOURCE_DIR}/libvip.pro
                              "SOURCES" _sources
                              "GENERICS" _generics )
 
+set(LIBVIP_HEADERS ${_headers} ${_headersStatic} PARENT_SCOPE)
 #------------------------------------------------------------------------------
 # Manage headers existing in source tree
 #------------------------------------------------------------------------------
