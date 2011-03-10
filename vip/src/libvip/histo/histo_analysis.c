@@ -365,9 +365,9 @@ VipT1HistoAnalysis *VipAnalyseCascadesRidge(SSCascade *clist, Vip1DScaleSpaceStr
   if(cascade[0])
     {
       ana->gray = VipAllocSSObject();
-      if(ana->gray==PB) return(PB);  
+      if(ana->gray==PB) return(PB);
       ana->gray->D2ms = cascade[0]->D2ms;
-      VipExpandSSObjectSingularities( ana->gray, volstruct ); 
+      VipExpandSSObjectSingularities( ana->gray, volstruct );
     }
 
   if(cascade[1])
@@ -383,22 +383,21 @@ VipT1HistoAnalysis *VipAnalyseCascadesRidge(SSCascade *clist, Vip1DScaleSpaceStr
   scale = mVipMin(ana->gray->good_scale,ana->white->good_scale);
   scale = mVipMax(100,scale);*/
   scale=50;
-  VipComputeAnalysedLoc( ana->white, scale+1 );
-  VipComputeAnalysedLoc( ana->gray, scale+1 );
+  if(VipComputeAnalysedLoc( ana->white, scale+1 )==PB) return(PB);
+  if(VipComputeAnalysedLoc( ana->gray, scale+1 )==PB) return(PB);
   PutUndersamplingRatio(ana,volstruct->undersampling_ratio);
-
   contrast = ana->white->mean - ana->gray->mean;
   
   if(ana->white)
     {
       ana->white->sigma = mVipMax(ana->white->right_sigma,ana->white->left_sigma);
-      ana->white->sigma = mVipMax(ana->white->sigma,(int)(0.167*contrast));
+//       ana->white->sigma = mVipMax(ana->white->sigma,(int)(0.167*contrast));
       printf("white: mean: %d, sigma:%d\n",ana->white->mean,ana->white->sigma);
     }
   if(ana->gray)
     {
       ana->gray->sigma = mVipMin(ana->gray->right_sigma,ana->gray->left_sigma);
-      if (ana->white) ana->gray->sigma = mVipMax(ana->gray->sigma,1.5*ana->white->sigma);
+//       if (ana->white) ana->gray->sigma = mVipMax(ana->gray->sigma,1.5*ana->white->sigma);
       printf("gray: mean: %d, sigma:%d\n",ana->gray->mean,ana->gray->sigma);
     }
 
@@ -545,7 +544,6 @@ VipT1HistoAnalysis *VipAnalyseCascades(SSCascade *clist, Vip1DScaleSpaceStruct *
 	}
     }
   /*ana->sequence = MRI_T1_SPGR;*/
-printf("avant %d\n",ana->sequence);fflush(stdout);
   if(ana->sequence==MRI_T1_SPGR)
     {
       SPGRana=VipAnalyseCascadesSPGRSequence(ana, clist, cmax, volstruct);
@@ -1373,7 +1371,6 @@ SSCascade *clist, SSCascade *cbrain, Vip1DScaleSpaceStruct *volstruct)
   
   slist = NULL;
   ncascade = 0;
-  printf("1\n"),fflush(stdout);
   
   if(clist->D1ms!=NULL) VipInsertSSSingularity(clist->D1ms,&slist);
   if(clist->D1Ms!=NULL) VipInsertSSSingularity(clist->D1Ms,&slist);
@@ -1396,7 +1393,6 @@ SSCascade *clist, SSCascade *cbrain, Vip1DScaleSpaceStruct *volstruct)
   ncascade +=1;
   ana->brain = VipAllocSSObject();
   if(ana->brain==PB) return(PB);
-  printf("2\n"),fflush(stdout);
 
   /*first analyse*/
   walker = slist;
@@ -1408,13 +1404,6 @@ SSCascade *clist, SSCascade *cbrain, Vip1DScaleSpaceStruct *volstruct)
   ana->brain->D2ms = walker;
   VipExpandSSObjectSingularities( ana->background, volstruct );
   VipExpandSSObjectSingularities( ana->brain, volstruct );
-
-  printf("3\n"),fflush(stdout);
-  printf("%d\n",ana),fflush(stdout);
-  printf("%d\n",ana->brain),fflush(stdout);
-  printf("%d\n",ana->brain->D2Mrs),fflush(stdout);
-  printf("%d\n",ana->brain->D1Ms),fflush(stdout);
-  printf("%d\n",ana->brain->D1ms),fflush(stdout);
 
   if (ana->brain->D2Mrs!=NULL && ana->brain->D1Ms!=NULL)
       {
@@ -1429,13 +1418,11 @@ SSCascade *clist, SSCascade *cbrain, Vip1DScaleSpaceStruct *volstruct)
       VipPrintfWarning("Pb discovered in 2010 by C. Fischer");
       return(PB);
       }
-  printf("31\n"),fflush(stdout);
 
   if(cgraywhite==PB)
     {
       VipPrintfWarning("Impossible to distinguish gray and white matter: insufficient grey white contrast, you have to increase field regularization in VipBiasCorrection)");
       return(MRI_T1_IR);
- 
     }
   else
     {
@@ -1450,7 +1437,6 @@ SSCascade *clist, SSCascade *cbrain, Vip1DScaleSpaceStruct *volstruct)
       if(ana->gray==PB) return(PB);
     }
   fflush(stdout);
-  printf("4\n"),fflush(stdout);
 
   if(ana->brain->D1Ms==NULL)
     {
@@ -1482,7 +1468,6 @@ SSCascade *clist, SSCascade *cbrain, Vip1DScaleSpaceStruct *volstruct)
       ana->csf = VipAllocSSObject();
       if(ana->csf==PB) return(PB);
     }
-  printf("5\n"),fflush(stdout);
 
   walker = ana->background->D2ms;
   walker = VipGetNextSingularityOnRight( walker->right, D2m );
@@ -1507,14 +1492,13 @@ SSCascade *clist, SSCascade *cbrain, Vip1DScaleSpaceStruct *volstruct)
 
   if(NO_CSF_CLUE==VFALSE)
       VipExpandSSObjectSingularities( ana->csf, volstruct );
-  printf("6\n"),fflush(stdout);
 
   if(ncascade>=3)
     {
       VipExpandSSObjectSingularities( ana->white, volstruct );
       VipExpandSSObjectSingularities( ana->gray, volstruct );
 
-      VipComputeAnalysedLoc( ana->gray, mVipMin(ana->gray->scale_event, ana->white->scale_event) );    
+      VipComputeAnalysedLoc( ana->gray, mVipMin(ana->gray->scale_event, ana->white->scale_event) );
       VipComputeAnalysedLoc( ana->white, mVipMin(ana->gray->scale_event, ana->white->scale_event) );
 
       PutUndersamplingRatio(ana,volstruct->undersampling_ratio);
@@ -1932,11 +1916,8 @@ SSCascade *VipGetInsideRangeCascade( SSCascade *clist, int left, int right, int 
   walker = clist;
   cgw = NULL;
 
-       printf("outside");fflush(stdout);
-
   while(walker!=NULL)
     {
-      printf("O");fflush(stdout);
       if((walker->D2ms) && ((walker->D2ms->loc[0]) > left )
 	 &&((walker->D2ms->loc[0]) < right )
 	 &&((walker->scale_event)<scalemax))
