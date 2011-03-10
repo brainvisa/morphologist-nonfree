@@ -169,6 +169,13 @@ int main(int argc, char *argv[])
   int i;
   int threshold_edges = 2;
   int controlled = VFALSE;
+  int xCA=0, yCA=0, zCA=0; 
+  int xCP=0, yCP=0, zCP=0;
+  int xP=0, yP=0, zP=0;
+  char point_filename[VIP_NAME_MAXLEN]="";
+  int talset = VFALSE;
+  VipTalairach tal, *coord=NULL;
+  int docorrection = VTRUE;
 
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -261,7 +268,7 @@ int main(int argc, char *argv[])
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  ngrid = atoi(argv[i]);
 	}
-      else if (!strncmp (argv[i], "-Dimfield", 2)) 
+      else if (!strncmp (argv[i], "-Dimfield", 3)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  if(argv[i][0]=='2') fieldtype = F2D_REGULARIZED_FIELD;
@@ -390,7 +397,13 @@ int main(int argc, char *argv[])
      else if (!strncmp (argv[i], "-Last", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  Last = atoi(argv[i]);
+          if(argv[i][0]=='a') Last = 3000;
+	  else Last = atoi(argv[i]);
+	}
+     else if (!strncmp (argv[i], "-Points", 2)) 
+	{
+	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+	  strcpy(point_filename,argv[i]);
 	}
      else if (!strncmp (argv[i], "-mode", 2)) 
 	{
@@ -458,6 +471,18 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
 	}
+      else if (!strncmp (argv[i], "-Dcorrect", 3)) 
+	{
+	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+	  if(argv[i][0]=='y') docorrection = VTRUE;
+	  else if(argv[i][0]=='n') docorrection = VFALSE;
+          else
+	    {
+	      VipPrintfError("Dcorrect: y/n choice");
+	      VipPrintfExit("(commandline)VipT1BiasCorrection");
+	      return(VIP_CL_ERROR);
+	    }
+	}
       else if (!strncmp (argv[i], "-writeformat", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -495,7 +520,6 @@ int main(int argc, char *argv[])
   if (fieldtype == F2D_REGULARIZED_FIELD ) printf("2D field regularization\n");
   if (fieldtype == F3D_REGULARIZED_FIELD ) printf("3D field regularization\n");
 
-
   /* PREPROCESSING: better estimation of histo
      estimation of white matter crest line */
 
@@ -517,6 +541,27 @@ int main(int argc, char *argv[])
 	  vol = converter;
       }
 
+      if(Last==3000)
+      {
+          if(GetCommissureCoordinates(vol, point_filename, &tal,
+			xCA, yCA, zCA,
+			xCP, yCP, zCP,
+			xP, yP, zP, talset)!=PB)
+          {
+              coord = &tal;
+              xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+              xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+              xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
+          
+              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+              if(Last<0) Last = 0;
+          }
+          else
+          {
+              printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+              Last = 0;
+          }
+      }
       printf("deleting last %d slices\n",Last);
       for(i=0;i<Last;i++)
         VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
@@ -611,10 +656,43 @@ int main(int argc, char *argv[])
       thresholdlow = (int)(mean+2*sigma+0.5);
       printf("threshold for corner background/tissue: %d\n", thresholdlow);
 
-      thresholdedvol = VipCopyVolume(vol,"closing");
-      if(!thresholdedvol) return(VIP_CL_ERROR);
-      VipSingleThreshold( thresholdedvol, LOWER_THAN, thresholdlow, BINARY_RESULT );
-      VipConnectivityChamferClosing (thresholdedvol,1,CONNECTIVITY_26,FRONT_PROPAGATION);
+/**/
+      masked = VipCopyVolume(vol,"extray");
+      if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
+//       VipComputeCustomizedFrontPropagationChamferDistanceMap( masked, 255, -1, 
+//               VIP_NO_LIMIT_IN_PROPAGATION, 0, 3, 3, 3, 50 );
+      if( mean < 0.3 )
+      {
+          printf("The volume has been already cutout, redefinition of the threshold...\n");
+          thresholdedvol = VipCopyVolume(vol,"closing");
+          if(!thresholdedvol) return(VIP_CL_ERROR);
+          VipFreeVolume(masked);
+
+          VipSingleThreshold( thresholdedvol, GREATER_OR_EQUAL_TO, thresholdlow, BINARY_RESULT );
+          masked = VipCopyVolume(thresholdedvol,"opening");
+          VipConnectivityChamferOpening (masked,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
+//           VipConnectivityChamferErosion (masked, mVipMax(mVipVolVoxSizeX(vol),
+//                                          mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
+
+          VipConnectivityChamferClosing (thresholdedvol,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
+          VipConnectivityChamferDilation (thresholdedvol,mVipMax(mVipVolVoxSizeX(vol), 
+                                          mVipVolVoxSizeY(vol))+0.1,CONNECTIVITY_26,FRONT_PROPAGATION);
+
+          VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+          VipFreeVolume(masked);
+      }
+      else
+      {
+          thresholdedvol = VipCopyVolume(vol,"closing");
+          if(!thresholdedvol) return(VIP_CL_ERROR);
+          VipSingleThreshold( thresholdedvol, LOWER_THAN, thresholdlow, BINARY_RESULT );
+          VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+          VipFreeVolume(masked);
+//           VipWriteTivoliVolume( thresholdedvol, "closing");
+          VipConnectivityChamferClosing (thresholdedvol,1,CONNECTIVITY_26,FRONT_PROPAGATION);
+      }
+/**/
+
       masked = VipCopyVolume(vol,"masked");
       if(!masked) return(VIP_CL_ERROR);
       VipMaskVolume(masked,thresholdedvol);
@@ -676,6 +754,29 @@ int main(int argc, char *argv[])
 	  vol = converter;
       }
 
+  if(Last==3000)
+  {
+      if(GetCommissureCoordinates(vol, point_filename, &tal,
+         xCA, yCA, zCA,
+         xCP, yCP, zCP,
+         xP, yP, zP, talset)!=PB)
+      {
+          coord = &tal;
+          xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+          xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+          xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
+
+          Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+          if(Last<0) Last = 0;
+      }
+      else
+      {
+          printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+          Last = 0;
+      }
+  }
+
+  printf("deleting last %d slices\n", Last);
   for(i=0;i<Last;i++)
     VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
   
@@ -798,6 +899,7 @@ int main(int argc, char *argv[])
       if (extrema) VipFreeVolume(extrema);
 
       if (VipConnexVolumeFilter (gradient, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
+      //       if (VipConnexVolumeFilter (gradient, CONNECTIVITY_26, 10000, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
       target = VipCopyVolume(gradient,"target");
 
       while(controlled==VFALSE)
@@ -936,12 +1038,15 @@ int main(int argc, char *argv[])
 	  if(VipWriteVolume(fullresult,fieldname)==PB) return(VIP_CL_ERROR);
       }
 
-  printf("Correcting volume...\n");
-  VipComputeUnbiasedVolume(fullresult,vol);
-
-  VipFreeVolume(fullresult);
-
-  if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
+  if(docorrection==VTRUE)
+  {
+      printf("Correcting volume...\n");
+      VipComputeUnbiasedVolume(fullresult,vol);
+      
+      VipFreeVolume(fullresult);
+      
+      if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
+  }
   /*
   compressed = VipComputeCompressedVolume( vol, compression);
   gradient = VipComputeCrestGrad(white_crest, compressed);
@@ -983,7 +1088,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-mW[rite] {write mean curvature: y/n (default:n)}]\n");
   (void)fprintf(stderr,"        [-mn[ame] {mean curvature image: (default:mean_curvature)}]\n");
   (void)fprintf(stderr,"        [-f[ield] {bias field name (default:\"biasfield\")}]\n");
-  (void)fprintf(stderr,"        [-D[imfield] {type of field (2/3) (default:3)}]\n");
+  (void)fprintf(stderr,"        [-Di[mfield] {type of field (2/3) (default:3)}]\n");
   (void)fprintf(stderr,"        [-F[write] {write field: y/n (default:n)}]\n");
   (void)fprintf(stderr,"        [-d[umb] {y/n (default:y)}]\n");
   (void)fprintf(stderr,"        [-Ke[ntropy] {float  (default:1.)}]\n");
@@ -1005,6 +1110,8 @@ static int Usage()
   (void)fprintf(stderr,"        [-Z[regulTuning] {float  (default:1.)}]\n");
   (void)fprintf(stderr,"        [-a[mplitude] {float ]1,10]  (default:1.1)}]\n");
   (void)fprintf(stderr,"        [-L[ast] {int (default:0)}]\n");
+  (void)fprintf(stderr,"        [-P[oints] {AC,PC,IH coord filename (*.tal) (default:not used)}]\n");
+  (void)fprintf(stderr,"        [-Dc[orrect] {Do the biais correction: y/n (default:y)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: a, v, s or t (default:t)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v, s or t (default:t)}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
@@ -1038,7 +1145,7 @@ static int Help()
   (void)printf("        [-en[ame] {edge image: (default:edges)}]\n");
   (void)printf("        [-mW[rite] {write mean curvature: y/n (default:n)}]\n");
   (void)printf("        [-mn[ame] {mean curvature image: (default:mean_curvature)}]\n");
-  (void)printf("        [-D[imfield] {type of field (2/3) (default:3)}]\n");
+  (void)printf("        [-Di[mfield] {type of field (2/3) (default:3)}]\n");
   (void)printf("2: the correction field is constant by slice, 3: constant by cubes\n");
   (void)printf("        [-F[write] {write field: y/n (default:n)}]\n");
   (void)printf("        [-d[umb] {y/n (default:y)}]\n");
@@ -1054,7 +1161,7 @@ static int Help()
   (void)printf("        [-t[auto] {char: y/n default:n}]\n");
   (void)printf("        [-tl[ow] {int (default:3*2^compression)}]\n");
   (void)printf("        [-th[igh] {int (default:not used)}]\n");
-  (void)printf("        [-e[ges] {int (default:not used, else n/2/3)}]\n");
+  (void)printf("        [-e[dges] {int (default:not used, else n/2/3)}]\n");
   (void)printf("remove 2D/3D edges for histogram estimation (discard partial volume)\n"); 
   (void)printf("        [-vt[ariance] {int (default:not used, else int threshold)}]\n");
   (void)printf("high threshold on standard deviation in 26-neighborhood for inclusion in histogram\n"); 
@@ -1085,6 +1192,11 @@ static int Help()
   (void)printf("Multiplicative factor for regularization in z direction (bad coil)\n");
   (void)printf("        [-L[ast] {int (default:0)}]\n");
   (void)printf("Mask the Last last slices in all estimation (for field of view going to the shoulder)\n");
+  (void)printf("        [-P[oints] {AC,PC,IH coord filename (*.tal) (default:not used)}]\n");
+  (void)printf("Correct format for the commissure coordinate file toto.APC:\n");
+  (void)printf("AC: 91 88 113\nPC: 91 115 109\nIH: 90 109 53\n");
+  (void)printf("        [-Dc[orrect] {Do the biais correction: y/n (default:y)}]\n");
+  (void)printf("Write the images as hfiltered or whiteridge whithout doing the bias correction if it has been done by another software\n");
   (void)printf("        [-r[eadformat] {char: a, v, s or t (default:any)}]\n");
   (void)printf("        [-w[riteformat] {char: v, s or t (default:t)}]\n");
   (void)printf("        [-h[elp]\n");
