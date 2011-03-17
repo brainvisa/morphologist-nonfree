@@ -719,20 +719,19 @@ int main(int argc, char *argv[])
     track = (int)(track/dscale+0.5);
 
     if(gnuplot=='p') gnuplotpsfile = VTRUE;
-
-    strcpy(histoname, "/volatile/cfischer/Histo/histogram");
-    /**/
     
     if(mode=='i')
     {
 	historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);
-        printf("Writing histogram of non undersample...\n");
-        if(VipWriteHisto(historesamp,histoname,WRITE_HISTO_ASCII)==PB)
-            VipPrintfWarning("I can not write the histogram but I am going further");
         histocumul = VipGetCumulHisto(shorthisto);
 // 	fichier = fopen("/volatile/cfischer/Histo/test.txt", "w");
 	if(factor==0 && undersampling_factor==1) u = 1;
-	else u = undersampling_factor/2;
+        else if (factor==1 && undersampling_factor==2) u = undersampling_factor/2;
+	else
+        {
+            undersampling_factor /= 2;
+            u = undersampling_factor/2;
+        }
 	while(u<=undersampling_factor*2)
 	{
             D0WRITE = VFALSE;
@@ -838,7 +837,7 @@ int main(int argc, char *argv[])
             
             for(i=0;i<j;i++)
             {
-                if((float)undersampling_factor_possible[i][1]<(moyenne_gray_mean - 1.5*std_gray_mean) || (float)undersampling_factor_possible[i][1]>(moyenne_gray_mean + 1.5*std_gray_mean) || (float)undersampling_factor_possible[i][3]<(moyenne_white_mean - 1.5*std_white_mean) || (float)undersampling_factor_possible[i][3]>(moyenne_white_mean + 1.5*std_white_mean))
+                if((std_gray_mean>5. && ((float)undersampling_factor_possible[i][1]<(moyenne_gray_mean - 1.5*std_gray_mean) || (float)undersampling_factor_possible[i][1]>(moyenne_gray_mean + 1.5*std_gray_mean))) || (std_white_mean>5. && ((float)undersampling_factor_possible[i][3]<(moyenne_white_mean - 1.5*std_white_mean) || (float)undersampling_factor_possible[i][3]>(moyenne_white_mean + 1.5*std_white_mean))))
                 {
                     printf("\nundersampling = %d out for the means\n", undersampling_factor_possible[i][0]), fflush(stdout);
                     k++;
@@ -900,7 +899,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        else
+        else if  ((j-k)>1)
         {
             ratio_min = 100.0;
             for(i=0;i<j;i++)
@@ -917,6 +916,7 @@ int main(int argc, char *argv[])
                         u = undersampling_factor_possible[i][0];
                         ratio_min = fabs(65.0-ratio_SigG1);
                     }
+                    else k++;
                 }
 
             }
@@ -924,6 +924,8 @@ int main(int argc, char *argv[])
 //             fprintf(fichier, "Best undersampling_factor = %d\n", u);
 //             fclose(fichier);
         }
+        if((j-k)==0) u = undersampling_factor;
+        undersampling_factor *= 2;
     }
 
     if(mode=='f')
@@ -1101,7 +1103,7 @@ int main(int argc, char *argv[])
       printf( "rm -r %s\n", systemcommand );
       VipRm( systemcommand, VipRecursive );
     }
-
+/*
     if(ridgename && ana)
       {
         vol = VipReadVolume(input);
@@ -1111,9 +1113,8 @@ int main(int argc, char *argv[])
         VipDoubleThreshold(vol,VIP_BETWEEN_OR_EQUAL_TO,mVipMin(ana->gray->mean +1*ana->gray->sigma,ana->white->mean -1*ana->white->sigma) ,ana->white->mean +2*ana->white->sigma,GREYLEVEL_RESULT);
         if (VipConnexVolumeFilter (vol, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
         VipWriteVolume(vol,ridgename);
-        
       }
-    
+*/
 
     
     return(0);
