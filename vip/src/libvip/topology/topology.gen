@@ -121,6 +121,43 @@ int VipFill26NeighborhoodForLabelComplement_GENSTRING(Topology26Neighborhood *to
 }
 #FUNCTION_END
 #TYPED_FUNC_END
+
+/*----------------------------------------------------------------------------*/
+
+#TYPED_FUNC_BEGIN VipFill26NeighborhoodForTwoLabelComplement_GENSTRING
+#TYPE_LIST_EXTERN ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipFill26NeighborhoodForTwoLabelComplement_GENSTRING(Topology26Neighborhood *top, 
+                                        GENTYPE *adresse, int label1, int label2)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  int i, *Xptr, *offsetptr;
+  int *X;
+  int temp;
+
+  if(top==NULL || adresse==NULL)
+    {
+      VipPrintfError("arguments in VipFill26NeighborhoodForTwoLabelComplement_GENSTRING");
+      VipPrintfExit("VipFill26NeighborhoodForTwoLabelComplement_GENSTRING");
+      return(PB);
+    }
+  X = top->ordered_values;
+  X[0] = 0;
+  Xptr = X+1;
+  offsetptr = top->offset+1;
+  for (i=26;i--;)
+      {
+	  temp = *(adresse+ *offsetptr++);
+	  *Xptr++ = (temp != (GENTYPE)label1) && (temp != (GENTYPE)label2);
+      }
+		       ;
+  return(OK);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
 /*----------------------------------------------------------------------------*/
 
 #TYPED_FUNC_BEGIN VipComputeCstarForLabel_GENSTRING
@@ -349,6 +386,35 @@ int VipComputeTopologicalClassificationForLabelComplement_GENSTRING(Topology26Ne
 #TYPED_FUNC_END
 
 /*----------------------------------------------------------------------------*/
+#TYPED_FUNC_BEGIN VipComputeTopologicalClassificationForLabel_GENSTRING
+#TYPE_LIST_EXTERN ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipComputeTopologicalClassificationForTwoLabel_GENSTRING(Topology26Neighborhood *top, 
+                                        GENTYPE *adresse, int inside, int outside)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+  int Cbar, Cstar;
+
+  if(top==NULL || adresse==NULL)
+    {
+      VipPrintfError("arguments in VipComputeTopologicalClassificationForTwoLabel_GENSTRING");
+      VipPrintfExit("VipComputeTopologicalClassificationForTwoLabel_GENSTRING");
+      return(TOPO_PB);
+    }
+  VipFill26NeighborhoodForTwoLabelComplement_GENSTRING(top,adresse,inside,outside);
+  Cbar = VipGetNumberOfComponentsIn18Neighborhood(top,CONNECTIVITY_6,CC_6_ADJACENT);
+  if(Cbar==0) return(TOPO_VOLUME_POINT);
+  VipFlipTopology26NeighborhoodValueTable(top);
+  Cstar = VipGetNumberOfComponentsIn26Neighborhood(top,CONNECTIVITY_26,CC_26_ADJACENT);
+  return(TopologicalClassification[Cstar][Cbar]);
+
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+/*----------------------------------------------------------------------------*/
 #TYPED_FUNC_BEGIN VipComputeTopologicalClassificationForLabelComplement_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
@@ -387,6 +453,7 @@ int VipIsASimplePointForLabel_GENSTRING(Topology26Neighborhood *top,
 #PROTOTYPE_END
 #FUNCTION_BEGIN
 { 
+
   int Cbar, Cstar;
 
   if(top==NULL || adresse==NULL)
