@@ -57,8 +57,8 @@ extern "C" {
 #define FRONT_RANDOM_AND_DEPTH 108
 
 /*---------------------------------------------------------------------------*/
-int VipHomotopicErosionFromInside( Volume *vol, int nb_iteration,
-				  int object, int inside, int outside, int front_mode);
+// int VipHomotopicErosionFromInside( Volume *vol, int nb_iteration,
+// 				  int object, int inside, int outside, int front_mode);
 /*-------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 int VipHomotopicErosionFromInsideSnake( Volume *vol, Volume *graylevel, int nb_iteration,
@@ -92,6 +92,11 @@ int VipHomotopicInsideSoftDilationSnake( Volume *vol, Volume *graylevel, int nb_
 /*---------------------------------------------------------------------------*/
 extern int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
 				  int object, int inside, int outside);
+/*-------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+extern int VipHomotopicErosionFromInside( Volume *vol, Volume *graylevel, int nb_iteration,
+				  int object, int inside, int outside );
 /*-------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------*/
@@ -149,8 +154,7 @@ extern int VipCleanUpFrontFromImmortals(
   int front_value);
 
 
-extern VipIntBucket *VipCreateFrontIntBucketHollowObject( Volume *vol, int connectivity, int front_value,
-						   int inside, int outside);
+extern VipIntBucket *VipCreateFrontIntBucketHollowObject( Volume *vol, int connectivity, int front_value, int inside, int outside);
 
 extern int VipCleanUpFrontFromImmortalsHollowObject(
   Topology26Neighborhood *topo26,
@@ -173,6 +177,19 @@ extern int VipFillNextFrontFromOldFrontHollowObject(
   int outside);
 /*---------------------------------------------------------------------------*/
 extern int VipRandomizeFrontOrder(VipIntBucket *front, int nloop);
+
+extern int VipWatershedFrontPropagation( Volume *vol, Volume *altitude, Volume *plan_hemi, int int_min, int int_max, int domain, int outside, int nb_interval, int connectivity);
+
+extern int VipFillNextFrontFromOldFrontVoronoiObject(
+  Vip_S16BIT *first_vol_point,
+  VipIntBucket *buck,
+  VipIntBucket *nextbuck,
+  VipConnectivityStruct *vcs,
+  int front_value,
+  int domain,
+  int outside);
+
+extern VipIntBucket *VipCreateFrontIntBucketVoronoiObject( Volume *vol, int connectivity, int front_value, int domain, int outside);
 
 #ifdef __cplusplus
 }
