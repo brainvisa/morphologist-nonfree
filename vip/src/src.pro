@@ -36,6 +36,7 @@ PSUBDIRS	=			\
               VipGreyStatFromClassif   \
 	VipHistoAnalysis		\
 	VipHomotopicSnake		\
+	VipHomotopic    	        \
 	VipFoetusHomotopicSnake		\
 	VipHyste			\
 	VipLabelArg			\

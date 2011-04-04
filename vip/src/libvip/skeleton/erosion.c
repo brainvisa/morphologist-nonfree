@@ -70,6 +70,7 @@ int VipHomotopicErosionFromInsideSnake( Volume *vol, Volume *graylevel, int nb_i
   float deltaU;
   int icon;
   int totalcount;
+  int valeur;
 
   if (VipVerifyAll(vol)==PB)
     {
@@ -155,7 +156,7 @@ int VipHomotopicErosionFromInsideSnake( Volume *vol, Volume *graylevel, int nb_i
 	      deltaU += deltaGPotentialGtoW(*gptr,KG,mG,sigmaG,KW,mW,sigmaW);
 	      if(deltaU<=0)
 		  {
-		      if (VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT(topo26, ptr, inside, outside)
+		      if (VipComputeTopologicalClassificationForTwoLabel_S16BIT(topo26, ptr, inside, outside)
 			  ==TOPO_BORDER_POINT)
 			  {
 			      *ptr = inside;
@@ -221,6 +222,7 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
   int *buckptr;
   int i;
   int totalcount;
+  int valeur;
 
   if (VipVerifyAll(vol)==PB)
     {
@@ -286,21 +288,18 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
       for(i=buck->n_points;i--;)
 	{
 	  ptr = first + *buckptr++;
-		 
 	  if (VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT(topo26, ptr, inside, outside)
-	      ==TOPO_BORDER_POINT)
+             ==TOPO_BORDER_POINT)
 	    {
 	      *ptr = outside;
 	      count++;
 	    }
 	}
-	      	      			
       VipFillNextFrontFromOldFrontForErosionFromOutside(first,buck,nextbuck,vcs6,object,VIP_FRONT,outside,inside);
 		  
       /*bucket permutation*/
       VipPermuteTwoIntBucket(&buck, &nextbuck);
       nextbuck->n_points = 0;
-	  
     }
   printf("\n");
   VipChangeIntLabel(vol,VIP_FRONT,object);
@@ -311,6 +310,111 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
   
   return(OK);
 }      
+
+/*---------------------------------------------------------------------------*/
+int VipHomotopicErosionFromInside( Volume *vol, Volume *graylevel, int nb_iteration,
+				  int object, int inside, int outside )
+/*-------------------------------------------------------------------------*/
+
+{
+  VipIntBucket *buck, *nextbuck;
+  Topology26Neighborhood *topo26;
+  VipConnectivityStruct *vcs6;
+  int loop, count, totalcount;
+  Vip_S16BIT *first, *ptr, *gfirst, *gptr, *voisin;
+  int *buckptr;
+  int i;
+  int icon;
+  int valeur;
+
+  if (VipVerifyAll(vol)==PB)
+    {
+      VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+      return(PB);
+    }
+  if (VipTestType(vol,S16BIT)!=OK)
+    {
+      VipPrintfError("Sorry,  VipHomotopicErosionFromInside is only implemented for S16BIT volume");
+      VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+      return(PB);
+    }
+  if (mVipVolBorderWidth(vol) < 1)
+    {
+      VipPrintfError("Sorry, VipHomotopicErosionFromInside is only implemented with border");
+      VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+      return(PB);
+    }
+
+  if(object==inside)
+    {
+      VipPrintfError("object value = inside value!");
+      VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+      return(PB);
+    }
+  printf("Homotopic erosion from inside...\n");
+  /*
+  printf("Initialization (object:%d, inside:%d, outside:%d)...\n",object,inside,outside);
+  */
+  VipSetBorderLevel( vol, outside ); 
+
+  buck = VipCreateFrontIntBucketForErosionFromOutside( vol, CONNECTIVITY_6, VIP_FRONT, object, inside);
+  if(buck==PB) return(PB);
+  nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
+  if(nextbuck==PB) return(PB);
+
+  topo26 = VipCreateTopology26Neighborhood( vol );
+  if(topo26==PB) return(PB);
+
+  vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
+
+  nextbuck->n_points = 0;
+
+  first = VipGetDataPtr_S16BIT(vol);
+  gfirst = VipGetDataPtr_S16BIT(graylevel);
+
+  /*main loop*/
+  loop=0;
+  count = 1;
+  totalcount = 0;
+  printf("loop: %3d, Added %6d",loop,0);
+
+  while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
+  {
+      if(loop==1) count=0;
+      totalcount += count;
+      count = 0;
+      printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Deleted: %6d",loop,totalcount);
+      fflush(stdout);
+      
+      buckptr = buck->data;
+      for(i=buck->n_points;i--;)
+      {
+          ptr = first + *buckptr;
+          gptr = gfirst + *buckptr++;
+          if(*gptr>1)
+          {
+              if (VipComputeTopologicalClassificationForTwoLabel_S16BIT(topo26, ptr, inside, outside)==TOPO_BORDER_POINT)
+              {
+                  *ptr = inside;
+                  count++;
+              }
+          }
+      }
+      VipFillNextFrontFromOldFrontForErosionFromOutside(first,buck,nextbuck,vcs6,object,VIP_FRONT,inside,outside);
+      
+      /*bucket permutation*/
+      VipPermuteTwoIntBucket(&buck, &nextbuck);
+      nextbuck->n_points = 0;
+  }
+  printf("\n");
+  VipChangeIntLabel(vol,VIP_FRONT,object);
+  VipChangeIntLabel(vol,VIP_IMMORTAL,object);
+  
+  VipFreeIntBucket(buck);
+  VipFreeIntBucket(nextbuck);
+  
+  return(OK);
+}
 
 /*---------------------------------------------------------------------------*/
 static VipIntBucket *VipCreateFrontIntBucketForErosionFromOutside( Volume *vol, int connectivity, int front_value,

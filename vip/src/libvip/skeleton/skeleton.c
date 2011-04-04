@@ -143,11 +143,12 @@ Volume *ConvertBrainToAltitude(Volume *brain,float sigma,
       ptrmc += vosmc->oLineBetweenSlice; /*skip border lines*/
    }
 
+  VipWriteTivoliVolume(meancurv,"meancurv");
    VipFreeVolume(meancurv);
-   /*
+   
    printf("Writing altitude...\n");
    VipWriteTivoliVolume(altitude,"altitude");
-   */
+   
    return(altitude);
 }
  
@@ -354,7 +355,7 @@ int VipWatershedHomotopicSkeleton( Volume *vol, Volume *altitude, int immortal_e
   
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
-
+  VipWriteVolume(vol, "whaterskeleton_bf_postproc");
   /*because of the bad trick related to the multiresolution implementation,
     cf construction of the front*/
   postprocessing = VipCreateSingleThresholdedVolume(vol,EQUAL_TO,inside,BINARY_RESULT);
