@@ -207,6 +207,8 @@ static int Usage()
     (void)fprintf(stderr,"Usage: VipHomotopic\n");
     (void)fprintf(stderr,"        -i[nput] {segmented brain image name}\n");
     (void)fprintf(stderr,"        [-o[utput] {image name (default:\"cortex\")}]\n");
+    (void)fprintf(stderr,"        [-C[ortex] {cortex image name}]\n");
+    (void)fprintf(stderr,"        [-S[keleton] {skeleton image name}]\n");
     (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
     (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:t)}]\n");
     (void)fprintf(stderr,"        [-h[elp]\n");
@@ -216,9 +218,15 @@ static int Usage()
 
 static int Help()
 {
+    VipPrintfInfo("Homotopic segmentation of an object defined by the external hull");
+    (void)printf("of the brain (the surface of a brain closing) and by the CSF/gray interface\n");
     (void)printf("Usage: VipHomotopicSnake\n");
     (void)printf("        -i[nput] {brain image name}\n");
     (void)printf(" a brain (or hemisphere) segmentation usually obtained with VipGetBrain\n");
+    (void)printf("        [-C[ortex] {cortex image name}]\n");
+    (void)printf(" a white matter segmentation obtained with VipHomotopicSnake\n");
+    (void)printf("        [-S[keleton] {skeleton image name}]\n");
+    (void)printf(" an image of the sulci obtained with VipSkeleton\n");
     (void)printf("        [-o[utput] {image name (default:\"homotopic\")}]\n");
     (void)printf("        [-r[eadformat] {char: v or t (default:v)}]\n");
     (void)printf("        [-w[riteformat] {char: v or t (default:t)}]\n");
