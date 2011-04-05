@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
   float dscale = 0.5;
   int i;
   Volume *vol=NULL, *brain=NULL, *converter=NULL, *vol2=NULL;
+  Volume *classif=NULL, *copy=NULL;
   char analyse = 'y';
   int track = 5;
   float berosion = 2.1;
@@ -96,6 +97,7 @@ int main(int argc, char *argv[])
   int xCP=0, yCP=0, zCP=0;
   int xP=0, yP=0, zP=0;
   char point_filename[VIP_NAME_MAXLEN]="";
+  float CA[3], CP[3], P[3], d[3];
   VipTalairach tal, *talptr=NULL, *coord=NULL;
   int talset = VFALSE;
   int layer = 0;
@@ -683,27 +685,31 @@ int main(int argc, char *argv[])
     if(ana && (strcmp(point_filename,"")||talset==VTRUE))
     {
       vol2=NULL;
-      if(GetCommissureCoordinates(vol, point_filename, &tal,
-			      xCA, yCA, zCA, 
-			      xCP, yCP, zCP, 
-			      xP, yP, zP, talset)==PB) return(VIP_CL_ERROR);
+      if(GetCommissureCoordinates(vol, point_filename, &tal, xCA, yCA, zCA, xCP, yCP, zCP, xP, yP, zP, talset)==PB) return(VIP_CL_ERROR);
 
       coord = &tal;
-      xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
-      xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+      CA[0] = (float)(coord->AC.x); CA[1] = (float)(coord->AC.y); CA[2] = (float)(coord->AC.z);
+      CP[0] = (float)(coord->PC.x); CP[1] = (float)(coord->PC.y); CP[2] = (float)(coord->PC.z);
+      P[0] = (float)(coord->Hemi.x); P[1] = (float)(coord->Hemi.y); P[2] = (float)(coord->Hemi.z);
+
       VipComputeTalairachTransformation(vol,&tal);
       talptr = &tal;
     }
 
     if (ridgename!=NULL)
     {
-      if(mode!='5')
-        VipPrintfWarning("Ridge image useless without mode 5");
-      else
+      if(mode=='5')
         {
           ridge = VipReadVolume(ridgename);
           if(!ridge) return(VIP_CL_ERROR);
         }
+      else if(mode=='V')
+        {
+          ridge = VipReadVolumeWithBorder(ridgename,1);
+          if(!ridge) return(VIP_CL_ERROR);
+        }
+      else
+        VipPrintfWarning("Ridge image useless without mode 5 or 2010");
     }
     if (variancename!=NULL)
     {
@@ -728,7 +734,7 @@ int main(int argc, char *argv[])
 
   switch(mode)
     {
-    case 'V': if(VipGetBrain2010(vol,variance,edges,ana,NO,debugflag,berosion,vthreshold,niterations,xCP,yCA,yCP)==PB) return(VIP_CL_ERROR);
+    case 'V': if(VipGetBrain2010(vol,variance,edges,ridge,ana,NO,debugflag,berosion,vthreshold,niterations,CA,CP,P)==PB) return(VIP_CL_ERROR);
       break;    
     case '5': if(VipGetBrain2005(vol,ana,NO,debugflag,1.6,5,berosion,10,niterations,ridge)==PB) return(VIP_CL_ERROR);
       break;    
@@ -747,58 +753,24 @@ int main(int argc, char *argv[])
       return(VIP_CL_ERROR);
     }
  }	
-    
+  
     /*2009 Try to add a hack to fill up some  partial volume voxels in order to get result stable to the variability
       of the histogram analysis*/
 
-//    if (layer>0)
-//    {
-// 	printf("Reading volume once again for partial volume tuning...\n");
-// 	vol2 = VipReadVolumeWithBorder(input,1);
-//      if(layeronly=='y')
-//      {
-// 		vol = VipReadVolumeWithBorder(brainname,1); 
-// 		VipWriteVolume(vol,"brain");
-//         	VipWriteVolume(vol2,"nobias");
-// 	}
-// 	if(VipDilateInPartialVolumeFar(vol2, vol,layer)==PB) return(VIP_CL_ERROR);
-//      VipSingleThreshold( vol, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
-//    }
-
-
-   /**/
-   strcpy(histoname, "/volatile/cfischer/Histo/adni/");
-   root2 = input;
-   root1 = input;
-   while(root2!=NULL)
-   {
-	root2 = strstr(root1,"/");
-	if(root2!=NULL) root1 = root2+1;
-   }
-   strcpy(stripped_input,root1);
-   strcat(histoname, stripped_input);
-
-   if (layer>0)
-   {
-	printf("Reading volume once again for partial volume tuning...\n");
-	vol2 = VipReadVolumeWithBorder(input,1);
-
-// 	var = VipReadVolumeWithBorder("/volatile/cfischer/base/prtocole1/AB070075/t1mri/default_acquisition/default_analysis/variance_AB070075.ima", 1);
-	VipSingleThreshold( variance, LOWER_THAN, 20, BINARY_RESULT );
-// 	VipExtedge(variance,EXTEDGE2D_ALL,SAME_VOLUME);
-// 	VipConnexVolumeFilter( variance, CONNECTIVITY_6, 100, CONNEX_BINARY );
-// 	VipDilation(variance,CHAMFER_BALL_2D,5);
-	VipWriteVolume(variance,"skinlayerbis");
-   }
-
-//    histo = VipCreateHistogram(vol2, vol3, edges, mc);
-//    if(histo==PB) printf("Erreur\n");
-//    printf("Writing histogram\n");
-//    if(VipWriteHisto(histo,histoname,WRITE_HISTO_ASCII)==PB)
-//    VipPrintfWarning("I can not write the histogram but I am going further");
-   /**/
- 
-
+  if (layer>0)
+  {
+      printf("Reading volume once again for partial volume tuning...\n");
+      vol2 = VipReadVolumeWithBorder(input,1);
+      if(layeronly=='y')
+      {
+          vol = VipReadVolumeWithBorder(brainname,1);
+          VipWriteVolume(vol,"brain");
+          VipWriteVolume(vol2,"nobias");
+      }
+      if(VipDilateInPartialVolumeFar(vol2, vol,layer)==PB) return(VIP_CL_ERROR);
+      VipSingleThreshold( vol, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
+  }
+  
   if(fillwhite=='y' && ana &&layeronly!='y')
     {
       if(vol2==NULL)
@@ -817,6 +789,39 @@ int main(int argc, char *argv[])
       VipFreeVolume(vol2);		    
       vol2 = NULL; 
     }
+
+  
+  printf("\n---------------------------------\n");
+  printf("Correction of the white_ridge...\n");
+  printf("---------------------------------\n");
+  
+  vol2 = VipReadVolumeWithBorder(input,1);
+  VipMaskVolume(vol2, vol);
+  
+  classif = VipGrayWhiteClassificationRegularisationForVoxelBasedAna(vol2, ana, VFALSE, 5, 20, CONNECTIVITY_26);
+  VipChangeIntLabel(classif,VOID_LABEL,0);
+  
+  VipSingleThreshold( vol2, GREATER_THAN, 0, BINARY_RESULT );
+  copy = VipCopyVolume(vol2, "copyvol2");
+  VipErosion( vol2, CHAMFER_BALL_3D, 3 );
+  VipMerge( copy, vol2, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+  VipMerge( classif, copy, VIP_MERGE_ALL_TO_ONE, 255, GRAY_LABEL );
+  VipFreeVolume(vol2);
+  VipFreeVolume(copy);
+
+//   vol2 = VipExtedge(classif,EXTEDGE3D_ALL,NEW_VOLUME);
+//   VipMerge(classif,vol2,VIP_MERGE_ALL_TO_ONE,255,GRAY_LABEL);
+//   VipFreeVolume(vol2);
+  
+  VipSingleThreshold(classif, EQUAL_TO, WHITE_LABEL, BINARY_RESULT );
+  VipConnexVolumeFilter( classif, CONNECTIVITY_6, -1, CONNEX_BINARY );
+
+  printf("\nCleaning white_ridge...\n\n");
+  VipMaskVolume(ridge, classif);
+  VipFreeVolume(classif);
+  VipConnexVolumeFilter( ridge, CONNECTIVITY_26, -1, CONNEX_BINARY );
+  VipWriteVolume(ridge,ridgename);
+  
 
   /* check if the mask is empty or fills the whole volume */
   if( VipCheckBrainMask( vol ) == PB )
