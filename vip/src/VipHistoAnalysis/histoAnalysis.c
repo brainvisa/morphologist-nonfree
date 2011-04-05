@@ -32,7 +32,7 @@
 #include <vip/deriche.h>
 #include <unistd.h>
 
-static int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
+// static int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
 Volume *VipComputeCrestAverageIntensity(Volume *crest, Volume *vol);
 
 /*------------------------------------------------------------------*/
@@ -196,7 +196,6 @@ int main(int argc, char *argv[])
     int u=0;
     int factor;
     VipHisto *historesamp = NULL;
-    VipHisto *histocumul = NULL;
     int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
     int j=0, k=0, l=0;
     float contrast = 0, ratio_GW = 0;
@@ -723,8 +722,6 @@ int main(int argc, char *argv[])
     if(mode=='i')
     {
 	historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);
-        histocumul = VipGetCumulHisto(shorthisto);
-// 	fichier = fopen("/volatile/cfischer/Histo/test.txt", "w");
 	if(factor==0 && undersampling_factor==1) u = 1;
         else if (factor==1 && undersampling_factor==2) u = undersampling_factor/2;
 	else
@@ -787,8 +784,6 @@ int main(int argc, char *argv[])
                         printf("\ncontrast = %.3f\n", contrast), fflush(stdout);
                         printf("ratio_GW = %.3f, val_histo_gray = %d, val_histo_white = %d\n", ratio_GW, shorthisto->val[ana->gray->mean], shorthisto->val[ana->white->mean]), fflush(stdout);
                         
-//                         printf("val_histo_gray+sigma = %d, ratio1 = %f, ratio2 = %f\n", histocumul->val[ana->gray->mean - ana->gray->sigma], 100.0*((float)(histocumul->val[ana->gray->mean])-(float)(histocumul->val[ana->gray->mean - ana->gray->sigma]))/(float)(histocumul->val[ana->gray->mean]), 100.0*((float)(histocumul->val[ana->gray->mean])-(float)(histocumul->val[ana->gray->mean - 2*ana->gray->sigma]))/(float)(histocumul->val[ana->gray->mean])), fflush(stdout);
-                        
                         if((0.09<contrast && contrast<0.55) && (0.30<ratio_GW && ratio_GW<2.5))
                         {
                             undersampling_factor_possible[j][0] = u;
@@ -796,7 +791,6 @@ int main(int argc, char *argv[])
                             undersampling_factor_possible[j][2] = ana->gray->sigma;
                             undersampling_factor_possible[j][3] = ana->white->mean;
                             undersampling_factor_possible[j][4] = ana->white->sigma;
-//                             fprintf(fichier, "Undersampling= %d : gray_mean= %d gray_sigma= %d white_mean= %d white_sigma= %d\n", undersampling_factor_possible[j][0], undersampling_factor_possible[j][1], undersampling_factor_possible[j][2], undersampling_factor_possible[j][3], undersampling_factor_possible[j][4]);
                             j++;
                         }
                         else l++;
@@ -806,125 +800,13 @@ int main(int argc, char *argv[])
                 {
                     VipPrintfError("Sorry, the analysis can not proceed further");
                 }
-            } //faire ici la deuxieme boucle si premiere na pas fonctionne
+            }
             if(u<undersampling_factor && u!=1) u+=undersampling_factor/4;
             else u+=(undersampling_factor+1)/2;
         }
-// 	fclose(fichier);
-        if(j==0) u = undersampling_factor;
-        
-        if(j>2)
-        {
-            for(i=0;i<j;i++)
-            {
-                moyenne_gray_mean += (float)undersampling_factor_possible[i][1];
-                moyenne_white_mean += (float)undersampling_factor_possible[i][3];
-            }
-            moyenne_gray_mean = moyenne_gray_mean/j;
-            moyenne_white_mean = moyenne_white_mean/j;
-            printf("\nmoyenne_gray_mean=%f, ", moyenne_gray_mean), fflush(stdout);
-            printf("moyenne_white_mean=%f\n", moyenne_white_mean), fflush(stdout);
-            
-            for(i=0;i<j;i++)
-            {
-                std_gray_mean += ((float)undersampling_factor_possible[i][1] - moyenne_gray_mean)*((float)undersampling_factor_possible[i][1] - moyenne_gray_mean);
-                std_white_mean += ((float)undersampling_factor_possible[i][3] - moyenne_white_mean)*((float)undersampling_factor_possible[i][3] - moyenne_white_mean);
-            }
-            std_gray_mean = sqrt(std_gray_mean/j);
-            std_white_mean = sqrt(std_white_mean/j);
-            printf("std_gray_mean=%f, ", std_gray_mean), fflush(stdout);
-            printf("std_white_mean=%f\n", std_white_mean), fflush(stdout);
-            
-            for(i=0;i<j;i++)
-            {
-                if((std_gray_mean>5. && ((float)undersampling_factor_possible[i][1]<(moyenne_gray_mean - 1.5*std_gray_mean) || (float)undersampling_factor_possible[i][1]>(moyenne_gray_mean + 1.5*std_gray_mean))) || (std_white_mean>5. && ((float)undersampling_factor_possible[i][3]<(moyenne_white_mean - 1.5*std_white_mean) || (float)undersampling_factor_possible[i][3]>(moyenne_white_mean + 1.5*std_white_mean))))
-                {
-                    printf("\nundersampling = %d out for the means\n", undersampling_factor_possible[i][0]), fflush(stdout);
-                    k++;
-                    for(l=0;l<5;l++)
-                    {
-                        undersampling_factor_possible[i][l] = 0;
-                    }
-                }
-            }
-            
-//             fichier = fopen("/volatile/cfischer/Histo/test.txt", "a");
-//             fputs("\n", fichier);
-//             for(i=0;i<j;i++)
-//             {
-//                 if(undersampling_factor_possible[i][0]!=0)
-//                 {
-//                     fprintf(fichier, "Undersampling= %d : gray_mean= %d gray_sigma= %d white_mean= %d white_sigma= %d\n", undersampling_factor_possible[i][0], undersampling_factor_possible[i][1], undersampling_factor_possible[i][2], undersampling_factor_possible[i][3], undersampling_factor_possible[i][4]);
-//                 }
-//             }
-//             fclose(fichier);
-        }
-        
-        for(i=0;i<j;i++)
-        {
-            if(undersampling_factor_possible[i][0]!=0)
-            {
-                if(((float)undersampling_factor_possible[i][1]/(float)undersampling_factor_possible[i][2])<1.8)
-                {
-                    printf("\nundersampling = %d out for the standard deviations\n", undersampling_factor_possible[i][0]), fflush(stdout);
-                    k++;
-                    for(l=0;l<5;l++)
-                    {
-                        undersampling_factor_possible[i][l] = 0;
-                    }
-                }
-            }
-        }
-        
-//         fichier = fopen("/volatile/cfischer/Histo/test.txt", "a");
-//         fputs("\n", fichier);
-//         for(i=0;i<j;i++)
-//         {
-//             if(undersampling_factor_possible[i][0]!=0)
-//             {
-//                 fprintf(fichier, "Undersampling= %d : gray_mean= %d gray_sigma= %d white_mean= %d white_sigma= %d\n", undersampling_factor_possible[i][0], undersampling_factor_possible[i][1], undersampling_factor_possible[i][2], undersampling_factor_possible[i][3], undersampling_factor_possible[i][4]);
-//             }
-//         }
-//         fputs("\n", fichier);
-//         fclose(fichier);
-        
-        if((j-k)==1)
-        {
-            for(i=0;i<j;i++)
-            {
-                if(undersampling_factor_possible[i][0]!=0)
-                {
-                    u=undersampling_factor_possible[i][0];
-//                     fprintf(fichier, "\nBest undersampling_factor = %d\n", u);
-                }
-            }
-        }
-        else if  ((j-k)>1)
-        {
-            ratio_min = 100.0;
-            for(i=0;i<j;i++)
-            {
-                if(undersampling_factor_possible[i][0]!=0)
-                {
-                    ratio_SigG1 = 100*(float)(shorthisto->val[undersampling_factor_possible[i][1] - undersampling_factor_possible[i][2]])/(float)(shorthisto->val[undersampling_factor_possible[i][1]]);
-                    ratio_SigG2 = 100*(float)(shorthisto->val[undersampling_factor_possible[i][1] - 2*undersampling_factor_possible[i][2]])/(float)(shorthisto->val[undersampling_factor_possible[i][1]]);
-                    
-                    printf("\nratio_SigG1 = %.3f, ratio_SigG2 = %.3f\n", ratio_SigG1, ratio_SigG2), fflush(stdout);
-                    
-                    if((fabs(65.0-ratio_SigG1)<ratio_min) && (ratio_SigG2>20.0)) //peut être augmenter ou ajouter le critère a 2sigma
-                    {
-                        u = undersampling_factor_possible[i][0];
-                        ratio_min = fabs(65.0-ratio_SigG1);
-                    }
-                    else k++;
-                }
+        u = VipIterateToGetPropUndersampledRatio(shorthisto, &undersampling_factor, undersampling_factor_possible, j);
+        printf("\nu=%d, ", u), fflush(stdout);
 
-            }
-//             fichier = fopen("/volatile/cfischer/Histo/test.txt", "a");
-//             fprintf(fichier, "Best undersampling_factor = %d\n", u);
-//             fclose(fichier);
-        }
-        if((j-k)==0) u = undersampling_factor;
         undersampling_factor *= 2;
     }
 
@@ -1116,7 +998,6 @@ int main(int argc, char *argv[])
       }
 */
 
-    
     return(0);
 
   
@@ -1234,140 +1115,140 @@ static int Help()
 }
 
 /******************************************************/
-/******************************************************/
-static int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust)
-{
-  VipOffsetStruct *vos;
-  int ix, iy, iz;
-  Vip_S16BIT *ptr, *cptr;
-  double sum, sum2;
-  double temp;
-  int n;
-  double threshold;
-
-
-     vos = VipGetOffsetStructure(vol);
-     ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-     cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
-     sum = 0.;
-     n = 0;
-     for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-       {
-	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-	   {
-	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-	       {
-		 if(*cptr)
-		   {
-		     n++;
-		     sum += *ptr;
-		   }
-		 ptr++;
-                 cptr++;
-	       }
-	     ptr += vos->oPointBetweenLine;  /*skip border points*/
-	     cptr += vos->oPointBetweenLine;  /*skip border points*/
-	   }
-	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
-	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
-       }
-     if(n==0 || n==1)
-       {
-         VipPrintfWarning ("empty volume in VipComputeStatInMaskVolume");
-         return(PB);
-       }
-     *mean = (float)(sum/n);
-     ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-     cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
-     sum2 = 0.;
-     for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-       {
-	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-	   {
-	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-	       {
-		 if(*cptr)
-		   {
-                     temp = *ptr-*mean;
-		     sum2 += temp*temp;
-		   }
-		 cptr++;
-		 ptr++;
-	       }
-	     ptr += vos->oPointBetweenLine;  /*skip border points*/
-	     cptr += vos->oPointBetweenLine;  /*skip border points*/
-	   }
-	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
-	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
-       }
-     *sigma = (float)sqrt((double)(sum2/(n-1)));
-
-     if (robust==VTRUE)
-       {
-
-         threshold = *mean + 3 * *sigma;
-
-
-         ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-         cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
-         for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-           {
-             for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-               {
-                 for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-                   {
-                     if(*cptr)
-                       {
-                         if (*ptr>threshold)
-                           {
-                             n--;
-                             sum -= *ptr;
-                           }
-                       }
-                     ptr++;
-                     cptr++;
-                   }
-                 ptr += vos->oPointBetweenLine;  /*skip border points*/
-                 cptr += vos->oPointBetweenLine;  /*skip border points*/
-               }
-             ptr += vos->oLineBetweenSlice; /*skip border lines*/
-             cptr += vos->oLineBetweenSlice; /*skip border lines*/
-           }
-         
-         *mean = (float)(sum/n);
-         
-         sum2=0.;
-         ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-         cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
-         for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-           {
-             for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-               {
-                 for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-                   {
-                     if(*cptr)
-                       {
-                         if (*ptr>threshold)
-                           {
-                             temp = *ptr-*mean;
-                             sum2 += temp*temp;
-                           }
-                       }
-                     cptr++;
-                     ptr++;
-                   }
-                 ptr += vos->oPointBetweenLine;  /*skip border points*/
-                 cptr += vos->oPointBetweenLine;  /*skip border points*/
-               }
-             ptr += vos->oLineBetweenSlice; /*skip border lines*/
-             cptr += vos->oLineBetweenSlice; /*skip border lines*/
-           }
-         *sigma = (float)sqrt((double)(sum2/(n-1)));
-       }
-     return(OK);
-   
-}
-/******************************************************/
+// /******************************************************/
+// static int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust)
+// {
+//   VipOffsetStruct *vos;
+//   int ix, iy, iz;
+//   Vip_S16BIT *ptr, *cptr;
+//   double sum, sum2;
+//   double temp;
+//   int n;
+//   double threshold;
+// 
+// 
+//      vos = VipGetOffsetStructure(vol);
+//      ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//      cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+//      sum = 0.;
+//      n = 0;
+//      for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//        {
+// 	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+// 	   {
+// 	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+// 	       {
+// 		 if(*cptr)
+// 		   {
+// 		     n++;
+// 		     sum += *ptr;
+// 		   }
+// 		 ptr++;
+//                  cptr++;
+// 	       }
+// 	     ptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	     cptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	   }
+// 	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
+// 	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//        }
+//      if(n==0 || n==1)
+//        {
+//          VipPrintfWarning ("empty volume in VipComputeStatInMaskVolume");
+//          return(PB);
+//        }
+//      *mean = (float)(sum/n);
+//      ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//      cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+//      sum2 = 0.;
+//      for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//        {
+// 	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+// 	   {
+// 	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+// 	       {
+// 		 if(*cptr)
+// 		   {
+//                      temp = *ptr-*mean;
+// 		     sum2 += temp*temp;
+// 		   }
+// 		 cptr++;
+// 		 ptr++;
+// 	       }
+// 	     ptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	     cptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	   }
+// 	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
+// 	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//        }
+//      *sigma = (float)sqrt((double)(sum2/(n-1)));
+// 
+//      if (robust==VTRUE)
+//        {
+// 
+//          threshold = *mean + 3 * *sigma;
+// 
+// 
+//          ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//          cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+//          for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//            {
+//              for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+//                {
+//                  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+//                    {
+//                      if(*cptr)
+//                        {
+//                          if (*ptr>threshold)
+//                            {
+//                              n--;
+//                              sum -= *ptr;
+//                            }
+//                        }
+//                      ptr++;
+//                      cptr++;
+//                    }
+//                  ptr += vos->oPointBetweenLine;  /*skip border points*/
+//                  cptr += vos->oPointBetweenLine;  /*skip border points*/
+//                }
+//              ptr += vos->oLineBetweenSlice; /*skip border lines*/
+//              cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//            }
+//          
+//          *mean = (float)(sum/n);
+//          
+//          sum2=0.;
+//          ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//          cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+//          for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//            {
+//              for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+//                {
+//                  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+//                    {
+//                      if(*cptr)
+//                        {
+//                          if (*ptr>threshold)
+//                            {
+//                              temp = *ptr-*mean;
+//                              sum2 += temp*temp;
+//                            }
+//                        }
+//                      cptr++;
+//                      ptr++;
+//                    }
+//                  ptr += vos->oPointBetweenLine;  /*skip border points*/
+//                  cptr += vos->oPointBetweenLine;  /*skip border points*/
+//                }
+//              ptr += vos->oLineBetweenSlice; /*skip border lines*/
+//              cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//            }
+//          *sigma = (float)sqrt((double)(sum2/(n-1)));
+//        }
+//      return(OK);
+//    
+// }
+// /******************************************************/
 /******************************************************/
 
 Volume *VipComputeCrestAverageIntensity(Volume *crest, Volume *vol)
