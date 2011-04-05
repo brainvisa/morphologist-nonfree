@@ -111,7 +111,10 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(white_cresttemp);  
   VIP_DEC_VOLUME(gradient);
   VIP_DEC_VOLUME(extrema);    
-  VIP_DEC_VOLUME(variance);                                   
+  VIP_DEC_VOLUME(variance);
+  VIP_DEC_VOLUME(classif);
+  VIP_DEC_VOLUME(copyvol);
+  VIP_DEC_VOLUME(copyvol2);
   int flag8bit = VFALSE;
   char *input = NULL;
   char fieldname[VIP_NAME_MAXLEN] = "biasfield";
@@ -176,7 +179,18 @@ int main(int argc, char *argv[])
   int talset = VFALSE;
   VipTalairach tal, *coord=NULL;
   int docorrection = VTRUE;
-
+  VipHisto *shorthisto, *historesamp = NULL;
+  Vip1DScaleSpaceStruct *volstruct;
+  SSSingularity *slist=NULL;
+  SSCascade *clist=NULL, *chigh;
+  VipT1HistoAnalysis *ana = 0;
+  int undersampling_factor = 0;
+  int factor;
+  int n, u;
+  int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
+  int j=0, k=0, l=0;
+  float contrast = 0, ratio_GW = 0;
+  
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
 
@@ -310,6 +324,11 @@ int main(int argc, char *argv[])
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  Koffset = atof(argv[i]);
 	}
+      else if (!strncmp (argv[i], "-Kcrest", 3)) 
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          Kcrest = atof(argv[i]);
+        } 
       else if (!strncmp (argv[i], "-compression", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -585,7 +604,6 @@ int main(int argc, char *argv[])
       deriche = VipCopyVolume(vol,"deriche");
       if (deriche==PB) return(VIP_CL_ERROR);
       if(VipDeriche3DGradientNorm(deriche, 2., DERICHE_EXTREMA, 0.)==PB) return(VIP_CL_ERROR);
-
       /*compress to prevent spurious minima related to too many bins*/
        
       if(compressionset==VFALSE)
@@ -633,11 +651,14 @@ int main(int argc, char *argv[])
     
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
 
-
       thresholdedvol = VipCreateSingleThresholdedVolume( deriche, GREATER_THAN, threshold_edges , BINARY_RESULT); 
       
       if (VipExtRayCorner(thresholdedvol, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
-
+      masked = VipCopyVolume(vol,"extray");
+      if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
+      VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+      VipFreeVolume(masked);
+      
       VipResizeBorder( vol, 3 );
       VipResizeBorder( thresholdedvol, 3 );
       /*VipWriteTivoliVolume( thresholdedvol, "outside");*/
@@ -688,7 +709,6 @@ int main(int argc, char *argv[])
           VipSingleThreshold( thresholdedvol, LOWER_THAN, thresholdlow, BINARY_RESULT );
           VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
           VipFreeVolume(masked);
-//           VipWriteTivoliVolume( thresholdedvol, "closing");
           VipConnectivityChamferClosing (thresholdedvol,1,CONNECTIVITY_26,FRONT_PROPAGATION);
       }
 /**/
@@ -835,7 +855,7 @@ int main(int argc, char *argv[])
       printf("\n");
     }
 
-  /* 
+  /*
   if(VipWriteTivoliVolume(compressed,"compressed")==PB) return(VIP_CL_ERROR);
   */
   if(thresholdlowset==VTRUE)
@@ -996,6 +1016,9 @@ int main(int argc, char *argv[])
       VipMaskVolume(variance,mask);      
       VipConnectivityChamferErosion( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
     }
+  
+//   copyvol =VipCopyVolume(compressed, "copy_compressed");
+  
   if (variance)
     {
       VipConnectivityChamferDilation( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
@@ -1010,29 +1033,179 @@ int main(int argc, char *argv[])
     }
   if (VipConnexVolumeFilter (compressed, CONNECTIVITY_26, -1, CONNEX_GREYLEVEL)==PB) return(VIP_CL_ERROR);
 
+//   printf("--------------------------------------------------------------\n");
+//   printf("First bias correction whith the none corrected white_ridges...\n");
+//   printf("--------------------------------------------------------------\n");
+  
   printf("Computing Bias with Kentropy = %f, Kregularization = %f, Kcrest = %f Koffset = %f\n",
 	 Kentropy,Kregul,Kcrest,Koffset);
 
-  
   result = VipComputeT1BiasFieldMultiGrid(mode, dumb,compressed,gradient,
                                           sampling,Kentropy,Kregul,Kcrest,Koffset,
                                           amplitude,temperature,geom,fieldtype,nInc,Inc,ngrid,RegulZTuning);
-
   if(result==PB) return(VIP_CL_ERROR);
   
-
   if (writehfiltered==VTRUE)
-    {
-      VipSingleThreshold( compressed, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
-      VipWriteVolume(compressed,hfilteredname);
-
-    }
+  {
+      masked = VipCreateSingleThresholdedVolume( compressed, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
+      VipWriteVolume(masked,hfilteredname);
+  }
   VipFreeVolume(compressed);
-  /* debug  vol = compressed;*/
+  /*debug  vol = compressed;*/
+//   copyvol = VipCopyVolume(vol, "copyvol");
   fullresult = VipResampleField(result, vol);
   VipFreeVolume(result);
-  
   if(fullresult==PB) return(VIP_CL_ERROR);
+/*  
+  VipComputeUnbiasedVolume(fullresult,copyvol);
+  VipFreeVolume(fullresult);
+  
+  printf("------------------------------------------------------------------------\n");
+  printf("Histogram analysis of the nobias volume to correct the white_ridges...\n");
+  printf("------------------------------------------------------------------------\n");
+  
+  copyvol2 = VipCopyVolume(copyvol, "copyvol2");
+  printf("Masking volume with %s...\n",hfilteredname);
+  VipMaskVolume(copyvol,masked);
+  VipFreeVolume(masked);
+  
+  VipComputeStatInRidgeVolume(copyvol,gradient, &mean, &sigma, VTRUE);
+//   VipComputeStatInRidgeVolume(compressed,gradient, &mean, &sigma, VTRUE);
+  printf("ridge stats: mean: %f; sigma: %f\n", mean, sigma);
+  
+  printf("Computing histogram\n");
+  shorthisto = VipComputeVolumeHisto(copyvol);
+//   shorthisto = VipComputeVolumeHisto(compressed);
+  VipSetHistoVal(shorthisto,0,0);
+  historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);
+  
+  if(factor==0 && undersampling_factor==1) u = 1;
+  else if (factor==1 && undersampling_factor==2) u = undersampling_factor/2;
+  else
+  {
+      undersampling_factor /= 2;
+      u = undersampling_factor/2;
+  }
+  while(u<=undersampling_factor*2)
+  {
+      volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,0.5,0,2,u);
+      if(volstruct==PB) printf("Error in VipCompute1DScaleSpaceStructUntilLastCascade\n");
+      slist = VipComputeSSSingularityList(volstruct,5,VFALSE,VTRUE,VTRUE,VFALSE,VFALSE);
+      if(slist==PB) printf("Error in VipComputeSSSingularityList\n");
+      
+      printf("Detecting D1/D2 singularity matings and cascades...\n"), fflush(stdout);
+      if(VipFindSSSingularityMates(slist)==PB) printf("Error in VipFindSSSingularityMates\n");
+      else
+      {
+          chigh = NULL;
+          VipCountSingularitiesStillAlive(slist,&n,volstruct->itermax);
+          if((n<=5)) chigh = VipCreateHighestCascade(slist,volstruct->itermax,n);
+          clist = VipComputeOrderedCascadeList( slist, 1000, volstruct->hcumul);
+          
+          if(chigh!=NULL)
+          {
+              chigh->next = clist;
+              clist = chigh;
+              printf("Analysing histogram knowing white ridge statistics...\n");
+              ana = VipAnalyseCascadesRidge( clist, volstruct, mean);
+              if(ana==PB) printf("Error in VipAnalyseCascadesRidge\n");
+              else 
+              {
+                  VipMarkAnalysedObjects( ana, volstruct );
+                  
+                  contrast = ((float)ana->white->mean - (float)ana->gray->mean)/((float)ana->white->mean);
+                  ratio_GW = (float)(shorthisto->val[ana->gray->mean])/(float)(shorthisto->val[ana->white->mean]);
+                  
+                  printf("\ncontrast = %.3f\n", contrast), fflush(stdout);
+                  printf("ratio_GW = %.3f, val_histo_gray = %d, val_histo_white = %d\n", ratio_GW, shorthisto->val[ana->gray->mean], shorthisto->val[ana->white->mean]), fflush(stdout);
+                  
+                  if((0.09<contrast && contrast<0.55) && (0.30<ratio_GW && ratio_GW<2.5))
+                  {
+                      undersampling_factor_possible[j][0] = u;
+                      undersampling_factor_possible[j][1] = ana->gray->mean;
+                      undersampling_factor_possible[j][2] = ana->gray->sigma;
+                      undersampling_factor_possible[j][3] = ana->white->mean;
+                      undersampling_factor_possible[j][4] = ana->white->sigma;
+                      j++;
+                  }
+              }
+          }
+          else VipPrintfError("Sorry, the histogram analysis can not proceed further");
+      }
+      if(u<undersampling_factor && u!=1) u+=undersampling_factor/4;
+      else u+=(undersampling_factor+1)/2;
+  }
+  u = VipIterateToGetPropUndersampledRatio(shorthisto, &undersampling_factor, undersampling_factor_possible, j);
+  
+  volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,0.5,0,2,u);
+  slist = VipComputeSSSingularityList(volstruct,5,VFALSE,VTRUE,VTRUE,VFALSE,VFALSE);
+  VipFindSSSingularityMates(slist);
+  chigh = NULL;
+  VipCountSingularitiesStillAlive(slist,&n,volstruct->itermax);
+  if((n<=5)) chigh = VipCreateHighestCascade(slist,volstruct->itermax,n);
+  clist = VipComputeOrderedCascadeList(slist, 1000, volstruct->hcumul);
+  if(chigh!=NULL && clist!=PB)
+  {
+      chigh->next = clist;
+      clist = chigh;
+      ana = VipAnalyseCascadesRidge( clist, volstruct, mean );
+      VipMarkAnalysedObjects( ana, volstruct );
+  }
+  else ana=PB;
+  
+  if(ana->gray==NULL || ana->white==NULL)
+  {
+      printf("Error in the histogram analysis\n");
+  }
+  else
+  {
+      printf("---------------------------------------------------------------------\n");
+      printf("Gray/White classification on the whole brain to clean white_ridges...\n");
+      printf("---------------------------------------------------------------------\n");
+      
+//       masked = VipCopyVolume(copyvol, "copyvol");
+      masked = VipCopyVolume(copyvol2, "copyvol");
+
+      printf("Classification to get the whole brain...\n");
+      classif = VipCSFGrayWhiteFatClassificationRegularisationForRobustApproach( copyvol2, ana, NO, 1, ana->gray->mean - 2.5*ana->gray->sigma, ana->gray->mean - 1.7*ana->gray->sigma, ana->white->mean + 4*ana->white->sigma, ana->white->mean + 6*ana->white->sigma, ana->gray->mean + (ana->white->mean - ana->gray->mean)/2);
+      VipSingleThreshold( classif, EQUAL_TO, BRAIN_LABEL, BINARY_RESULT );
+      VipConnexVolumeFilter( classif, CONNECTIVITY_6, -1, CONNEX_BINARY );
+
+      VipMaskVolume(masked, classif);
+      VipFreeVolume(classif);
+      
+      printf("Gray/White classification to get the white matter...\n");
+      classif = VipGrayWhiteClassificationRegularisationForVoxelBasedAna(masked, ana, VFALSE, 5, 20, CONNECTIVITY_26);
+      VipFreeVolume(masked);
+      VipChangeIntLabel(classif,VOID_LABEL,0);
+      masked = VipExtedge(classif,EXTEDGE3D_ALL,NEW_VOLUME);
+      VipMerge(classif,masked,VIP_MERGE_ALL_TO_ONE,255,GRAY_LABEL);
+      VipFreeVolume(masked);
+      
+      VipSingleThreshold(classif, EQUAL_TO, WHITE_LABEL, BINARY_RESULT );
+      VipConnexVolumeFilter( classif, CONNECTIVITY_6, -1, CONNEX_BINARY );
+
+      printf("Cleaning white_ridges...\n");
+      VipMaskVolume(gradient, classif);
+      if (writeridges==VTRUE) VipWriteVolume(gradient,wridgesname);
+      
+      printf("--------------------------------------------------------------\n");
+      printf("Second bias correction whith the corrected white_ridges...\n");
+      printf("--------------------------------------------------------------\n");
+      
+      printf("Computing Bias with Kentropy = %f, Kregularization = %f, Kcrest = %f Koffset = %f\n",
+             Kentropy,Kregul,Kcrest,Koffset);
+
+      result = VipComputeT1BiasFieldMultiGrid(mode,dumb,compressed,gradient,
+                                              sampling,Kentropy,Kregul,Kcrest,Koffset,
+                                              amplitude,temperature,geom,fieldtype,nInc,Inc,ngrid,RegulZTuning);
+      if(result==PB) return(VIP_CL_ERROR);
+      
+      fullresult = VipResampleField(result, vol);
+      VipFreeVolume(result);
+      if(fullresult==PB) return(VIP_CL_ERROR);
+  }*/
+
   if(writefield==VTRUE)
       {
 	  if(VipWriteVolume(fullresult,fieldname)==PB) return(VIP_CL_ERROR);
@@ -1094,6 +1267,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-Ke[ntropy] {float  (default:1.)}]\n");
   (void)fprintf(stderr,"        [-Kr[egul] {float  (default:50.)}]\n");
   (void)fprintf(stderr,"        [-Ko[ffset] {float  (default:0.5)}]\n");
+  (void)fprintf(stderr,"        [-Kc[rest] {float  (default:20.)}]\n");
   (void)fprintf(stderr,"        [-c[ompression] {int [0,14]  (default:auto)}]\n");
   (void)fprintf(stderr,"        [-t[auto] {char: y/n default:y}]\n");
   (void)fprintf(stderr,"        [-tl[ow] {int (default:3*2^compression)}]\n");
@@ -1156,6 +1330,8 @@ static int Help()
   (void)printf("        [-Ko[ffset] {float  (default:0.5)}]\n");
   /*  (void)printf("Weight of the sum of squared log (=distance to the uniform field with 1. value)\n");*/
   (void)printf("Weight of the squared difference between old and new mean\n");
+  (void)printf("        [-Kc[rest] {float  (default:20.)}]\n");
+  (void)printf("Weight of the voxel in the white ridge volume\n");
   (void)printf("        [-c[ompression] {int [0,14]  (default:auto)}]\n");
   (void)printf("The number of bits which are discarted during the volume entropy computation (= /2^compression))\n");
   (void)printf("        [-t[auto] {char: y/n default:n}]\n");
