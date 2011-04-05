@@ -1751,7 +1751,7 @@ int VipComputeAnalysedLoc (SSObject *o, int scale)
   int i;
   int good_scale = -1;
   int found = VFALSE;
-  int VISU=VFALSE;
+  int VISU = VFALSE;
   
 
   if(!o || !(o->D2ms) || (scale<0) || (scale>1000000))
@@ -1976,3 +1976,240 @@ SSCascade *VipGetInsideRangeBiggestCascade( SSCascade *clist, int left, int righ
 
   return(cgw);
 }
+
+/*---------------------------------------------------------------------------*/
+int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust)
+/*---------------------------------------------------------------------------*/
+{
+    VipOffsetStruct *vos;
+    int ix, iy, iz;
+    Vip_S16BIT *ptr, *cptr;
+    double sum, sum2;
+    double temp;
+    int n;
+    double threshold;
+
+
+    vos = VipGetOffsetStructure(vol);
+    ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+    cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+    sum = 0.;
+    n = 0;
+    for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+    {
+        for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+        {
+            for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+            {
+                if(*cptr)
+                {
+                    n++;
+                    sum += *ptr;
+                }
+                ptr++;
+                cptr++;
+            }
+            ptr += vos->oPointBetweenLine;  /*skip border points*/
+            cptr += vos->oPointBetweenLine;  /*skip border points*/
+        }
+        ptr += vos->oLineBetweenSlice; /*skip border lines*/
+        cptr += vos->oLineBetweenSlice; /*skip border lines*/
+    }
+    if(n==0 || n==1)
+    {
+        VipPrintfWarning ("empty volume in VipComputeStatInMaskVolume");
+        return(PB);
+    }
+    *mean = (float)(sum/n);
+    ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+    cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+    sum2 = 0.;
+    for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+    {
+        for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+        {
+            for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+            {
+                if(*cptr)
+                {
+                    temp = *ptr-*mean;
+                    sum2 += temp*temp;
+                }
+                cptr++;
+                ptr++;
+            }
+            ptr += vos->oPointBetweenLine;  /*skip border points*/
+            cptr += vos->oPointBetweenLine;  /*skip border points*/
+        }
+        ptr += vos->oLineBetweenSlice; /*skip border lines*/
+        cptr += vos->oLineBetweenSlice; /*skip border lines*/
+    }
+    *sigma = (float)sqrt((double)(sum2/(n-1)));
+
+    if (robust==VTRUE)
+    {
+
+        threshold = *mean + 3 * *sigma;
+
+
+        ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+        cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+        for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+        {
+            for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+            {
+                for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+                {
+                    if(*cptr)
+                    {
+                        if (*ptr>threshold)
+                        {
+                            n--;
+                            sum -= *ptr;
+                        }
+                    }
+                    ptr++;
+                    cptr++;
+                }
+                ptr += vos->oPointBetweenLine;  /*skip border points*/
+                cptr += vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr += vos->oLineBetweenSlice; /*skip border lines*/
+            cptr += vos->oLineBetweenSlice; /*skip border lines*/
+        }
+         
+        *mean = (float)(sum/n);
+         
+        sum2=0.;
+        ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+        cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+        for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+        {
+            for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+            {
+                for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+                {
+                    if(*cptr)
+                    {
+                        if (*ptr>threshold)
+                        {
+                            temp = *ptr-*mean;
+                            sum2 += temp*temp;
+                        }
+                    }
+                    cptr++;
+                    ptr++;
+                }
+                ptr += vos->oPointBetweenLine;  /*skip border points*/
+                cptr += vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr += vos->oLineBetweenSlice; /*skip border lines*/
+            cptr += vos->oLineBetweenSlice; /*skip border lines*/
+        }
+        *sigma = (float)sqrt((double)(sum2/(n-1)));
+    }
+    return(OK);
+}
+
+/*---------------------------------------------------------------------------*/
+int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios[5][5], int j)
+/*---------------------------------------------------------------------------*/
+{
+    float moyenne_gray_mean=0, moyenne_white_mean=0;
+    float std_gray_mean=0, std_white_mean=0;
+    float ratio_SigG1=0, ratio_SigG2=0;
+    int i, l;
+    int k = 0;
+    int ratio_min, best_ratio;
+    
+    if(j==0) return(*ratio);
+    
+    if(j>2)
+    {
+        for(i=0;i<j;i++)
+        {
+            moyenne_gray_mean += (float)ratios[i][1];
+            moyenne_white_mean += (float)ratios[i][3];
+        }
+        moyenne_gray_mean = moyenne_gray_mean/j;
+        moyenne_white_mean = moyenne_white_mean/j;
+        printf("\nmoyenne_gray_mean=%f, ", moyenne_gray_mean), fflush(stdout);
+        printf("moyenne_white_mean=%f\n", moyenne_white_mean), fflush(stdout);
+        
+        for(i=0;i<j;i++)
+        {
+            std_gray_mean += ((float)ratios[i][1] - moyenne_gray_mean)*((float)ratios[i][1] - moyenne_gray_mean);
+            std_white_mean += ((float)ratios[i][3] - moyenne_white_mean)*((float)ratios[i][3] - moyenne_white_mean);
+        }
+        std_gray_mean = sqrt(std_gray_mean/j);
+        std_white_mean = sqrt(std_white_mean/j);
+        printf("std_gray_mean=%f, ", std_gray_mean), fflush(stdout);
+        printf("std_white_mean=%f\n", std_white_mean), fflush(stdout);
+        
+        for(i=0;i<j;i++)
+        {
+            if((std_gray_mean>5. && ((float)ratios[i][1]<(moyenne_gray_mean - 1.5*std_gray_mean) || (float)ratios[i][1]>(moyenne_gray_mean + 1.5*std_gray_mean))) || (std_white_mean>5. && ((float)ratios[i][3]<(moyenne_white_mean - 1.5*std_white_mean) || (float)ratios[i][3]>(moyenne_white_mean + 1.5*std_white_mean))))
+            {
+                printf("\nundersampling = %d out for the means\n", ratios[i][0]), fflush(stdout);
+                k++;
+                for(l=0;l<5;l++)
+                {
+                    ratios[i][l] = 0;
+                }
+            }
+        }
+    }
+    
+    for(i=0;i<j;i++)
+    {
+        if(ratios[i][0]!=0)
+        {
+            if(((float)ratios[i][1]/(float)ratios[i][2])<1.8)
+            {
+                printf("\nundersampling = %d out for the standard deviations\n", ratios[i][0]), fflush(stdout);
+                k++;
+                for(l=0;l<5;l++)
+                {
+                    ratios[i][l] = 0;
+                }
+            }
+        }
+    }
+    
+    if((j-k)==1)
+    {
+        for(i=0;i<j;i++)
+        {
+            if(ratios[i][0]!=0)
+            {
+                return(ratios[i][0]);
+            }
+        }
+    }
+    else if  ((j-k)>1)
+    {
+        ratio_min = 100.0;
+        for(i=0;i<j;i++)
+        {
+            if(ratios[i][0]!=0)
+            {
+                ratio_SigG1 = 100*(float)(histo->val[ratios[i][1] - ratios[i][2]])/(float)(histo->val[ratios[i][1]]);
+                ratio_SigG2 = 100*(float)(histo->val[ratios[i][1] - 2*ratios[i][2]])/(float)(histo->val[ratios[i][1]]);
+                
+                printf("\nratio_SigG1 = %.3f, ratio_SigG2 = %.3f\n", ratio_SigG1, ratio_SigG2), fflush(stdout);
+                    
+                if((fabs(65.0-ratio_SigG1)<ratio_min) && (ratio_SigG2>20.0))
+                {
+                    best_ratio = ratios[i][0];
+                    ratio_min = fabs(65.0-ratio_SigG1);
+                }
+                else k++;
+            }
+
+        }
+    }
+    if((j-k)==0) return(*ratio);
+
+    return(best_ratio);
+}
+
