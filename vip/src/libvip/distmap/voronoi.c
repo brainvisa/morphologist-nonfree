@@ -33,8 +33,10 @@
 #include <vip/volume.h>
 #include <vip/connex.h>
 #include <vip/distmap.h>
+#include <vip/skeleton.h>
 
 #include <vip/distmap_static.h>
+#include <vip/skeleton_static.h>
 
 int CreateAndSplitConnectivityMask(Volume*,int,DistmapMask**,DistmapMask**);
 
@@ -487,4 +489,376 @@ Volume *VipComputeConnectivityFrontPropagationGeodesicVoronoi (
   return(label);
 
 
+}
+
+/*--------------------------------------------------------------------*/
+int VipWatershedFrontPropagation( Volume *vol, Volume *altitude, Volume *plan_hemi, int int_min, int int_max, int domain, int outside, int nb_interval, int connectivity)
+{
+    VipIntBucket *buck, *nextbuck, *buck_immortals;
+    VipConnectivityStruct *vcs;
+    int loop, count, immortals;
+    int dir;
+    Vip_S16BIT *first, *ptr, *ptr_neighbor;
+    Vip_S16BIT *afirst, *aptr, *phfirst, *phptr;
+    int *buckptr;
+    int i, m;
+    Vip3DBucket_S16BIT *border, *borderptr;
+    float interval;
+
+    if (VipVerifyAll(vol)==PB)
+    {
+        VipPrintfExit("(voronoi)VipWatershedVoronoi");
+        return(PB);
+    }
+    if (VipVerifyAll(altitude)==PB)
+    {
+        VipPrintfExit("(voronoi)VipWatershedVoronoi");
+        return(PB);
+    }
+    if (VipTestType(vol,S16BIT)!=OK)
+    {
+        VipPrintfError("Sorry, VipWatershedVoronoi is only implemented for S16BIT volume");
+        VipPrintfExit("(voronoi)VipWatershedVoronoi");
+        return(PB);
+    }
+    if (VipTestType(altitude,S16BIT)!=OK)
+    {
+        VipPrintfError("Sorry, altitude should be a S16BIT volume");
+        VipPrintfExit("(voronoi)VipWatershedVoronoi");
+        return(PB);
+    }
+    if (mVipVolBorderWidth(vol) < 1)
+    {
+        VipPrintfError("Sorry, VipWatershedVoronoi is only implemented with border");
+        VipPrintfExit("(voronoi)VipWatershedVoronoi");
+        return(PB);
+    }
+    if(VipTestEqualBorderWidth(vol,altitude)==PB)
+    {
+        VipPrintfError("Sorry, voronoi and altitude should have the same borderwidth");
+        VipPrintfExit("(voronoi)VipWatershedVoronoi");
+        return(PB);
+    }
+
+    printf("--------------------------------------------\n");
+    printf("Watershed driven front propagation voronoi...\n");
+    printf("--------------------------------------------\n");
+
+    printf("Initialization...\n");
+    fflush(stdout);
+    
+    VipSetBorderLevel( vol, outside ); /* already done before but security */
+
+    buck = VipCreateFrontIntBucketVoronoiObject( vol, connectivity, VIP_FRONT, domain, outside);
+    VipWriteVolume(vol,"buck");
+    if(buck==PB) return(PB);
+    nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
+    if(nextbuck==PB) return(PB);
+    buck_immortals = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
+    if(buck_immortals==PB) return(PB);
+
+    vcs = VipGetConnectivityStruct( vol, connectivity );
+
+    first = VipGetDataPtr_S16BIT(vol);
+    afirst = VipGetDataPtr_S16BIT(altitude);
+    if(plan_hemi!=NULL) phfirst = VipGetDataPtr_S16BIT(plan_hemi);
+
+    /*initialisation*/
+    /*Mark all initial immortals and dwindle the front*/
+
+    immortals = 0;
+    interval = (float)(int_max - int_min + 1)/nb_interval;
+
+    /*main loop*/
+    for(m=0;m<nb_interval;m++)
+    {
+        loop = 0;
+        count = 1;
+        while((loop++<500)&&(count)&&(buck->n_points>0))
+        {
+            printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+            printf("loop: %3d, numero_int: %2d, immortals: %3d", loop, m, immortals);
+            fflush(stdout);
+            
+            count = 0;
+            
+            /*first scan: mark points in the gray level interval*/
+            buckptr = buck->data;
+            for(i=buck->n_points;i--;)
+            {
+                ptr = first + *buckptr;
+                if(*ptr==VIP_FRONT)
+                {
+                    aptr = afirst + *buckptr;
+                    if(*aptr>(float)(int_max - (m+1)*interval)) *ptr=VIP_CANDIDATE;
+                }
+                buckptr++;
+            }
+            
+            /*second scan: mark points immortal (border) or inside a voronoi*/
+            buckptr = buck->data;
+            for(i=buck->n_points;i--;)
+            {
+                ptr = first + *buckptr;
+                if(*ptr==VIP_CANDIDATE)
+                {
+                    for(dir=0;dir<vcs->nb_neighbors;dir++)
+                    {
+                        ptr_neighbor = ptr + vcs->offset[dir];
+                        if(*ptr_neighbor==1 || *ptr_neighbor==2 || *ptr_neighbor==3)
+                        {
+                            if(*ptr==VIP_CANDIDATE)
+                            {
+                                if(plan_hemi!=NULL)
+                                {
+                                    phptr = phfirst + *buckptr;
+                                    if(*ptr_neighbor==1 && *phptr==0) *ptr=*ptr_neighbor;
+                                    else if (*ptr_neighbor==2 && *phptr==255) *ptr=*ptr_neighbor;
+                                    else if (*ptr_neighbor==3) *ptr=*ptr_neighbor;
+                                    count++;
+                                }
+                                else
+                                {
+                                    *ptr=*ptr_neighbor;
+                                    count++;
+                                }
+                            }
+                            else if((*ptr!=*ptr_neighbor) && (*ptr!=VIP_IMMORTAL))
+                            {
+                                *ptr=VIP_IMMORTAL;
+                                immortals++;
+                                if(buck_immortals->n_points==buck_immortals->size)
+                                {
+                                    if(VipIncreaseIntBucket(buck_immortals,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
+                                }
+                                buck_immortals->data[buck_immortals->n_points++]=*buckptr;
+                                break;
+                            }
+                        }
+                    }
+                }
+                buckptr++;
+            }
+            VipFillNextFrontFromOldFrontVoronoiObject(first,buck,nextbuck,vcs,VIP_FRONT,domain, outside);
+            
+            /*bucket permutation*/
+            VipPermuteTwoIntBucket(&buck, &nextbuck);
+            nextbuck->n_points = 0;
+        }
+    }
+    printf("\n");
+    
+    VipCleanUpBorderFromImmortalsVoronoiObject( vol, buck_immortals, VIP_IMMORTAL, 0, CONNECTIVITY_26);
+    
+    VipFreeIntBucket(buck);
+    VipFreeIntBucket(nextbuck);
+    
+    return(OK);
+}
+
+/*----------------------------------------------------------------------------*/
+VipIntBucket *VipCreateFrontIntBucketVoronoiObject( Volume *vol, int connectivity, int front_value, int domain, int outside)
+{
+    Vip_S16BIT *ptr, *voisin;
+    int i, NbTotalPts;
+    VipIntBucket *buck;
+    VipConnectivityStruct *vcs;
+    int icon;
+
+    if (VipVerifyAll(vol)==PB)
+    {
+        VipPrintfExit("(skeleton)VipCreateFrontIntBucketHollowObject");
+        return(PB);
+    }
+    if (VipTestType(vol,S16BIT)!=OK)
+    {
+        VipPrintfError("Sorry,  VipCreateFrontIntBucketHollowObject is only implemented for S16BIT volume");
+        VipPrintfExit("(skeleton)VipCreateFrontIntBucketHollowObject");
+        return(PB);
+    }
+    if (mVipVolBorderWidth(vol) < 1)
+    {
+        VipPrintfError("Sorry,  VipCreateFrontIntBucketHollowObject is only implemented with border");
+        VipPrintfExit("(skeleton)VipCreateFrontIntBucketHollowObject");
+        return(PB);
+    }
+
+    vcs = VipGetConnectivityStruct( vol, connectivity );
+
+    ptr = VipGetDataPtr_S16BIT(vol);
+
+    NbTotalPts = VipOffsetVolume(vol);
+
+    buck = VipAllocIntBucket(VIP_INITIAL_FRONT_SIZE);
+
+    for ( i=0; i<NbTotalPts; i++ )
+    {
+        if (*ptr==domain)
+        {
+            for (icon=0;icon<vcs->nb_neighbors;icon++)
+            {
+                voisin = ptr + vcs->offset[icon];
+                if(*voisin==1 || *voisin==2 || *voisin==3)
+                {
+                    if(buck->n_points==buck->size)
+                    {
+                        if(VipIncreaseIntBucket(buck,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
+                    }
+                    buck->data[buck->n_points++] = i;
+                    *ptr = front_value;
+                    break;
+                }
+            }
+        }
+        ptr++;
+    }
+    
+    if(VipRandomizeFrontOrder(buck,10)==PB) return(PB);
+    
+    VipFreeConnectivityStruct(vcs);
+    
+    return(buck);
+}
+
+/*-------------------------------------------------------------------------*/
+int VipFillNextFrontFromOldFrontVoronoiObject(
+Vip_S16BIT *first_vol_point,
+VipIntBucket *buck,
+VipIntBucket *nextbuck,
+VipConnectivityStruct *vcs,
+int front_value,
+int domain,
+int outside)
+{
+    int *buckptr;
+    Vip_S16BIT *ptr, *ptr_neighbor;
+    int i, dir;
+
+    if(first_vol_point==NULL)
+    {
+        VipPrintfError("NULL pointer in VipFillNextFrontFromOldFrontHollowObject");
+        VipPrintfExit("VipFillNextFrontFromOldFrontHollowObject");
+        return(PB);
+    }
+    if((buck==NULL) || (nextbuck==NULL))
+    {
+        VipPrintfError("One NULL bucket in VipFillNextFrontFromOldFrontHollowObject");
+        VipPrintfExit("VipFillNextFrontFromOldFrontHollowObject");
+        return(PB);
+    }
+    if(vcs==NULL)
+    {
+        VipPrintfError("NULL VipConnectivityStruct pointer in VipFillNextFrontFromOldFrontHollowObject");
+        VipPrintfExit("VipFillNextFrontFromOldFrontHollowObject");
+        return(PB);
+    }
+
+    buckptr = buck->data;
+    for(i=buck->n_points;i--;)
+    {
+        ptr = first_vol_point + *buckptr;
+        if(*ptr==front_value)
+        {
+            if(nextbuck->n_points==nextbuck->size)
+            {
+                if(VipIncreaseIntBucket(nextbuck,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
+            }
+            nextbuck->data[nextbuck->n_points++]=*buckptr;
+        }
+        else if((*ptr==1) || (*ptr==2) || (*ptr==3))
+        {
+            for(dir=0;dir<vcs->nb_neighbors;dir++)
+            {
+                ptr_neighbor = ptr + vcs->offset[dir];
+                if(*ptr_neighbor==domain)   /*non zero, not immortal, AND NOT ALREADY IN FRONT*/
+                {
+                    *ptr_neighbor = front_value;
+                    if(nextbuck->n_points==nextbuck->size)
+                    {
+                        if(VipIncreaseIntBucket(nextbuck,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
+                    }
+                    nextbuck->data[nextbuck->n_points++] = *buckptr + vcs->offset[dir];
+                }
+            }
+        }
+        else if(*ptr==outside)
+        {
+            VipPrintfWarning("This should be inside value");
+        }
+        buckptr++;
+    }
+    return(OK);
+}
+
+/*-------------------------------------------------------------------------*/
+int VipCleanUpBorderFromImmortalsVoronoiObject( Volume *vol, VipIntBucket *buck, int *immortals, int outside, int connectivity)
+{
+    int *buckptr;
+    Vip_S16BIT *first, *ptr, *ptr_neighbor;
+    VipConnectivityStruct *vcs;
+    int i, dir, count;
+    int nb_vois1, nb_vois2, nb_vois3;
+
+    if (VipVerifyAll(vol)==PB)
+    {
+        VipPrintfExit("VipCleanUpBorderFromImmortalsVoronoiObject");
+        return(PB);
+    }
+    if (VipTestType(vol,S16BIT)!=OK)
+    {
+        VipPrintfError("Sorry, VipCleanUpBorderFromImmortalsVoronoiObject is only implemented for S16BIT volume");
+        VipPrintfExit("VipCleanUpBorderFromImmortalsVoronoiObject");
+        return(PB);
+    }
+    if(buck==NULL)
+    {
+        VipPrintfError("NULL bucket in VipCleanUpBorderFromImmortalsVoronoiObject");
+        VipPrintfExit("VipCleanUpBorderFromImmortalsVoronoiObject");
+        return(PB);
+    }
+    
+    count = 0;
+    
+    vcs = VipGetConnectivityStruct( vol, connectivity );
+    first = VipGetDataPtr_S16BIT(vol);
+    
+    buckptr = buck->data;
+    for(i=buck->n_points;i--;)
+    {
+        nb_vois1 = 0;
+        nb_vois2 = 0;
+        nb_vois3 = 0;
+        
+        ptr = first + *buckptr;
+        for(dir=0;dir<vcs->nb_neighbors;dir++)
+        {
+            ptr_neighbor = ptr + vcs->offset[dir];
+            switch(*ptr_neighbor)
+            {
+                case 1:
+                    nb_vois1++;
+                    break;
+                case 2:
+                    nb_vois2++;
+                    break;
+                case 3:
+                    nb_vois3++;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if(nb_vois1>nb_vois2 && nb_vois1>nb_vois3) *ptr=1;
+        else if(nb_vois2>nb_vois1 && nb_vois2>nb_vois3) *ptr=2;
+        else if(nb_vois3>nb_vois1 && nb_vois3>nb_vois2) *ptr=3;
+        else if(nb_vois1==nb_vois3 || nb_vois2==nb_vois3) *ptr=3;
+        else
+        {
+            if(count%2==0) *ptr=1;
+            else *ptr=2;
+            count++;
+        }
+        buckptr++;
+    }
+    return(OK);
 }
