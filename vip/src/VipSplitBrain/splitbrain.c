@@ -41,6 +41,7 @@
 #include <vip/distmap.h>
 #include <vip/talairach.h>
 #include <vip/brain.h>
+#include <vip/skeleton.h>
 
 /*----------------------------------------------------------------------------*/
 static int VipGetLabelsFromTemplate(
@@ -65,12 +66,16 @@ int VipWriteCoordOverZBucketInVolume_S16BIT(
   int value,
   int Z);
 /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+static int GetCutAlongTheLineBucket(  
+  Volume *vol,
+  Volume *template,
+  VipTalairach *tal,
+  int wthreshold,
+  Vip3DBucket_S16BIT **buck,
+  char mode);
+/*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-static int GetCutAlongTheLineBucket(  Volume *vol, Volume *template,
-						      VipTalairach *tal,
-				      int wthreshold, Vip3DBucket_S16BIT **buck);
-/*----------------------------------------------------------------------------*/
 /*------------------------------------------------------------------*/
 static int Usage();
 static int Help();
@@ -86,7 +91,7 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(classif); 
   VIP_DEC_VOLUME(seed); 
   VIP_DEC_VOLUME(template); 
-  VIP_DEC_VOLUME(brain); 
+  VIP_DEC_VOLUME(brain);
   char *ridgename = NULL;
   Volume *ridge=NULL;
   Vip3DBucket_S16BIT *cutbuck=NULL;
@@ -106,6 +111,7 @@ int main(int argc, char *argv[])
   float erosion_size = 2.;
   float wtcoef = 2.;
   char analyse = 'y';
+  char mode = 'V';
   VipT1HistoAnalysis *ana=NULL;
   Vip3DBucket_S16BIT *cclist=NULL, *ccptr=NULL;
   Vip3DBucket_S16BIT *lhemi=NULL, *rhemi=NULL, *cereb=NULL;
@@ -116,7 +122,7 @@ int main(int argc, char *argv[])
   int seedOK=VFALSE;
   int talset = VFALSE;
   int Zover=-1;
-  VipTalairach tal;
+  VipTalairach tal, *coord=NULL;
   int template_filled = VFALSE;
   int write_seed = VFALSE;
   VipHisto *labels=NULL;
@@ -129,7 +135,17 @@ int main(int argc, char *argv[])
   float bary = 0.75;
   int Coefset = VFALSE;
   char walgo = 'r';
-
+  int int_max, int_min;
+  int nb_interval = 0;
+  Volume *mask1=NULL, *mask2=NULL, *plan_hemi=NULL;
+  float CA[3], CP[3], P[3], d[3];
+  float ptPlanHemi[3];
+  VipOffsetStruct *vos;
+  Vip_S16BIT *ptr, *cptr, *hptr;
+  int ix, iy, iz;
+  float pt = 0.0;
+  float little_opening_size;
+  
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
 
@@ -204,10 +220,22 @@ int main(int argc, char *argv[])
 	  else
 	    {
 	      VipPrintfError("analyse option is a y/n/r switch");
-	      VipPrintfExit("(commandline)VipGetBrain");
+	      VipPrintfExit("(commandline)VipSplitBrain");
 	      return(VIP_CL_ERROR);
 	    }
 	}
+      else if (!strncmp (argv[i], "-mode", 2)) 
+        {
+            if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+            else if(argv[i][0]=='V') mode = 'V';
+            else if(argv[i][0]=='W') mode = 'W';
+            else
+            {
+                VipPrintfError("This mode is unknown");
+                VipPrintfExit("(commandline)VipSplitBrain");
+                return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-TemplateUse", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -410,8 +438,13 @@ int main(int argc, char *argv[])
 			      xCA, yCA, zCA, 
 			      xCP, yCP, zCP, 
 			      xP, yP, zP, talset)==PB) return(VIP_CL_ERROR);
-
+  coord = &tal;
+  CA[0] = (int)(coord->AC.x); CA[1] = (int)(coord->AC.y); CA[2] = (int)(coord->AC.z);
+  CP[0] = (int)(coord->PC.x); CP[1] = (int)(coord->PC.y); CP[2] = (int)(coord->PC.z);
+  P[0] = (int)(coord->Hemi.x); P[1] = (int)(coord->Hemi.y); P[2] = (int)(coord->Hemi.z);
+  
   VipComputeTalairachTransformation(brain,&tal);
+  
   /*VipWriteTalairachRefFile(input,&tal);*/
   /*
   VipPrintTalairach(&tal);
@@ -469,14 +502,13 @@ int main(int argc, char *argv[])
   if(CutUse==VTRUE)
     {
       if(strcmp(point_filename,"") ||talset==VTRUE)
-	{
-	  if(GetCutAlongTheLineBucket(  vol, template,
-					&tal, wthreshold, &cutbuck)==PB)
-	    {
-	      fprintf(stderr,"Problem with GetCutAlongTheLineBucket");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(GetCutAlongTheLineBucket( vol, template, &tal, wthreshold, &cutbuck, mode)==PB)
+            {
+              fprintf(stderr,"Problem with GetCutAlongTheLineBucket");
+              return(VIP_CL_ERROR);
+            }
+        }
     }
 
 
@@ -532,6 +564,7 @@ int main(int argc, char *argv[])
   printf("Closing of size 1 relatively to 18-connectivity...\n");
   if(VipConnectivityChamferClosing(vol,1,CONNECTIVITY_18,FRONT_PROPAGATION)==PB) return(VIP_CL_ERROR);
   */
+
   if (cutbuck!=NULL)
     {
       printf("AutoDeleting %d white matter points from interhemispheric plane and pons\n",
@@ -539,6 +572,7 @@ int main(int argc, char *argv[])
       VipWriteCoordBucketInVolume(cutbuck,vol,0);
       if(write_seed==VTRUE)  VipWriteTivoliVolume(vol,"cut");
     }
+
   printf("Let us try to split this brain correctly...\n");
   while(seedOK==VFALSE && (erosion_size>=2) && (erosion_size<10))
     {
@@ -588,14 +622,8 @@ int main(int argc, char *argv[])
 		    {
 		      if (mVipHistoVal(labels,i)>mVipHistoVal(labels,labelmax)) labelmax=i;
 		    }
-		  if (
-		      ( ((100*mVipHistoVal(labels,labelmax))/ccptr->n_points) > 95 )
-		      ||
-			(((100*mVipHistoVal(labels,1))/ccptr->n_points
-			  +(100*mVipHistoVal(labels,2))/ccptr->n_points)<5
-			  && (labelmax==3 || 
-			      (labelmax==0 && ((100*mVipHistoVal(labels,3))/ccptr->n_points)>20))
-			      ))	
+		  if ( (((100*mVipHistoVal(labels,labelmax))/ccptr->n_points)>95) ||
+			( ((100*mVipHistoVal(labels,1))/ccptr->n_points+(100*mVipHistoVal(labels,2))/ccptr->n_points)<5 && (labelmax==3 || (labelmax==0 && ((100*mVipHistoVal(labels,3))/ccptr->n_points)>20)) ) )
 		    {
 		      if (labelmax!=0) write_label[cc] = labelmax;
 		      else write_label[cc]=3;
@@ -757,7 +785,7 @@ int main(int argc, char *argv[])
       if(cereb!=NULL)
 	{
 	  if(Zover==-1)
-	    VipWriteCoordOverZBucketInVolume_S16BIT(cereb,seed,3,Zover);
+              VipWriteCoordOverZBucketInVolume_S16BIT(cereb,seed,3,Zover);
 	  else VipWriteCoordBucketInVolume(cereb,seed,3);
 	}
       /*VipWriteTivoliVolume(seed,"toto");*/
@@ -776,17 +804,23 @@ int main(int argc, char *argv[])
     }
   if(write_seed==VTRUE) VipWriteTivoliVolume(template,"temp+seed-final");
 
-
-  VipChangeIntLabel( seed, 255, 0);
+  VipChangeIntLabel( seed, 255, 0 );
   if(write_seed==VTRUE)       
     VipWriteTivoliVolume(seed,"seed");
 
   printf("White matter core reconstruction...\n");
   if(ana!=NULL)
     {
-      vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO,(int)(0.5*ana->white->mean+0.5*ana->gray->mean),
-                                              ana->white->mean + 2 * ana->white->sigma, BINARY_RESULT );
-
+      if(mode=='V')
+      {
+          vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO,
+                  (int)(0.5*ana->white->mean+0.5*ana->gray->mean), ana->white->mean + 2 * ana->white->sigma, BINARY_RESULT );
+      }
+      else if(mode=='W')
+      {
+          vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO,
+                  wthreshold, ana->white->mean + 2 * ana->white->sigma, BINARY_RESULT );
+      }
       /*2005 vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, (int)(0.5*ana->white->mean+0.5*ana->gray->mean) , BINARY_RESULT);*/
       if(vol==PB) return(VIP_CL_ERROR);
     }
@@ -796,74 +830,355 @@ int main(int argc, char *argv[])
       if(vol==PB) return(VIP_CL_ERROR);
     }
   if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB)
-    return(VIP_CL_ERROR);
+      return(VIP_CL_ERROR);
 
+  little_opening_size = 0.9;
+  if(mVipVolVoxSizeX(brain)>little_opening_size) little_opening_size=mVipVolVoxSizeX(brain)+0.1;
+  if(mVipVolVoxSizeY(brain)>little_opening_size) little_opening_size=mVipVolVoxSizeY(brain)+0.1;
+  if(mVipVolVoxSizeZ(brain)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(brain)+0.1;
+  
   if (ridgename!=NULL)
     {
       ridge = VipReadVolume(ridgename);
       if(!ridge) return(VIP_CL_ERROR);
       VipMaskVolume(ridge,vol);
-      printf("Opening of size 1.6mm ...\n");
-        if(VipOpening(vol,CHAMFER_BALL_3D,1.6)==PB) return(VIP_CL_ERROR);
-      VipMerge(vol,ridge,VIP_MERGE_ONE_TO_ONE, 255, 255);
+      if(mode=='V')
+      {
+          printf("Opening of size 1.6mm ...\n");
+          if(VipOpening(vol,CHAMFER_BALL_3D,1.6)==PB) return(VIP_CL_ERROR);
+          VipMerge(vol,ridge,VIP_MERGE_ONE_TO_ONE, 255, 255);
+      }
+      if(mode=='W')
+      {
+          printf("Opening of size %fmm ...\n", little_opening_size);
+          if(VipOpening(vol,CHAMFER_BALL_3D,mVipMin(little_opening_size+0.3,1.6))==PB) return(VIP_CL_ERROR);
+          VipMerge(vol,ridge,VIP_MERGE_ONE_TO_ONE, 255, 255);
+          if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
+      }
     }
-
-
-  VipMerge(vol,seed,VIP_MERGE_SAME_VALUES,0,0);
-
-  /* VipWriteTivoliVolume(vol,"domain"); */
-
-  voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
-
-  VipFreeVolume(vol);
-
-  if((ana->gray->mean + 1 * ana->gray->sigma)<(int)(0.5*ana->white->mean+0.5*ana->gray->mean))
+  
+  if(mode=='V')
     {
-      printf("White matter complete reconstruction...\n");
-      if(ana!=NULL)
-	{
-	  vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, ana->gray->mean + 1 * ana->gray->sigma, BINARY_RESULT);
-	  if(vol==PB) return(VIP_CL_ERROR);
-	}
-      else
-	{
-	  vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, wthreshold, BINARY_RESULT);
-	  if(vol==PB) return(VIP_CL_ERROR);
-	}
-      if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB)
-	return(VIP_CL_ERROR);
-    
-      VipMerge(vol,voronoi,VIP_MERGE_SAME_VALUES,0,0);
+        VipMerge(vol,seed,VIP_MERGE_SAME_VALUES,0,0);
 
-      VipFreeVolume(voronoi);
-    
-      voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
-      VipFreeVolume(vol);
+        /* VipWriteTivoliVolume(vol,"domain"); */
+
+        voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
+
+        VipFreeVolume(vol);
+
+        if((ana->gray->mean + 1 * ana->gray->sigma)<(int)(0.5*ana->white->mean+0.5*ana->gray->mean))
+        {
+            printf("White matter complete reconstruction...\n");
+            if(ana!=NULL)
+            {
+                vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, ana->gray->mean + 1 * ana->gray->sigma, BINARY_RESULT);
+                if(vol==PB) return(VIP_CL_ERROR);
+            }
+            else
+            {
+                vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, wthreshold, BINARY_RESULT);
+                if(vol==PB) return(VIP_CL_ERROR);
+            }
+            if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
+
+            VipMerge(vol,voronoi,VIP_MERGE_SAME_VALUES,0,0);
+
+            VipFreeVolume(voronoi);
+
+            voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
+            VipFreeVolume(vol);
+        }
+
+        printf("Brain complete reconstruction...\n");
+        vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, 1, BINARY_RESULT);
+        if(vol==PB) return(VIP_CL_ERROR);
+
+        if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB)
+            return(VIP_CL_ERROR);
+
+        VipMerge(vol,voronoi,VIP_MERGE_SAME_VALUES,0,0);
+
+        VipFreeVolume(voronoi);
+
+        voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
+        VipFreeVolume(vol);
+
+        vol=voronoi;
+
+        /*
+        if (cutbuck!=NULL)
+          {
+            printf("AutoDeleting %d white matter points from interhemispheric plane\n", cutbuck->n_points);
+            VipWriteCoordBucketInVolume(cutbuck,vol,0);
+          }
+        */
     }
-  printf("Brain complete reconstruction...\n");
-  vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, 1, BINARY_RESULT);
-  if(vol==PB) return(VIP_CL_ERROR);
 
-  if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB)
-    return(VIP_CL_ERROR);
-
-  VipMerge(vol,voronoi,VIP_MERGE_SAME_VALUES,0,0);
-
-  VipFreeVolume(voronoi);
-
-  voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
-  VipFreeVolume(vol);
-
-  vol=voronoi;
-
-  /*
-  if (cutbuck!=NULL)
+  if(mode=='W')
     {
-      printf("AutoDeleting %d white matter points from interhemispheric plane\n",
-	     cutbuck->n_points);
-      VipWriteCoordBucketInVolume(cutbuck,vol,0);
+        plan_hemi = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, 0, BINARY_RESULT);
+
+        d[0] = d[1] = d[2] = 1000.0;
+        Vip3DPlanesResolution(CA, CP, P, d, &(ptPlanHemi[0]), &(ptPlanHemi[1]), &(ptPlanHemi[2]));
+//        printf("a = %f, b = %f, c = %f, d = %f\n", ptPlanHemi[0], ptPlanHemi[1], ptPlanHemi[2], d[0]), fflush(stdout);
+
+        vos = VipGetOffsetStructure( plan_hemi );
+        ptr = VipGetDataPtr_S16BIT( plan_hemi ) + vos->oFirstPoint;
+        for ( iz=0; iz<mVipVolSizeZ(plan_hemi); iz++ )   /* loop on slices */
+        {
+            for ( iy=0; iy<mVipVolSizeY(plan_hemi); iy++ )  /* loop on lines */
+            {
+                for ( ix=0; ix<mVipVolSizeX(plan_hemi); ix++ )   /* loop on points */
+                {
+                    pt = ptPlanHemi[0]*(ix) + ptPlanHemi[1]*(iy) + ptPlanHemi[2]*(iz) - 1000.0;
+                    if(0>(int)(pt*1000)) *ptr = 0;
+                    else *ptr = 255;
+                    ptr++;
+                }
+                ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+        }
+        /* VipWriteVolume(plan_hemi,"planHemi"); */
+
+        printf("Calculation of the maximum and minimum intensities...\n");
+        mask1 = VipCopyVolume(brain, "white_matter");
+        VipMaskVolume(mask1, vol);
+
+        mask2 = VipCreateSingleThresholdedVolume(seed, EQUAL_TO, 0, BINARY_RESULT);
+        VipMaskVolume(mask1, mask2);
+
+        VipFreeVolume(mask2);
+
+        int_max = VipGetVolumeMax(mask1);
+        VipChangeIntLabel(mask1, 0, int_max+100);
+        int_min = VipGetVolumeMin(mask1);
+        nb_interval = (int)(4*log(int_max-int_min));
+        printf("int_max=%d, int_min=%d\n", int_max, int_min);
+        fflush(stdout);
+
+        VipFreeVolume(mask1);
+
+        VipMerge(vol,seed,VIP_MERGE_SAME_VALUES,0,0);
+        /* VipWriteVolume(vol,"domain"); */
+
+        VipWatershedFrontPropagation(vol, brain, plan_hemi, int_min, int_max, 255, 0, nb_interval, CONNECTIVITY_6);
+
+// // //   VipMaskVolume(mask, hemi_strip);
+// // //   VipMerge(vol, mask, VIP_MERGE_SAME_VALUES, 0, 0);
+// // //   VipChangeIntLabel( vol, -103, 0 );
+// // //
+// // //   VipWriteVolume(vol,"avant_voronoi");
+// // //   voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
+// // //   VipFreeVolume(vol);
+// // //
+// // //   VipWriteVolume(voronoi,"voronoi");
+
+        VipFreeVolume(seed);
+        seed = VipCreateSingleThresholdedVolume(vol, GREATER_THAN, 0, GREYLEVEL_RESULT);
+
+        VipFreeVolume(vol);
+
+  /*Correction de la frontiere entre le cervelet et les hemispheres*/
+        mask1 = VipCreateSingleThresholdedVolume(seed, EQUAL_TO, 3, BINARY_RESULT);
+        if(VipClosing(mask1,CHAMFER_BALL_3D,15)==PB) return(VIP_CL_ERROR);
+
+        vos = VipGetOffsetStructure( seed );
+        ptr = VipGetDataPtr_S16BIT( seed ) + vos->oFirstPoint;
+        cptr = VipGetDataPtr_S16BIT( mask1 ) + vos->oFirstPoint;
+        for ( iz=0; iz<mVipVolSizeZ(seed); iz++ )   /* loop on slices */
+        {
+            for ( iy=0; iy<mVipVolSizeY(seed); iy++ )  /* loop on lines */
+            {
+                for ( ix=0; ix<mVipVolSizeX(seed); ix++ )   /* loop on points */
+                {
+                    if(*ptr!=0 && *cptr==255)
+                    {
+                        *ptr = 3;
+                    }
+                    ptr++;
+                    cptr++;
+                }
+                ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+                cptr = cptr + vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+            cptr = cptr + vos->oLineBetweenSlice; /*skip border lines*/
+        }
+
+        VipFreeVolume(mask1);
+        mask1 = VipCreateDoubleThresholdedVolume(seed, VIP_BETWEEN_OR_EQUAL_TO, 1, 2, BINARY_RESULT);
+        if(VipClosing(mask1,CHAMFER_BALL_3D,15)==PB) return(VIP_CL_ERROR);
+
+        vos = VipGetOffsetStructure( seed );
+        ptr = VipGetDataPtr_S16BIT( seed ) + vos->oFirstPoint;
+        cptr = VipGetDataPtr_S16BIT( mask1 ) + vos->oFirstPoint;
+        hptr = VipGetDataPtr_S16BIT( plan_hemi ) + vos->oFirstPoint;
+        for ( iz=0; iz<mVipVolSizeZ(seed); iz++ )   /* loop on slices */
+        {
+            for ( iy=0; iy<mVipVolSizeY(seed); iy++ )  /* loop on lines */
+            {
+                for ( ix=0; ix<mVipVolSizeX(seed); ix++ )   /* loop on points */
+                {
+                    if(*ptr==3 && *cptr==255)
+                    {
+                        if(!(*hptr)) *ptr=1;
+                        else *ptr=2;
+                    }
+                    ptr++;
+                    cptr++;
+                    hptr++;
+                }
+                ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+                cptr = cptr + vos->oPointBetweenLine;  /*skip border points*/
+                hptr = hptr + vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+            cptr = cptr + vos->oLineBetweenSlice; /*skip border lines*/
+            hptr = hptr + vos->oLineBetweenSlice; /*skip border lines*/
+        }
+
+        printf("Brain complete reconstruction...\n");
+        vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, 1, BINARY_RESULT);
+        if(vol==PB) return(VIP_CL_ERROR);
+
+        if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB)
+            return(VIP_CL_ERROR);
+
+        VipMerge(vol,seed,VIP_MERGE_SAME_VALUES,0,0);
+//         VipWriteVolume(vol,"domain2");
+
+        printf("Calculation of the maximum and minimum intensities...\n");
+        mask2 = VipCreateSingleThresholdedVolume(seed, EQUAL_TO, 0, BINARY_RESULT);
+        mask1 = VipCopyVolume(brain, "gray_matter");
+        VipMaskVolume(mask1, mask2);
+        VipFreeVolume(mask2);
+        mask2=NULL;
+
+        int_max = VipGetVolumeMax(mask1);
+        VipChangeIntLabel(mask1, 0, int_max+100);
+        int_min = VipGetVolumeMin(mask1);
+        nb_interval = (int)(3*log(int_max-int_min));
+        printf("int_max=%d, int_min=%d\n", int_max, int_min);
+        fflush(stdout);
+
+        VipFreeVolume(mask1);
+//         VipFreeVolume(seed);
+
+        VipWatershedFrontPropagation(vol, brain, NULL, int_min, int_max, 255, 0, nb_interval, CONNECTIVITY_6);
+        VipSingleThreshold(vol, LOWER_THAN, 255, GREYLEVEL_RESULT);
+
+  /*Correction de la frontiere entre le cervelet et les hemispheres*/
+        mask2 = VipCopyVolume(vol, "split");
+
+    //Recuperation hemisphere gauche
+        mask1 = VipCreateSingleThresholdedVolume(vol, EQUAL_TO, 1, BINARY_RESULT);
+        if(VipClosing(mask1,CHAMFER_BALL_3D,10)==PB) return(VIP_CL_ERROR);
+        if(VipOpening(mask1,CHAMFER_BALL_3D,10)==PB) return(VIP_CL_ERROR);
+        if(VipErosion(mask1,CHAMFER_BALL_3D,little_opening_size+0.5)==PB)
+            return(VIP_CL_ERROR);
+
+        vos = VipGetOffsetStructure( vol );
+        ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+        cptr = VipGetDataPtr_S16BIT( mask1 ) + vos->oFirstPoint;
+        for ( iz=0; iz<mVipVolSizeZ(vol); iz++ )   /* loop on slices */
+        {
+            for ( iy=0; iy<mVipVolSizeY(vol); iy++ )  /* loop on lines */
+            {
+                for ( ix=0; ix<mVipVolSizeX(vol); ix++ )   /* loop on points */
+                {
+                    if(*ptr==3 && *cptr==255) *ptr = 1;
+                    else if(*ptr==1 && *cptr==0) *ptr =255;
+                    ptr++;
+                    cptr++;
+                }
+                ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+                cptr = cptr + vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+            cptr = cptr + vos->oLineBetweenSlice; /*skip border lines*/
+        }
+
+    //Recuperation hemisphere droit
+        VipFreeVolume(mask1);
+        mask1 = VipCreateSingleThresholdedVolume(vol, EQUAL_TO, 2, BINARY_RESULT);
+        if(VipClosing(mask1,CHAMFER_BALL_3D,10)==PB) return(VIP_CL_ERROR);
+        if(VipOpening(mask1,CHAMFER_BALL_3D,10)==PB) return(VIP_CL_ERROR);
+        if(VipErosion(mask1,CHAMFER_BALL_3D,little_opening_size+0.5)==PB)
+            return(VIP_CL_ERROR);
+
+        vos = VipGetOffsetStructure( vol );
+        ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+        cptr = VipGetDataPtr_S16BIT( mask1 ) + vos->oFirstPoint;
+        for ( iz=0; iz<mVipVolSizeZ(vol); iz++ )   /* loop on slices */
+        {
+            for ( iy=0; iy<mVipVolSizeY(vol); iy++ )  /* loop on lines */
+            {
+                for ( ix=0; ix<mVipVolSizeX(vol); ix++ )   /* loop on points */
+                {
+                    if(*ptr==3 && *cptr==255) *ptr = 2;
+                    else if(*ptr==2 && *cptr==0) *ptr =255;
+                    ptr++;
+                    cptr++;
+                }
+                ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+                cptr = cptr + vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+            cptr = cptr + vos->oLineBetweenSlice; /*skip border lines*/
+        }
+
+   //Recuperation cervelet
+        VipFreeVolume(mask1);
+        mask1 = VipCreateSingleThresholdedVolume(mask2, EQUAL_TO, 3, BINARY_RESULT);
+        if(VipClosing(mask1,CHAMFER_BALL_3D,15)==PB) return(VIP_CL_ERROR);
+        if(VipOpening(mask1,CHAMFER_BALL_3D,10)==PB) return(VIP_CL_ERROR);
+        if(VipErosion(mask1,CHAMFER_BALL_3D,little_opening_size+0.5)==PB)
+            return(VIP_CL_ERROR);
+
+        vos = VipGetOffsetStructure( vol );
+        ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+        cptr = VipGetDataPtr_S16BIT( mask1 ) + vos->oFirstPoint;
+        for ( iz=0; iz<mVipVolSizeZ(vol); iz++ )   /* loop on slices */
+        {
+            for ( iy=0; iy<mVipVolSizeY(vol); iy++ )  /* loop on lines */
+            {
+                for ( ix=0; ix<mVipVolSizeX(vol); ix++ )   /* loop on points */
+                {
+                    if((*ptr==1 || *ptr==2) && *cptr==255) *ptr = 255;
+                    else if(*ptr==3 && *cptr==0) *ptr = 255;
+                    ptr++;
+                    cptr++;
+                }
+                ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+                cptr = cptr + vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+            cptr = cptr + vos->oLineBetweenSlice; /*skip border lines*/
+        }
+
+        VipFreeVolume(mask1);
+        VipFreeVolume(mask2);
+
+        mask1 = VipCopyVolume(brain, "border");
+        mask2 = VipCreateSingleThresholdedVolume(vol, EQUAL_TO, 255, BINARY_RESULT);
+        VipMaskVolume(mask1, mask2);
+        VipFreeVolume(mask2);
+
+        int_max = VipGetVolumeMax(mask1);
+        VipChangeIntLabel(mask1, 0, int_max+100);
+        int_min = VipGetVolumeMin(mask1);
+        nb_interval = (int)(3*log(int_max-int_min));
+        printf("int_max=%d, int_min=%d\n", int_max, int_min);
+        fflush(stdout);
+        VipFreeVolume(mask1);
+        
+        VipMerge(vol,seed,VIP_MERGE_SAME_VALUES,0,0);
+        VipWatershedFrontPropagation(vol, brain, NULL, int_min, int_max, 255, 0, nb_interval, CONNECTIVITY_6);
+        VipSingleThreshold(vol, LOWER_THAN, 255, GREYLEVEL_RESULT);
     }
-  */
+  
   printf("Writing %s...\n",output);
   if (writelib == TIVOLI)
     {
@@ -882,6 +1197,7 @@ int main(int argc, char *argv[])
   return(0);
 
 }
+
 /*----------------------------------------------------------------------------*/
 int VipWriteCoordOverZBucketInVolume_S16BIT(
   Vip3DBucket_S16BIT *buck,
@@ -914,7 +1230,7 @@ int VipWriteCoordOverZBucketInVolume_S16BIT(
 
 /*----------------------------------------------------------------------------*/
 static int GetCutAlongTheLineBucket(  Volume *vol, Volume *template,
-  VipTalairach *tal, int wthreshold, Vip3DBucket_S16BIT **buck)
+  VipTalairach *tal, int wthreshold, Vip3DBucket_S16BIT **buck, char mode )
 /*----------------------------------------------------------------------------*/
 {
    Vip_S16BIT *ptr;
@@ -931,7 +1247,7 @@ static int GetCutAlongTheLineBucket(  Volume *vol, Volume *template,
     }
   bidon = template;
   bidon = NULL;
-
+  
   vos = VipGetOffsetStructure(vol);
   ptr = VipGetDataPtr_S16BIT(vol) + vos->oFirstPoint;
 
@@ -941,7 +1257,7 @@ static int GetCutAlongTheLineBucket(  Volume *vol, Volume *template,
   /*corpus callosum*/
   x = 0;
   for (y=-50;y<50;y+=3)
-    for (z=-50;z<30;z+=3)
+    for (z=-50;z<23;z+=3)
       {
 	input_point[0] = x;
 	input_point[1] = y;
@@ -956,13 +1272,13 @@ static int GetCutAlongTheLineBucket(  Volume *vol, Volume *template,
 	   &&(oy>=0)&&(oy<mVipVolSizeY(vol))
 	   &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))	  
 	  {
-	    if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice)) >wthreshold)
+	    if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
 	      {
 		(*buck)->data[(*buck)->n_points].x = ox;
 		(*buck)->data[(*buck)->n_points].y = oy;
 		(*buck)->data[(*buck)->n_points].z = oz;
 		(*buck)->n_points++;
-		/*		printf("%d, %d, %d",ox,oy,oz);*/
+// 		printf("%d, %d, %d",ox,oy,oz);
 	      }
 	  }
 	
@@ -985,9 +1301,9 @@ static int GetCutAlongTheLineBucket(  Volume *vol, Volume *template,
 	fflush(stdout);
 	if((ox>=0)&&(ox<mVipVolSizeX(vol))
 	   &&(oy>=0)&&(oy<mVipVolSizeY(vol))
-	   &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))	  
+	   &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))
 	  {
-	    if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice)) >wthreshold)
+	    if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
 	      {
 		(*buck)->data[(*buck)->n_points].x = ox;
 		(*buck)->data[(*buck)->n_points].y = oy;
@@ -997,35 +1313,36 @@ static int GetCutAlongTheLineBucket(  Volume *vol, Volume *template,
 	  }
 	
       }
-      
-  for(x = -30;x<=30;x+=3)
-  for (y=10;y<45;y+=3)
-    for (z=25;z<31;z+=3)
-      {
-	input_point[0] = x;
-	input_point[1] = y;
-	input_point[2] = z;
-	fflush(stdout);
-	VipTalairachInverseTransformation(input_point,tal,output_point);
-	ox = (int)(output_point[0]/mVipVolVoxSizeX(vol)+0.5);
-	oy = (int)(output_point[1]/mVipVolVoxSizeY(vol)+0.5);
-	oz = (int)(output_point[2]/mVipVolVoxSizeZ(vol)+0.5);
-	fflush(stdout);
-	if((ox>=0)&&(ox<mVipVolSizeX(vol))
-	   &&(oy>=0)&&(oy<mVipVolSizeY(vol))
-	   &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))	  
-	  {
-	    if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice)) >wthreshold)
-	      {
-		(*buck)->data[(*buck)->n_points].x = ox;
-		(*buck)->data[(*buck)->n_points].y = oy;
-		(*buck)->data[(*buck)->n_points].z = oz;
-		(*buck)->n_points++;
-	      }
-	  }
-	
-      }
-  
+
+  if(mode=='V')
+  {
+      for(x = -30;x<=30;x+=3)
+      for (y=10;y<45;y+=3)
+        for (z=25;z<31;z+=3)
+          {
+             input_point[0] = x;
+             input_point[1] = y;
+             input_point[2] = z;
+             fflush(stdout);
+             VipTalairachInverseTransformation(input_point,tal,output_point);
+             ox = (int)(output_point[0]/mVipVolVoxSizeX(vol)+0.5);
+             oy = (int)(output_point[1]/mVipVolVoxSizeY(vol)+0.5);
+             oz = (int)(output_point[2]/mVipVolVoxSizeZ(vol)+0.5);
+             fflush(stdout);
+             if((ox>=0)&&(ox<mVipVolSizeX(vol))
+                &&(oy>=0)&&(oy<mVipVolSizeY(vol))
+                &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))	  
+               {
+                 if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
+                   {
+                     (*buck)->data[(*buck)->n_points].x = ox;
+                     (*buck)->data[(*buck)->n_points].y = oy;
+                     (*buck)->data[(*buck)->n_points].z = oz;
+                     (*buck)->n_points++;
+                   }
+               }
+          }
+  }
 
   VipDwindle3DBucket_S16BIT(*buck);
 
@@ -1166,6 +1483,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-C[utUse] {(y/n), default:y}]\n");
   (void)fprintf(stderr,"        [-b[rain] {binary brain image name (default:brain)}]\n");
   (void)fprintf(stderr,"        [-o[utput] {splitted brain image name (default:voronoi)}]\n");
+  (void)fprintf(stderr,"        [-m[ode] {char: V[oronoi], W[atershed], default:V\n");
   (void)fprintf(stderr,"        [-wa[lgo] {algo r/b/c/t, default:r\n");
   (void)fprintf(stderr,"        [-wt[hreshold] {algo t: int (default :mW - Coef*sW)}]\n");
   (void)fprintf(stderr,"        [-ws[eed] {write seed image (y/n), default:n}]\n");
@@ -1219,6 +1537,9 @@ static int Help()
   (void)printf("brain binary mask\n");
   (void)printf("        [-o[utput] {splitted brain image name (default:voronoi)}]\n");
   (void)printf("a 3 color label image (a voronoi diagram inside brain mask\n");
+  (void)printf("        [-m[ode] {char: V[oronoi], W[atershed], default:V\n");
+  (void)printf("Voronoi: classification using voronoi diagramme\n");
+  (void)printf("Watershed: classification using a watershed algo during the propagation\n");
   (void)printf("        [-wa[lgo] {algo r/b/c/t, default:r\n");
   (void)printf("r: regulariwed grey white classification\n");
   (void)printf("b: barycenter, cf -B option\n");
