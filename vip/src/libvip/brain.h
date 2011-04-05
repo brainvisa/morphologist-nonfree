@@ -95,6 +95,19 @@ int connectivity
 /*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
+int VipPropagationWithRefluxConnectivity(
+Volume *mask,
+Volume *vol,
+Volume *variance,
+int distance,
+int mode,
+int seuil1,
+int seuil2,
+int connectivity
+);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
 int VipPropagationReflux(
 Volume *mask,
 Volume *vol1,
@@ -112,15 +125,16 @@ int VipGetBrain2010(
 Volume *vol,
 Volume *variance,
 Volume *edges,
+Volume *ridge,
 VipT1HistoAnalysis *ana,
 int dumb,
 int debug,
 float brain_erosion_size,
 int variance_threshold,
 int nb_iterations,
-int xCP,
-int yCA,
-int yCP
+float CA[3],
+float CP[3],
+float P[3]
 );
 /*---------------------------------------------------------------------------*/
 
