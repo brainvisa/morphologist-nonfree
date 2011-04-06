@@ -790,38 +790,39 @@ int main(int argc, char *argv[])
       vol2 = NULL; 
     }
 
-  
-  printf("\n---------------------------------\n");
-  printf("Correction of the white_ridge...\n");
-  printf("---------------------------------\n");
-  
-  vol2 = VipReadVolumeWithBorder(input,1);
-  VipMaskVolume(vol2, vol);
-  
-  classif = VipGrayWhiteClassificationRegularisationForVoxelBasedAna(vol2, ana, VFALSE, 5, 20, CONNECTIVITY_26);
-  VipChangeIntLabel(classif,VOID_LABEL,0);
-  
-  VipSingleThreshold( vol2, GREATER_THAN, 0, BINARY_RESULT );
-  copy = VipCopyVolume(vol2, "copyvol2");
-  VipErosion( vol2, CHAMFER_BALL_3D, 3 );
-  VipMerge( copy, vol2, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-  VipMerge( classif, copy, VIP_MERGE_ALL_TO_ONE, 255, GRAY_LABEL );
-  VipFreeVolume(vol2);
-  VipFreeVolume(copy);
-
-//   vol2 = VipExtedge(classif,EXTEDGE3D_ALL,NEW_VOLUME);
-//   VipMerge(classif,vol2,VIP_MERGE_ALL_TO_ONE,255,GRAY_LABEL);
-//   VipFreeVolume(vol2);
-  
-  VipSingleThreshold(classif, EQUAL_TO, WHITE_LABEL, BINARY_RESULT );
-  VipConnexVolumeFilter( classif, CONNECTIVITY_6, -1, CONNEX_BINARY );
-
-  printf("\nCleaning white_ridge...\n\n");
-  VipMaskVolume(ridge, classif);
-  VipFreeVolume(classif);
-  VipConnexVolumeFilter( ridge, CONNECTIVITY_26, -1, CONNEX_BINARY );
-  VipWriteVolume(ridge,ridgename);
-  
+  if (mode=='V')
+  {
+      printf("\n---------------------------------\n");
+      printf("Correction of the white_ridge...\n");
+      printf("---------------------------------\n");
+      
+      vol2 = VipReadVolumeWithBorder(input,1);
+      VipMaskVolume(vol2, vol);
+      
+      classif = VipGrayWhiteClassificationRegularisationForVoxelBasedAna(vol2, ana, VFALSE, 5, 20, CONNECTIVITY_26);
+      VipChangeIntLabel(classif,VOID_LABEL,0);
+      
+      VipSingleThreshold( vol2, GREATER_THAN, 0, BINARY_RESULT );
+      copy = VipCopyVolume(vol2, "copyvol2");
+      VipErosion( vol2, CHAMFER_BALL_3D, 3 );
+      VipMerge( copy, vol2, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+      VipMerge( classif, copy, VIP_MERGE_ALL_TO_ONE, 255, GRAY_LABEL );
+      VipFreeVolume(vol2);
+      VipFreeVolume(copy);
+      
+      //   vol2 = VipExtedge(classif,EXTEDGE3D_ALL,NEW_VOLUME);
+      //   VipMerge(classif,vol2,VIP_MERGE_ALL_TO_ONE,255,GRAY_LABEL);
+      //   VipFreeVolume(vol2);
+      
+      VipSingleThreshold(classif, EQUAL_TO, WHITE_LABEL, BINARY_RESULT );
+      VipConnexVolumeFilter( classif, CONNECTIVITY_6, -1, CONNEX_BINARY );
+      
+      printf("\nCleaning white_ridge...\n\n");
+      VipMaskVolume(ridge, classif);
+      VipFreeVolume(classif);
+      VipConnexVolumeFilter( ridge, CONNECTIVITY_26, -1, CONNEX_BINARY );
+      VipWriteVolume(ridge,ridgename);
+  }
 
   /* check if the mask is empty or fills the whole volume */
   if( VipCheckBrainMask( vol ) == PB )
