@@ -59,8 +59,8 @@ int VipDilateInPartialVolumeFar(Volume *vol, Volume *mask, int layer);
 /*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
-VipHisto *VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivity);
-// int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivity);
+// VipHisto *VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivity);
+int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivity);
 /*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
