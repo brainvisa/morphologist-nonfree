@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
       VipHomotopicInsideDilationSnakeRidge(ridge,pyrlab->image[0]->volume,pyr->image[0]->volume,
                                       100, 255, linside, loutside, FRONT_RANDOM_ORDER,
                                       1., mG, sG, mW, sW);
-      /*
+//       /*
       newsG = sG/2.+ sG*(float)(100-pressure)/200.;
       newsW = sW+ sW*(float)(pressure)/200.;
       if(pressure!=0)
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
       VipHomotopicErosionFromInsideSnake(pyrlab->image[0]->volume,pyr->image[0]->volume,
                                          100, 255, linside, loutside,
                                          1., mG, newsG, mW, newsW);
-      */
+//       */
     }
 
   printf("-------------------------\n");
