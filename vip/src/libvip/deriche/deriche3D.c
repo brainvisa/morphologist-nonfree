@@ -293,10 +293,10 @@ float threshold)
       return(PB);
     }
 
-  if(mVipVolVoxSizeX(fvol)!=mVipVolVoxSizeY(fvol))
-    {
-      VipPrintfWarning("Different Xvoxsize ans Yvoxsize in Compute3DNorm!");
-    }
+//   if(mVipVolVoxSizeX(fvol)!=mVipVolVoxSizeY(fvol))
+//     {
+//       VipPrintfWarning("Different Xvoxsize ans Yvoxsize in Compute3DNorm!");
+//     }
 
   if(mVipVolBorderWidth(gx)!=0 ||mVipVolBorderWidth(gy)!=0 ||
      mVipVolBorderWidth(gz)!=0 ||mVipVolBorderWidth(fvol)!=0) 
@@ -370,10 +370,10 @@ float threshold)
       return(PB);
     }
 
-  if(mVipVolVoxSizeX(fvol)!=mVipVolVoxSizeY(fvol))
-    {
-      VipPrintfWarning("Different Xvoxsize ans Yvoxsize in Extract3DExtrema!");
-    }
+//   if(mVipVolVoxSizeX(fvol)!=mVipVolVoxSizeY(fvol))
+//     {
+//       VipPrintfWarning("Different Xvoxsize ans Yvoxsize in Extract3DExtrema!");
+//     }
 
   if(mVipVolBorderWidth(gx)!=0 ||mVipVolBorderWidth(gy)!=0 ||
      mVipVolBorderWidth(fvol)!=0) 
