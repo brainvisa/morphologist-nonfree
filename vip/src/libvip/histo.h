@@ -210,12 +210,18 @@ extern Volume *VipComputeVarianceVolume(Volume *vol);
 					 float h4
 					 );
   /*---------------------------------------------------------------*/
+
 /*---------------------------------------------------------------------------*/
 extern int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
 /*---------------------------------------------------------------------------*/
-/*-----------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+extern int VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
 extern int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios[5][5], int j);
-/*-----------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
