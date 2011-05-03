@@ -59,7 +59,7 @@ static int Help();
 /*-----------------------------------------------------------------*/
 static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol);
 static Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol);
-extern int  VipComputeStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
+// extern int  VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
 
 /*---------------------------------------------------------------------------*/
 extern Volume *VipComputeT1BiasFieldMultiGrid(int mode, int dumb, Volume *vol, Volume *crest, float undersampling, 
@@ -560,30 +560,30 @@ int main(int argc, char *argv[])
 	  vol = converter;
       }
 
-      if(Last==3000)
-      {
-          if(GetCommissureCoordinates(vol, point_filename, &tal,
-			xCA, yCA, zCA,
-			xCP, yCP, zCP,
-			xP, yP, zP, talset)!=PB)
-          {
-              coord = &tal;
-              xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
-              xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
-              xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
-          
-              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
-              if(Last<0) Last = 0;
-          }
-          else
-          {
-              printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
-              Last = 0;
-          }
-      }
-      printf("deleting last %d slices\n",Last);
-      for(i=0;i<Last;i++)
-        VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
+//       if(Last==3000)
+//       {
+//           if(GetCommissureCoordinates(vol, point_filename, &tal,
+// 			xCA, yCA, zCA,
+// 			xCP, yCP, zCP,
+// 			xP, yP, zP, talset)!=PB)
+//           {
+//               coord = &tal;
+//               xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+//               xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+//               xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
+//           
+//               Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+//               if(Last<0) Last = 0;
+//           }
+//           else
+//           {
+//               printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+//               Last = 0;
+//           }
+//       }
+//       printf("deleting last %d slices\n",Last);
+//       for(i=0;i<Last;i++)
+//         VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
   
       boundingbox = VipCreateSingleThresholdedVolume( vol, EQUAL_TO, 0 , BINARY_RESULT);
       VipSetBorderLevel( boundingbox,255);
@@ -663,10 +663,10 @@ int main(int argc, char *argv[])
       VipResizeBorder( thresholdedvol, 3 );
       /*VipWriteTivoliVolume( thresholdedvol, "outside");*/
 
-      VipComputeStatInMaskVolume(vol,thresholdedvol, &mean, &sigma, VTRUE);
-      /*debug
-      VipWriteTivoliVolume( thresholdedvol, "outside");
-      */
+      VipComputeRobustStatInMaskVolume(vol,thresholdedvol, &mean, &sigma, VTRUE);
+      //debug
+      /*VipWriteTivoliVolume( thresholdedvol, "outside");*/
+      
       VipFreeVolume(thresholdedvol);
 
       VipResizeBorder( deriche, 3 );
@@ -716,7 +716,7 @@ int main(int argc, char *argv[])
       masked = VipCopyVolume(vol,"masked");
       if(!masked) return(VIP_CL_ERROR);
       VipMaskVolume(masked,thresholdedvol);
-      VipComputeStatInMaskVolume(masked,thresholdedvol, &mean, &sigma, VFALSE);
+      VipComputeRobustStatInMaskVolume(masked,thresholdedvol, &mean, &sigma, VFALSE);
       VipFreeVolume(thresholdedvol);
       VipFreeVolume(masked);
 
@@ -749,7 +749,7 @@ int main(int argc, char *argv[])
 
       if (writevariance==VTRUE) VipWriteVolume( variance_brute, variancename);
       /*
-      VipComputeStatInMaskVolume(variance,variance, &mean, &sigma, VTRUE);
+      VipComputeRobustStatInMaskVolume(variance,variance, &mean, &sigma, VTRUE);
       printf("variance in tissues: mean: %f; sigma: %f\n", mean, sigma);
       variance_threshold = (int)(mean-0*sigma+0.5);
       */
@@ -898,7 +898,7 @@ int main(int argc, char *argv[])
       VipFreeVolume(target);
       extrema = VipComputeCrestGradExtrema(gradient, compressed);
 
-      VipComputeStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
+      VipComputeRobustStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
       printf("crest gradient: mean: %f; sigma: %f\n", mean, sigma);
       thresholdhigh = (int)(mean+2*sigma+0.5);
       printf("threshold gradient: %d\n", thresholdhigh);
@@ -906,7 +906,7 @@ int main(int argc, char *argv[])
       VipSingleThreshold( extrema, GREATER_OR_EQUAL_TO, (int)(mean+1.*sigma+0.5), BINARY_RESULT);
       VipMerge(white_cresttemp,extrema,VIP_MERGE_ONE_TO_ONE,255,0);
       if (VipConnexVolumeFilter (white_cresttemp, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
-      VipComputeStatInMaskVolume(gradient,white_cresttemp, &mean, &sigma, VFALSE);
+      VipComputeRobustStatInMaskVolume(gradient,white_cresttemp, &mean, &sigma, VFALSE);
 
 
       VipFreeVolume(white_cresttemp);
@@ -945,7 +945,7 @@ int main(int argc, char *argv[])
           VipFreeVolume(arrow);
           extrema = VipComputeCrestGradExtrema(gradient, compressed);
           /*
-          VipComputeStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
+          VipComputeRobustStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
           printf("crest gradient: mean: %f; sigma: %f\n", mean, sigma);
           thresholdhigh = (int)(mean+2*sigma+0.5);
           printf("threshold gradient: %d\n", thresholdhigh);
@@ -953,7 +953,7 @@ int main(int argc, char *argv[])
           VipSingleThreshold( extrema, GREATER_OR_EQUAL_TO, (int)(mean+1.*sigma+0.5), BINARY_RESULT);
           VipMerge(white_cresttemp,extrema,VIP_MERGE_ONE_TO_ONE,255,0);
           if (VipConnexVolumeFilter (white_cresttemp, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
-          VipComputeStatInMaskVolume(gradient,white_cresttemp, &mean, &sigma, VFALSE);
+          VipComputeRobustStatInMaskVolume(gradient,white_cresttemp, &mean, &sigma, VFALSE);
 
 
           VipFreeVolume(white_cresttemp);
@@ -1224,13 +1224,13 @@ int main(int argc, char *argv[])
   compressed = VipComputeCompressedVolume( vol, compression);
   gradient = VipComputeCrestGrad(white_crest, compressed);
  
-  VipComputeStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
+  VipComputeRobustStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
   printf("crest gradient: mean: %f; sigma: %f\n", mean, sigma);
   thresholdhigh = (int)(mean+2*sigma+0.5);
   printf("threshold gradient: %d\n", thresholdhigh);
   white_cresttemp = VipCreateDoubleThresholdedVolume(gradient,VIP_BETWEEN_OR_EQUAL_TO,1,thresholdhigh,BINARY_RESULT);
   if (VipConnexVolumeFilter (white_cresttemp, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
-  VipComputeStatInMaskVolume(gradient,white_cresttemp, &mean, &sigma, VFALSE);
+  VipComputeRobustStatInMaskVolume(gradient,white_cresttemp, &mean, &sigma, VFALSE);
   VipFreeVolume(white_cresttemp);
   printf("ridge gradient: mean: %f; sigma: %f\n", mean, sigma);
   thresholdhigh = (int)(mean+2*sigma+0.5);
@@ -1387,138 +1387,138 @@ static int Help()
 }
 
 /******************************************************/
-int VipComputeStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust)
-{
-  VipOffsetStruct *vos;
-  int ix, iy, iz;
-  Vip_S16BIT *ptr, *cptr;
-  double sum, sum2;
-  double temp;
-  int n;
-  double threshold;
-
-
-     vos = VipGetOffsetStructure(vol);
-     ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-     cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
-     sum = 0.;
-     n = 0;
-     for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-       {
-	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-	   {
-	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-	       {
-		 if(*cptr)
-		   {
-		     n++;
-		     sum += *ptr;
-		   }
-		 ptr++;
-                 cptr++;
-	       }
-	     ptr += vos->oPointBetweenLine;  /*skip border points*/
-	     cptr += vos->oPointBetweenLine;  /*skip border points*/
-	   }
-	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
-	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
-       }
-     if(n==0 || n==1)
-       {
-         VipPrintfWarning ("empty volume in VipComputeStatInMaskVolume");
-         return(PB);
-       }
-     *mean = (float)(sum/n);
-     ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-     cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
-     sum2 = 0.;
-     for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-       {
-	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-	   {
-	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-	       {
-		 if(*cptr)
-		   {
-                     temp = *ptr-*mean;
-		     sum2 += temp*temp;
-		   }
-		 cptr++;
-		 ptr++;
-	       }
-	     ptr += vos->oPointBetweenLine;  /*skip border points*/
-	     cptr += vos->oPointBetweenLine;  /*skip border points*/
-	   }
-	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
-	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
-       }
-     *sigma = (float)sqrt((double)(sum2/(n-1)));
-
-     if (robust==VTRUE)
-       {
-
-         threshold = *mean + 3 * *sigma;
-
-
-         ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-         cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
-         for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-           {
-             for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-               {
-                 for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-                   {
-                     if(*cptr)
-                       {
-                         if (*ptr>threshold)
-                           {
-                             n--;
-                             sum -= *ptr;
-                           }
-                       }
-                     ptr++;
-                     cptr++;
-                   }
-                 ptr += vos->oPointBetweenLine;  /*skip border points*/
-                 cptr += vos->oPointBetweenLine;  /*skip border points*/
-               }
-             ptr += vos->oLineBetweenSlice; /*skip border lines*/
-             cptr += vos->oLineBetweenSlice; /*skip border lines*/
-           }
-         
-         *mean = (float)(sum/n);
-         
-         sum2=0.;
-         ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
-         cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
-         for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
-           {
-             for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
-               {
-                 for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
-                   {
-                     if(*cptr)
-                       {
-                         if (*ptr>threshold)
-                           {
-                             temp = *ptr-*mean;
-                             sum2 += temp*temp;
-                           }
-                       }
-                     cptr++;
-                     ptr++;
-                   }
-                 ptr += vos->oPointBetweenLine;  /*skip border points*/
-                 cptr += vos->oPointBetweenLine;  /*skip border points*/
-               }
-             ptr += vos->oLineBetweenSlice; /*skip border lines*/
-             cptr += vos->oLineBetweenSlice; /*skip border lines*/
-           }
-         *sigma = (float)sqrt((double)(sum2/(n-1)));
-       }
-     return(OK);
-   
-}
+// int VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust)
+// {
+//   VipOffsetStruct *vos;
+//   int ix, iy, iz;
+//   Vip_S16BIT *ptr, *cptr;
+//   double sum, sum2;
+//   double temp;
+//   int n;
+//   double threshold;
+// 
+// 
+//      vos = VipGetOffsetStructure(vol);
+//      ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//      cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+//      sum = 0.;
+//      n = 0;
+//      for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//        {
+// 	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+// 	   {
+// 	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+// 	       {
+// 		 if(*cptr)
+// 		   {
+// 		     n++;
+// 		     sum += *ptr;
+// 		   }
+// 		 ptr++;
+//                  cptr++;
+// 	       }
+// 	     ptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	     cptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	   }
+// 	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
+// 	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//        }
+//      if(n==0 || n==1)
+//        {
+//          VipPrintfWarning ("empty volume in VipComputeRobustStatInMaskVolume");
+//          return(PB);
+//        }
+//      *mean = (float)(sum/n);
+//      ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//      cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+//      sum2 = 0.;
+//      for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//        {
+// 	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+// 	   {
+// 	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+// 	       {
+// 		 if(*cptr)
+// 		   {
+//                      temp = *ptr-*mean;
+// 		     sum2 += temp*temp;
+// 		   }
+// 		 cptr++;
+// 		 ptr++;
+// 	       }
+// 	     ptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	     cptr += vos->oPointBetweenLine;  /*skip border points*/
+// 	   }
+// 	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
+// 	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//        }
+//      *sigma = (float)sqrt((double)(sum2/(n-1)));
+// 
+//      if (robust==VTRUE)
+//        {
+// 
+//          threshold = *mean + 3 * *sigma;
+// 
+// 
+//          ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//          cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+//          for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//            {
+//              for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+//                {
+//                  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+//                    {
+//                      if(*cptr)
+//                        {
+//                          if (*ptr>threshold)
+//                            {
+//                              n--;
+//                              sum -= *ptr;
+//                            }
+//                        }
+//                      ptr++;
+//                      cptr++;
+//                    }
+//                  ptr += vos->oPointBetweenLine;  /*skip border points*/
+//                  cptr += vos->oPointBetweenLine;  /*skip border points*/
+//                }
+//              ptr += vos->oLineBetweenSlice; /*skip border lines*/
+//              cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//            }
+//          
+//          *mean = (float)(sum/n);
+//          
+//          sum2=0.;
+//          ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//          cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+//          for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+//            {
+//              for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+//                {
+//                  for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+//                    {
+//                      if(*cptr)
+//                        {
+//                          if (*ptr>threshold)
+//                            {
+//                              temp = *ptr-*mean;
+//                              sum2 += temp*temp;
+//                            }
+//                        }
+//                      cptr++;
+//                      ptr++;
+//                    }
+//                  ptr += vos->oPointBetweenLine;  /*skip border points*/
+//                  cptr += vos->oPointBetweenLine;  /*skip border points*/
+//                }
+//              ptr += vos->oLineBetweenSlice; /*skip border lines*/
+//              cptr += vos->oLineBetweenSlice; /*skip border lines*/
+//            }
+//          *sigma = (float)sqrt((double)(sum2/(n-1)));
+//        }
+//      return(OK);
+//    
+// }
 /******************************************************/
 static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol)
 {
