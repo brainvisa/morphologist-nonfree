@@ -877,7 +877,7 @@ float P[3]
   VipExtedge(skin,EXTEDGE2D_ALL_EXCEPT_Y_BOTTOM,SAME_VOLUME);
   VipExtedge(mask,EXTEDGE2D_ALL_EXCEPT_Y_TOP,SAME_VOLUME);
   if(VipMerge(skin, mask, VIP_MERGE_ONE_TO_ONE, 0, 0) == PB) return(PB);
-  VipWriteVolume(skin,"skin");
+
   if(VipConnexVolumeFilter( skin, CONNECTIVITY_18, -1, CONNEX_BINARY ) == PB) return(PB);
   if(VipDilation( skin, CHAMFER_BALL_2D, 4 ) == PB) return(PB);
 
