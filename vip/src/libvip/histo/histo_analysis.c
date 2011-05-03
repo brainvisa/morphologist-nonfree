@@ -2017,7 +2017,7 @@ int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mea
     }
     if(n==0 || n==1)
     {
-        VipPrintfWarning ("empty volume in VipComputeStatInMaskVolume");
+        VipPrintfWarning ("empty volume in VipComputeStatInRidgeVolume");
         return(PB);
     }
     *mean = (float)(sum/n);
@@ -2109,6 +2109,141 @@ int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mea
         *sigma = (float)sqrt((double)(sum2/(n-1)));
     }
     return(OK);
+}
+
+/*---------------------------------------------------------------------------*/
+int VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust)
+/*---------------------------------------------------------------------------*/
+{
+  VipOffsetStruct *vos;
+  int ix, iy, iz;
+  Vip_S16BIT *ptr, *cptr;
+  double sum, sum2;
+  double temp;
+  int n;
+  double threshold;
+
+
+     vos = VipGetOffsetStructure(vol);
+     ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+     cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+     sum = 0.;
+     n = 0;
+     for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+       {
+	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	   {
+	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	       {
+		 if(*cptr)
+		   {
+		     n++;
+		     sum += *ptr;
+		   }
+		 ptr++;
+                 cptr++;
+	       }
+	     ptr += vos->oPointBetweenLine;  /*skip border points*/
+	     cptr += vos->oPointBetweenLine;  /*skip border points*/
+	   }
+	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
+       }
+     if(n==0 || n==1)
+       {
+         VipPrintfWarning ("empty volume in VipComputeRobustStatInMaskVolume");
+         return(PB);
+       }
+     *mean = (float)(sum/n);
+     ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+     cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+     sum2 = 0.;
+     for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+       {
+	 for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+	   {
+	     for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+	       {
+		 if(*cptr)
+		   {
+                     temp = *ptr-*mean;
+		     sum2 += temp*temp;
+		   }
+		 cptr++;
+		 ptr++;
+	       }
+	     ptr += vos->oPointBetweenLine;  /*skip border points*/
+	     cptr += vos->oPointBetweenLine;  /*skip border points*/
+	   }
+	 ptr += vos->oLineBetweenSlice; /*skip border lines*/
+	 cptr += vos->oLineBetweenSlice; /*skip border lines*/
+       }
+     *sigma = (float)sqrt((double)(sum2/(n-1)));
+
+     if (robust==VTRUE)
+       {
+
+         threshold = *mean + 3 * *sigma;
+
+
+         ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+         cptr = VipGetDataPtr_S16BIT( thresholdedvol  ) + vos->oFirstPoint;
+         for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+           {
+             for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+               {
+                 for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+                   {
+                     if(*cptr)
+                       {
+                         if (*ptr>threshold)
+                           {
+                             n--;
+                             sum -= *ptr;
+                           }
+                       }
+                     ptr++;
+                     cptr++;
+                   }
+                 ptr += vos->oPointBetweenLine;  /*skip border points*/
+                 cptr += vos->oPointBetweenLine;  /*skip border points*/
+               }
+             ptr += vos->oLineBetweenSlice; /*skip border lines*/
+             cptr += vos->oLineBetweenSlice; /*skip border lines*/
+           }
+         
+         *mean = (float)(sum/n);
+         
+         sum2=0.;
+         ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+         cptr = VipGetDataPtr_S16BIT( thresholdedvol ) + vos->oFirstPoint;
+         for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+           {
+             for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+               {
+                 for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+                   {
+                     if(*cptr)
+                       {
+                         if (*ptr>threshold)
+                           {
+                             temp = *ptr-*mean;
+                             sum2 += temp*temp;
+                           }
+                       }
+                     cptr++;
+                     ptr++;
+                   }
+                 ptr += vos->oPointBetweenLine;  /*skip border points*/
+                 cptr += vos->oPointBetweenLine;  /*skip border points*/
+               }
+             ptr += vos->oLineBetweenSlice; /*skip border lines*/
+             cptr += vos->oLineBetweenSlice; /*skip border lines*/
+           }
+         *sigma = (float)sqrt((double)(sum2/(n-1)));
+       }
+     return(OK);
+   
 }
 
 /*---------------------------------------------------------------------------*/
