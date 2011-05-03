@@ -550,7 +550,6 @@ int VipWatershedFrontPropagation( Volume *vol, Volume *altitude, Volume *plan_he
     VipSetBorderLevel( vol, outside ); /* already done before but security */
 
     buck = VipCreateFrontIntBucketVoronoiObject( vol, connectivity, VIP_FRONT, domain, outside);
-    VipWriteVolume(vol,"buck");
     if(buck==PB) return(PB);
     nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
     if(nextbuck==PB) return(PB);
