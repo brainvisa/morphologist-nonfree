@@ -907,7 +907,6 @@ float P[3]
 //   VipSingleThreshold( white, GREATER_OR_EQUAL_TO, (int)(1.3*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT );
 //   VipConnexVolumeFilter( white, CONNECTIVITY_26, -1, CONNEX_BINARY );
 
-
 //----Creation du masque "brain" erode
   distmap = VipCreateSingleThresholdedVolume(brain,EQUAL_TO,0,BINARY_RESULT);
   VipComputeFrontPropagationChamferDistanceMap( distmap, 0, -1, VIP_PUT_LIMIT_TO_INFINITE, 6 );
@@ -930,7 +929,7 @@ float P[3]
 
   if((ana->white->mean-2*ana->white->left_sigma) > T_GRAY_WHITE_LOW)
   {
-      if(VipCreateBrainSeed( mask2, variance, ana, ana->white->mean-2*ana->white->left_sigma, T_WHITE_FAT_LOW_1, 3 ) == PB) return(PB);
+      if(VipCreateBrainSeed( mask2, variance, ana, ana->white->mean-2*ana->white->left_sigma, T_WHITE_FAT_LOW_1, 5 ) == PB) return(PB);
   }
   else VipCreateBrainSeed( mask2, variance, ana, T_GRAY_WHITE_LOW, T_WHITE_FAT_LOW_1, 5 );
   if(VipConnexVolumeFilter( mask2, CONNECTIVITY_26, 200, CONNEX_BINARY ) == PB) return(PB);
@@ -1014,7 +1013,7 @@ float P[3]
 
   mask = VipCreateDoubleThresholdedVolume( white, VIP_BETWEEN_OR_EQUAL_TO, 0, (int)(1.2*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT );
   VipSingleThreshold( white, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
-  
+
   skin = VipCopyVolume(white, "white_fin");
   if( VipMerge(skin, mask, VIP_MERGE_ONE_TO_ONE, 255, 0)== PB) return(PB);
 
