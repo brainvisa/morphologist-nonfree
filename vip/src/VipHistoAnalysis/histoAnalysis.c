@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
 		    else if(argv[i][0]=='a') mode = 'a';
 		    else if(argv[i][0]=='e') mode = 'e';
 		    else if(argv[i][0]=='v') mode = 'v';
+		    else if(argv[i][0]=='h') mode = 'h';
 		    else if(argv[i][0]=='c') mode = 'c';
 		    else if(argv[i][0]=='C') mode = 'C';
 		    else if(argv[i][0]=='s') mode = 's';
@@ -571,7 +572,7 @@ int main(int argc, char *argv[])
                         printf("ridge stats: mean: %f; sigma: %f\n", mean, sigma);
                         VipFreeVolume(ridge);
                       }
-		    printf("Computing histogram\n");
+		    printf("Computing histogram...\n");
                     
                     if(variance_threshold==-1 && variance_pourcentage==-1 && deriche_edges==-1)
                       {
@@ -633,7 +634,7 @@ int main(int argc, char *argv[])
 		    VipFreeVolume(vol);
 		    if(mode!='e')
 			{
-			    printf("Writing histogram\n");
+			    printf("Writing histogram...\n");
 			    if(VipWriteHisto(shorthisto,output,WRITE_HISTO_ASCII)==PB)
 				VipPrintfWarning("I can not write the histogram but I am going further");
 			}
@@ -694,11 +695,14 @@ int main(int argc, char *argv[])
         return(0);
       }
 
-    printf("Computing scale space singularities up to order three...\n");
-    fflush(stdout);
-  
-    /*VipSetHistoVal(shorthisto,mVipHistoRangeMax(shorthisto)-1,1);*/ /*bug brucker 3T*/
-    VipSetHistoVal(shorthisto,0,0); /*outside field of view for square images*/
+    if(mode!='h' && mode!='v')
+    {
+        printf("Computing scale space singularities up to order three...\n");
+        fflush(stdout);
+        
+        /*VipSetHistoVal(shorthisto,mVipHistoRangeMax(shorthisto)-1,1);*/ /*bug brucker 3T*/
+        VipSetHistoVal(shorthisto,0,0); /*outside field of view for square images*/
+    }
 
     if((mode=='a' && sequence==MODE_HISTO) || (mode=='i' && sequence==MODE_HISTO))
       {
@@ -784,7 +788,7 @@ int main(int argc, char *argv[])
                         printf("\ncontrast = %.3f\n", contrast), fflush(stdout);
                         printf("ratio_GW = %.3f, val_histo_gray = %d, val_histo_white = %d\n", ratio_GW, shorthisto->val[ana->gray->mean], shorthisto->val[ana->white->mean]), fflush(stdout);
                         
-                        if((0.09<contrast && contrast<0.55) && (0.30<ratio_GW && ratio_GW<2.5))
+                        if((0.09<contrast && contrast<0.55) && (0.25<ratio_GW && ratio_GW<2.5))
                         {
                             undersampling_factor_possible[j][0] = u;
                             undersampling_factor_possible[j][1] = ana->gray->mean;
@@ -819,7 +823,7 @@ int main(int argc, char *argv[])
 
 	    volstruct = VipCompute1DScaleSpaceStructFromHisto(shorthisto,nbiter,dscale,offset,nderivative,undersampling_factor );
     }
-    else
+    else if(mode!='h' && mode!='v')
 	{
 	    D0WRITE = VFALSE;
 	    D1WRITE = VTRUE;
@@ -831,13 +835,16 @@ int main(int argc, char *argv[])
 	    else
 		volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,dscale,offset,2,undersampling_factor);
 	}
-
-    if(volstruct==PB) return(VIP_CL_ERROR);
-
-    slist = VipComputeSSSingularityList(volstruct,track,D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE);
-    if(slist==PB) return(VIP_CL_ERROR);
     
-    if(mode!='f')
+    if(mode!='h' && mode!='v')
+    {
+        if(volstruct==PB) return(VIP_CL_ERROR);
+        
+        slist = VipComputeSSSingularityList(volstruct,track,D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE);
+        if(slist==PB) return(VIP_CL_ERROR);
+    }
+    
+    if(mode!='f' && mode!='v' && mode!='h')
 	{
 	    printf("Detecting D1/D2 singularity matings and cascades...\n");
 
@@ -943,13 +950,16 @@ int main(int argc, char *argv[])
       }
     }
 
-    VipFree1DScaleSpaceStruct(volstruct);
-
-    /*   if(slist!=NULL) VipFreeSSSingularityList(slist); 
-         Probleme with histo plantage.his???*/
-    if(clist!=NULL) VipFreeCascadeList(clist);
-  
-    fflush(stdout);
+    if(mode!='h' && mode!='v')
+    {
+        VipFree1DScaleSpaceStruct(volstruct);
+        
+        /*   if(slist!=NULL) VipFreeSSSingularityList(slist); 
+        Probleme with histo plantage.his???*/
+        if(clist!=NULL) VipFreeCascadeList(clist);
+        fflush(stdout);
+    }
+    
     if(gnuplot=='s')
     {
       switch( renderMode )
@@ -1015,7 +1025,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-S[AVE] {y/n (default:n)}]\n");   
   (void)fprintf(stderr,"        [-R[idge] {White ridge image name (default: not used)}]\n");
   (void)fprintf(stderr,"        [-M[ask] {mask to compute histogram (default: not used)}]\n");
-  (void)fprintf(stderr,"        [-m[ode] {char: [entropy], v[isu], f[ree], c[ascade], C[ascade], a[nalyse], m[axima], i[teration], s[surface], h[surface], default:v}]\n");
+  (void)fprintf(stderr,"        [-m[ode] {char: [entropy], v[isu], h[isto], f[ree], c[ascade], C[ascade], a[nalyse], i[teration], s[surface], h[surface], default:v}]\n"); /*, m[axima]*/
   (void)fprintf(stderr,"        [-C[ontrast] {int (default:auto, else h, l, H, s, 2, 3, 4)}]\n");
   (void)fprintf(stderr,"        [-e[dges] {char (default:not used, 2/3)}]\n");
   (void)fprintf(stderr,"        [-vt[ariance] {int (default:not used, else int threshold)}]\n");
@@ -1060,8 +1070,9 @@ static int Help()
   (void)printf("Save histogram analysis if performed (Extension: output.han)\n");
   (void)printf("        [-m[ode] {char: e[ntropy], v[isu], f[ree], c[ascade], C[ascade], a[nalyse], m[axima], i[teration], default:v}\n");
   (void)printf("e: computes some kind of entropy...\n");
-  (void)printf("m: give n maxima the most significative...\n");
+//   (void)printf("m: give n maxima the most significative...\n");
   (void)printf("v: visu mode send histogram to gnuplot or matplotlib (see -g and --matplotlib options)\n");
+  (void)printf("h: just writes the histogram\n");
   (void)printf("c: cascade mode detects D1/D2 n largest cascades\n");
   (void)printf("C: cascade mode detects D1/D2 n highest cascades\n");
   (void)printf("a: analyse mode according to contrast\n");
