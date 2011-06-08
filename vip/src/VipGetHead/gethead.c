@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  strcpy(output,argv[i]);
 	}
-      else if (!strncmp (argv[i], "-closing", 3)) 
+      else if (!strncmp (argv[i], "-closing", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  closingsize = atof(argv[i]);
