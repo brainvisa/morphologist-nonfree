@@ -327,33 +327,39 @@ static Vip3DBucket_S16BIT *SplitSSAlongPliDePassage(Vip3DBucket_S16BIT *bucklist
     Vip3DBucket_S16BIT *newbucklist = NULL;
     Vip3DBucket_S16BIT thefirst, *hook, *killer;
     Vip3DBucket_S16BIT **bucktab;
+    Vip3DBucket_S16BIT *cclist;
     TouchBassin *tbassin;
     Vip3DBucket_S16BIT *bptr;
+    Volume *copy_squel;
     int nbassin;
     int i,j,k;
     VipOffsetStruct *vos;
     Vip_S16BIT *ptr, *first;
     int killed;
     int created;
+    int nb_cc;
     int countpotpp;
     int splittedmaxsize;
     int jmax;
 
     if(bucklist2==PB || rootsvoronoi==PB ||
        potentialpp==PB || npotentialpp==PB || rootsbassin==PB || nbucket==PB)
-	{
-	    VipPrintfError("Empty arg");
-	    VipPrintfExit("SplitSSAlongPliDePassage");
-	    return(PB);
-	}
+    {
+        VipPrintfError("Empty arg");
+        VipPrintfExit("SplitSSAlongPliDePassage");
+        return(PB);
+    }
+
+    copy_squel = VipCopyVolume(rootsvoronoi, "roots");
+    VipSetVolumeLevel(copy_squel, 0);
 
     *nbucket=0;
     bptr = bucklist2;
     while(bptr!=NULL)
-	{
-	    (*nbucket)++;
-	    bptr = bptr->next;
-	}
+    {
+        (*nbucket)++;
+        bptr = bptr->next;
+    }
 
     tbassin = (TouchBassin *)VipCalloc(*nbucket,sizeof(TouchBassin),"SplitSSAlongPliDePassage");
     if(!tbassin) return(PB);
@@ -362,13 +368,13 @@ static Vip3DBucket_S16BIT *SplitSSAlongPliDePassage(Vip3DBucket_S16BIT *bucklist
     printf("Dispatching %d ss into catchment bassins\n",*nbucket);
 
     for(i=0;i<*nbucket;i++)
-	{
-	    tbassin[i].n_bassins = 0;
-	    tbassin[i].lab = (int *)VipCalloc(nbassin,sizeof(int),"SplitSSAlongPliDePassage");
-	    if(tbassin[i].lab==NULL) return(PB);
-	    tbassin[i].size = (int *)VipCalloc(nbassin,sizeof(int),"SplitSSAlongPliDePassage");
-	    if(tbassin[i].size==NULL) return(PB);
-	}
+    {
+        tbassin[i].n_bassins = 0;
+        tbassin[i].lab = (int *)VipCalloc(nbassin,sizeof(int),"SplitSSAlongPliDePassage");
+        if(tbassin[i].lab==NULL) return(PB);
+        tbassin[i].size = (int *)VipCalloc(nbassin,sizeof(int),"SplitSSAlongPliDePassage");
+        if(tbassin[i].size==NULL) return(PB);
+    }
 
     bucktab = ( Vip3DBucket_S16BIT **)VipCalloc(nbassin,sizeof( Vip3DBucket_S16BIT *),"SplitSSAlongPliDePassage");
     if(!bucktab) return(PB);
@@ -379,182 +385,224 @@ static Vip3DBucket_S16BIT *SplitSSAlongPliDePassage(Vip3DBucket_S16BIT *bucklist
 
     bptr = bucklist2;
     for(i=0;i<*nbucket;i++)
-	{
+    {
 
-	    for(j=0;j<bptr->n_points;j++)
-		{
-		    ptr = first + bptr->data[j].x + bptr->data[j].y * vos->oLine 
-			+ bptr->data[j].z * vos->oSlice; 
-		    if(*ptr>0)
-			{
-			    if(*ptr>nbassin-1)
-				{
-				    VipPrintfError("Strange value");
-				    VipPrintfExit("SplitSSAlongPliDePassage");
-				    return(PB);
-				}
-			    for(k=0;k<tbassin[i].n_bassins;k++)
-				{
-				    if(tbassin[i].lab[k]==*ptr)
-					{
-					    tbassin[i].size[k]++; /*already found*/
-					    break;
-					}
-				}
-			    if(k==tbassin[i].n_bassins) /*new bassin*/
-				{
-				    tbassin[i].lab[tbassin[i].n_bassins] = *ptr;
-				    tbassin[i].size[(tbassin[i].n_bassins)++] = 1;
-				}
-			}
-		    else
-			{
-			    printf("lab: %d\n",*ptr);
-			    VipPrintfWarning("Skeleton point outside all catchment bassins?");
-			}
-		}
-	    splittedmaxsize = 0;
-	    jmax = 0;
-	    for(j=0;j<tbassin[i].n_bassins;j++)
-		if (tbassin[i].size[j]>splittedmaxsize)
-		    {
-			splittedmaxsize=tbassin[i].size[j];
-			jmax = j;
-		    }
-	    if(splittedmaxsize < MIN_SIZE_BASSIN_SPLITTED)
-		{
-		    tbassin[i].n_bassins = 1;
-		    tbassin[i].size[0] = bptr->n_points;
-		    tbassin[i].lab[0] = tbassin[i].lab[jmax];
-		}	    
-	    bptr = bptr->next;
-	}
+        for(j=0;j<bptr->n_points;j++)
+        {
+            ptr = first + bptr->data[j].x + bptr->data[j].y * vos->oLine + bptr->data[j].z * vos->oSlice;
+            if(*ptr>0)
+            {
+                if(*ptr>nbassin-1)
+                {
+                    VipPrintfError("Strange value");
+                    VipPrintfExit("SplitSSAlongPliDePassage");
+                    return(PB);
+                }
+                for(k=0;k<tbassin[i].n_bassins;k++)
+                {
+                    if(tbassin[i].lab[k]==*ptr)
+                    {
+                        tbassin[i].size[k]++; /*already found*/
+                        break;
+                    }
+                }
+                if(k==tbassin[i].n_bassins) /*new bassin*/
+                {
+                    tbassin[i].lab[tbassin[i].n_bassins] = *ptr;
+                    tbassin[i].size[(tbassin[i].n_bassins)++] = 1;
+                }
+            }
+            else
+            {
+                printf("lab: %d\n",*ptr);
+                VipPrintfWarning("Skeleton point outside all catchment bassins?");
+            }
+        }
+        splittedmaxsize = 0;
+        jmax = 0;
+        for(j=0;j<tbassin[i].n_bassins;j++)
+            if (tbassin[i].size[j]>splittedmaxsize)
+            {
+                splittedmaxsize=tbassin[i].size[j];
+                jmax = j;
+            }
+            if(splittedmaxsize < MIN_SIZE_BASSIN_SPLITTED)
+            {
+                tbassin[i].n_bassins = 1;
+                tbassin[i].size[0] = bptr->n_points;
+                tbassin[i].lab[0] = tbassin[i].lab[jmax];
+            }
+            bptr = bptr->next;
+    }
 
     *npotentialpp = 0;
     killed = 0;
     bptr = bucklist2;
     created = 0;
+    for(j=0;j<nbassin;j++) bucktab[j]=NULL;
     for(i=0;i<*nbucket;i++)
-	{
-	    if(tbassin[i].n_bassins>1)
-		{
-		    /*
-		      printf("buck %d: %d bassins, size:%d | ",i,tbassin[i].n_bassins,bptr->n_points);
-		      for(k=0;k<tbassin[i].n_bassins;k++)
-		      printf("%d:%d ",tbassin[i].lab[k], tbassin[i].size[k]);
-		      printf("\n");
-		    */
-		    killed++;
-		    created += tbassin[i].n_bassins;
-		    *npotentialpp += tbassin[i].n_bassins * ( tbassin[i].n_bassins-1) /2;   
-		}
-	    bptr = bptr->next;
-	}
-
+    {
+        if(tbassin[i].n_bassins>1)
+        {
+            for(k=0;k<tbassin[i].n_bassins;k++)
+            {
+                bucktab[tbassin[i].lab[k]]=VipAlloc3DBucket_S16BIT( tbassin[i].size[k] );
+                if(!bucktab[tbassin[i].lab[k]]) return(PB);
+            }
+            for(j=0;j<bptr->n_points;j++)
+            {
+                ptr = first + bptr->data[j].x + bptr->data[j].y * vos->oLine 
+                        + bptr->data[j].z * vos->oSlice; 
+                if(*ptr>0)
+                {
+                    bucktab[*ptr]->data[bucktab[*ptr]->n_points].x = bptr->data[j].x;
+                    bucktab[*ptr]->data[bucktab[*ptr]->n_points].y = bptr->data[j].y;
+                    bucktab[*ptr]->data[bucktab[*ptr]->n_points].z = bptr->data[j].z;
+                    bucktab[*ptr]->n_points++;
+                }
+            }
+            killed++;
+            nb_cc=0;
+            for(k=0;k<tbassin[i].n_bassins;k++)
+            {
+                VipSetImageLevel(copy_squel,0);
+                VipWriteCoordBucketInVolume(bucktab[tbassin[i].lab[k]], copy_squel, 255);
+                cclist = VipGet3DConnex( copy_squel, CONNECTIVITY_26 );
+                while(cclist!=NULL)
+                {
+                    created++;
+                    nb_cc++;
+                    cclist = cclist->next;
+                }
+            }
+            *npotentialpp += nb_cc * ( nb_cc - 1 ) /2;
+        }
+        bptr = bptr->next;
+    }
+    
     *potentialpp = (int *)VipCalloc(*npotentialpp * 2,sizeof(int),"SplitSSAlongPliDePassage");
     if(!*potentialpp) return(PB); /*future list of paired splitted buckets*/
-  
+    
     *rootsbassin = (int *)VipCalloc(*nbucket-killed+created+1,sizeof(int),"SplitSSAlongPliDePassage");
     if(!*rootsbassin) return(PB); /*more often cited bassin in one bucket*/
-
+    
     hook = &thefirst;
     bptr = bucklist2;
     for(j=0;j<nbassin;j++) bucktab[j]=NULL;
     created = 0;
     countpotpp = 0;
     for(i=0;i<*nbucket;i++)
-	{
-	    if(tbassin[i].n_bassins>1)
-		{
-		    for(k=0;k<tbassin[i].n_bassins;k++)
-			{
-			    bucktab[tbassin[i].lab[k]]=VipAlloc3DBucket_S16BIT( tbassin[i].size[k] );
-			    if(!bucktab[tbassin[i].lab[k]]) return(PB);
-			    (*rootsbassin)[++created]=tbassin[i].lab[k]; 
-			    for(j=0;j<k;j++)
-				{
-				    /*printf("(%d,%d)=(%d,%d)",2*countpotpp,2*countpotpp+1,created-(k-j),created);*/
-				    (*potentialpp)[2*countpotpp] = created-(k-j);
-				    (*potentialpp)[2*countpotpp+1] = created;
-				    countpotpp++;
-				}
-			    /* printf("created: %d, countpotpp: %d/%d\n",created, countpotpp,*npotentialpp);*/
-			}
-		    for(j=0;j<bptr->n_points;j++)
-			{
-			    ptr = first + bptr->data[j].x + bptr->data[j].y * vos->oLine 
-				+ bptr->data[j].z * vos->oSlice; 
-			    if(*ptr>0)
-				{
-				    bucktab[*ptr]->data[bucktab[*ptr]->n_points].x = bptr->data[j].x;
-				    bucktab[*ptr]->data[bucktab[*ptr]->n_points].y = bptr->data[j].y;
-				    bucktab[*ptr]->data[bucktab[*ptr]->n_points].z = bptr->data[j].z;
-				    bucktab[*ptr]->n_points++;
-				}
-			}
-		    for(j=0;j<nbassin;j++) /*create list of splitted bucket*/
-			{
-			    if(bucktab[j]!=NULL)
-				{
-				    if(bucktab[j]->size != bucktab[j]->n_points)
-					{
-					    VipPrintfError("Bad filling");
-					    VipPrintfExit("SplitSSAlongPliDePassage");
-					    return(PB);
-					}
-				    hook->next = bucktab[j];
-				    hook = hook->next;
-				    bucktab[j] = NULL;
-				}
-			}
-		} 
-	    bptr = bptr->next;
-	}
+    {
+        if(tbassin[i].n_bassins>1)
+        {
+            for(k=0;k<tbassin[i].n_bassins;k++)
+            {
+                bucktab[tbassin[i].lab[k]]=VipAlloc3DBucket_S16BIT( tbassin[i].size[k] );
+                if(!bucktab[tbassin[i].lab[k]]) return(PB);
+            }
+            for(j=0;j<bptr->n_points;j++)
+            {
+                ptr = first + bptr->data[j].x + bptr->data[j].y * vos->oLine 
+                        + bptr->data[j].z * vos->oSlice; 
+                if(*ptr>0)
+                {
+                    bucktab[*ptr]->data[bucktab[*ptr]->n_points].x = bptr->data[j].x;
+                    bucktab[*ptr]->data[bucktab[*ptr]->n_points].y = bptr->data[j].y;
+                    bucktab[*ptr]->data[bucktab[*ptr]->n_points].z = bptr->data[j].z;
+                    bucktab[*ptr]->n_points++;
+                }
+            }
+            nb_cc=0;
+            for(k=0;k<tbassin[i].n_bassins;k++)
+            {
+                VipSetImageLevel(copy_squel,0);
+                VipWriteCoordBucketInVolume(bucktab[tbassin[i].lab[k]], copy_squel, 255);
+                cclist = VipGet3DConnex( copy_squel, CONNECTIVITY_26 );
+                while(cclist!=NULL)
+                {
+                    (*rootsbassin)[++created]=tbassin[i].lab[k];
+                    for(j=0;j<nb_cc;j++)
+                    {
+                        /*printf("(%d,%d)=(%d,%d)\n",2*countpotpp,2*countpotpp+1,created-(nb_cc-j),created);*/
+                        (*potentialpp)[2*countpotpp] = created-(nb_cc-j);
+                        (*potentialpp)[2*countpotpp+1] = created;
+                        countpotpp++;
+                    }
+                    nb_cc++;
+                    cclist = cclist->next;
+                }
+            }
+            for(j=0;j<nbassin;j++) /*create list of splitted bucket*/
+            {
+                if(bucktab[j]!=NULL)
+                {
+                    if(bucktab[j]->size != bucktab[j]->n_points)
+                    {
+                        VipPrintfError("Bad filling");
+                        VipPrintfExit("SplitSSAlongPliDePassage");
+                        return(PB);
+                    }
+                    VipSetImageLevel(copy_squel,0);
+                    VipWriteCoordBucketInVolume(bucktab[j], copy_squel, 255);
+                    cclist = VipGet3DConnex( copy_squel, CONNECTIVITY_26 );
+                    while(cclist!=NULL)
+                    {
+                        hook->next = cclist;
+                        hook = hook->next;
+                        cclist = cclist->next;
+                    }
+                    bucktab[j] = NULL;
+                }
+            }
+        }
+        bptr = bptr->next;
+    }
+    
     if(countpotpp!=*npotentialpp)
-	{
-	    printf("%d versus %d\n",countpotpp, *npotentialpp);
-	    VipPrintfError("Bad filling of potential pli de passage");
-	    VipPrintfExit("SplitSSAlongPliDePassage");
-	    return(PB);
-	}
+    {
+        printf("%d versus %d\n",countpotpp, *npotentialpp);
+        VipPrintfError("Bad filling of potential pli de passage");
+        VipPrintfExit("SplitSSAlongPliDePassage");
+        return(PB);
+    }
 
     bptr = bucklist2; /*destroy old splitted bucket*/
     killed = 0;
     for(i=0;i<*nbucket;i++)
-	{
-	    if(tbassin[i].n_bassins>1)
-		{
-		    killer = bptr;
-		    killed++;
-		}
-	    else
-		{
-		    killer=NULL;
-		    (*rootsbassin)[++created] = tbassin[i].lab[0];
-		}
-	    bptr = bptr->next;
-	    if(killer!=NULL)
-		{
-		    bucklist2 = VipUnhook3DBucketFromList_S16BIT( killer, bucklist2);
-		    VipFree3DBucket_S16BIT(killer);
-		}
-	}
-
+    {
+        if(tbassin[i].n_bassins>1)
+        {
+            killer = bptr;
+            killed++;
+        }
+        else
+        {
+            killer=NULL;
+            (*rootsbassin)[++created] = tbassin[i].lab[0];
+        }
+        bptr = bptr->next;
+        if(killer!=NULL)
+        {
+            bucklist2 = VipUnhook3DBucketFromList_S16BIT( killer, bucklist2);
+            VipFree3DBucket_S16BIT(killer);
+        }
+    }
+    
     printf("%d/%d ss have been split into %d new ss\n",killed,*nbucket,(created-*nbucket+killed));
-
+    
     hook->next = bucklist2; /*concatenation*/
-
+    
     for(i=0;i<*nbucket;i++)
-	{
-	    free(tbassin[i].lab);
-	    free(tbassin[i].size);
-	}
+    {
+        free(tbassin[i].lab);
+        free(tbassin[i].size);
+    }
     free(tbassin);
     free(bucktab);
 
     newbucklist = thefirst.next;
     *nbucket = created;
-
+    
     return(newbucklist);
 }
 
