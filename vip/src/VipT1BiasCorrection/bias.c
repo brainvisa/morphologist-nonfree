@@ -97,8 +97,9 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(mask);
 
   VIP_DEC_VOLUME(vol);
-  VIP_DEC_VOLUME(boundingbox);
+//   VIP_DEC_VOLUME(boundingbox);
   VIP_DEC_VOLUME(deriche);
+  VIP_DEC_VOLUME(deriche_norm);
   VIP_DEC_VOLUME(thresholdedvol);
   VIP_DEC_VOLUME(masked);
   VIP_DEC_VOLUME(converter);
@@ -166,6 +167,7 @@ int main(int argc, char *argv[])
   Volume *edges=NULL;
   int mode = GEOMETRY;
   float max_gradient;
+  float min_volume;
   float mean=0;
   float sigma = 0;
   VipHisto *histo_edges; 
@@ -545,6 +547,10 @@ int main(int argc, char *argv[])
   /*decembre 04, Montreal, develop automatic definition
     of threshold for tissues/background*/
 
+  vol = VipReadVolumeWithBorder(input,0);
+  min_volume = VipGetVolumeMin(vol);
+  VipFreeVolume(vol);
+  
   if(tauto==VTRUE)
     {
       /*je plonge le volume ds un plus grand a cause des images normalisees,
@@ -560,63 +566,68 @@ int main(int argc, char *argv[])
 	  vol = converter;
       }
 
-//       if(Last==3000)
-//       {
-//           if(GetCommissureCoordinates(vol, point_filename, &tal,
-// 			xCA, yCA, zCA,
-// 			xCP, yCP, zCP,
-// 			xP, yP, zP, talset)!=PB)
-//           {
-//               coord = &tal;
-//               xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
-//               xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
-//               xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
-//           
-//               Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
-//               if(Last<0) Last = 0;
-//           }
-//           else
-//           {
-//               printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
-//               Last = 0;
-//           }
-//       }
-//       printf("deleting last %d slices\n",Last);
-//       for(i=0;i<Last;i++)
-//         VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
+      if(Last==3000)
+      {
+          if(GetCommissureCoordinates(vol, point_filename, &tal,
+			xCA, yCA, zCA,
+			xCP, yCP, zCP,
+			xP, yP, zP, talset)!=PB)
+          {
+              coord = &tal;
+              xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+              xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+              xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
+          
+              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+              if(Last<0) Last = 0;
+          }
+          else
+          {
+              printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+              Last = 0;
+          }
+      }
+      printf("deleting last %d slices\n",Last);
+      for(i=0;i<Last;i++)
+        VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
   
-      boundingbox = VipCreateSingleThresholdedVolume( vol, EQUAL_TO, 0 , BINARY_RESULT);
-      VipSetBorderLevel( boundingbox,255);
-      VipResizeBorder( boundingbox, mVipVolBorderWidth(boundingbox)-1 );
-      if( VipConnexVolumeFilter(boundingbox , CONNECTIVITY_26, -1, 
-        CONNEX_BINARY) == PB) return(PB);
-      VipConnectivityChamferDilation (boundingbox,1,CONNECTIVITY_26, 
-        FRONT_PROPAGATION);
-      VipSetBorderLevel( boundingbox,255);
-      VipResizeBorder( boundingbox, 0 );
-      VipInvertBinaryVolume(boundingbox);
-      /*VipWriteTivoliVolume( boundingbox, "boundingbox");*/
+//       boundingbox = VipCreateSingleThresholdedVolume( vol, EQUAL_TO, 0 , BINARY_RESULT);
+//       VipSetBorderLevel( boundingbox,255);
+//       VipResizeBorder( boundingbox, mVipVolBorderWidth(boundingbox)-1 );
+//       if( VipConnexVolumeFilter(boundingbox , CONNECTIVITY_26, -1, 
+//         CONNEX_BINARY) == PB) return(PB);
+//       VipConnectivityChamferDilation (boundingbox,1,CONNECTIVITY_26, 
+//         FRONT_PROPAGATION);
+//       VipSetBorderLevel( boundingbox,255);
+//       VipResizeBorder( boundingbox, 0 );
+//       VipInvertBinaryVolume(boundingbox);
+
+//       masked = VipCopyVolume(vol, "box");
+//       if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
+//       VipWriteTivoliVolume( masked, "boundingbox2");
+//       VipFreeVolume(masked);
+      
       VipSetBorderLevel( vol,0);
       VipResizeBorder( vol, 0 );
       /*
       VipSet3DSize(vol,mVipVolSizeX(vol)+4,mVipVolSizeY(vol)+4,mVipVolSizeZ(vol)+4);
       VipSetBorderWidth(vol,0); j'attend de voir la fin du plug aimsIO*/
+      
       deriche = VipCopyVolume(vol,"deriche");
       if (deriche==PB) return(VIP_CL_ERROR);
       if(VipDeriche3DGradientNorm(deriche, 2., DERICHE_EXTREMA, 0.)==PB) return(VIP_CL_ERROR);
       /*compress to prevent spurious minima related to too many bins*/
-       
       if(compressionset==VFALSE)
-        {
+      {
           histo = VipComputeVolumeHisto(deriche);
           ratio = 0;
           comphisto = VipGetPropUndersampledHisto( histo, 50, &ratio, &compression, 1, 100 );
           printf("gradient image compression: %d\n",ratio);
           VipFreeHisto(comphisto);
           VipFreeHisto(histo);	  
-        }
-      if (compression !=0)
-        {    
+      }
+      if (compression!=0)
+      {
           printf("Compressing volume (forgetting %d bits)...",compression);
           compressed = VipComputeCompressedVolume( deriche, compression);
           if(compressed == PB) return(VIP_CL_ERROR);
@@ -624,24 +635,31 @@ int main(int argc, char *argv[])
           VipFreeVolume(deriche);
           deriche=compressed;
           compressed=NULL;
-        }
+      }
+      VipResizeBorder( deriche, 3 );
+      if (writeedges==VTRUE) VipWriteVolume( deriche, edgesname);
+      
+      deriche_norm = VipCopyVolume(vol,"deriche_norm");
+      if (deriche_norm==PB) return(VIP_CL_ERROR);
+      if(VipDeriche3DGradientNorm(deriche_norm, 2., DERICHE_NORM, 0.)==PB) return(VIP_CL_ERROR);
+      
+      max_gradient = VipGetVolumeMax(deriche_norm);
 
-      max_gradient = VipGetVolumeMax(deriche);
+//       VipMaskVolume(deriche,boundingbox);
+//       VipFreeVolume(boundingbox);
 
-      VipMaskVolume(deriche,boundingbox);
-      VipFreeVolume(boundingbox);
-
-      histo_edges = VipComputeVolumeHisto(deriche);
-
+      histo_edges = VipComputeVolumeHisto(deriche_norm);
       if (histo_edges==PB) return(VIP_CL_ERROR);
+      
       for(i=1;i<=histo_edges->range_max-3;i++) 
         {
            if ((histo_edges->val[i]<=histo_edges->val[i-1])
                && (histo_edges->val[i]<=histo_edges->val[i+1])
-               && (histo_edges->val[i]<=histo_edges->val[i+2])) break;
+               && (histo_edges->val[i]<=histo_edges->val[i+2])
+               && (histo_edges->val[i]<=histo_edges->val[i+3])) break;
         }
       printf("edge magnitude minimum: %d\n", i);
-      VipFreeHisto(histo_edges);	  
+      VipFreeHisto(histo_edges);
 
       if (i>(max_gradient*0.1) || i<(max_gradient*0.01))
         {
@@ -650,68 +668,71 @@ int main(int argc, char *argv[])
       else threshold_edges = (int)(i*1);
     
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
-
-      thresholdedvol = VipCreateSingleThresholdedVolume( deriche, GREATER_THAN, threshold_edges , BINARY_RESULT); 
-      
+      /*VipWriteVolume(deriche_norm, "deriche_norm");*/
+      thresholdedvol = VipCreateSingleThresholdedVolume( deriche_norm, GREATER_THAN, threshold_edges, BINARY_RESULT);
       if (VipExtRayCorner(thresholdedvol, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
-      masked = VipCopyVolume(vol,"extray");
-      if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
+      
+      masked = VipCopyVolume(vol,"voxel_nul");
+      VipResizeBorder( masked, 1 );
+      if (VipSingleThreshold(masked, LOWER_OR_EQUAL_TO, min_volume, BINARY_RESULT)==PB) return(VIP_CL_ERROR);
+      VipConnectivityChamferErosion (masked, mVipMax(mVipVolVoxSizeX(vol),mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
+      if( VipConnexVolumeFilter(masked, CONNECTIVITY_6, -1, CONNEX_BINARY) == PB) return(PB);
+      VipConnectivityChamferDilation (masked, mVipMax(mVipVolVoxSizeX(vol),mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
+      VipSetBorderLevel( masked,255);
+      VipResizeBorder( masked, 0 );
       VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-      VipFreeVolume(masked);
+
+//       VipFreeVolume(masked);
       
       VipResizeBorder( vol, 3 );
       VipResizeBorder( thresholdedvol, 3 );
-      /*VipWriteTivoliVolume( thresholdedvol, "outside");*/
-
+      VipResizeBorder( masked, 3 );
+      
       VipComputeRobustStatInMaskVolume(vol,thresholdedvol, &mean, &sigma, VTRUE);
       //debug
-      /*VipWriteTivoliVolume( thresholdedvol, "outside");*/
+      /*VipWriteTivoliVolume( thresholdedvol, "outside");*/ 
       
       VipFreeVolume(thresholdedvol);
-
-      VipResizeBorder( deriche, 3 );
-      if (writeedges==VTRUE) VipWriteVolume( deriche, edgesname);
+      VipFreeVolume(deriche_norm);
 
       printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
       thresholdlowset=VTRUE;
       thresholdlow = (int)(mean+2*sigma+0.5);
       printf("threshold for corner background/tissue: %d\n", thresholdlow);
 
-/**/
-      masked = VipCopyVolume(vol,"extray");
-      if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
+//       masked = VipCopyVolume(vol,"extray");
+//       if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
 //       VipComputeCustomizedFrontPropagationChamferDistanceMap( masked, 255, -1, 
 //               VIP_NO_LIMIT_IN_PROPAGATION, 0, 3, 3, 3, 50 );
-      if( mean < 0.3 )
-      {
-          printf("The volume has been already cutout, redefinition of the threshold...\n");
-          thresholdedvol = VipCopyVolume(vol,"closing");
-          if(!thresholdedvol) return(VIP_CL_ERROR);
-          VipFreeVolume(masked);
-
-          VipSingleThreshold( thresholdedvol, GREATER_OR_EQUAL_TO, thresholdlow, BINARY_RESULT );
-          masked = VipCopyVolume(thresholdedvol,"opening");
-          VipConnectivityChamferOpening (masked,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
-//           VipConnectivityChamferErosion (masked, mVipMax(mVipVolVoxSizeX(vol),
-//                                          mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
-
-          VipConnectivityChamferClosing (thresholdedvol,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
-          VipConnectivityChamferDilation (thresholdedvol,mVipMax(mVipVolVoxSizeX(vol), 
-                                          mVipVolVoxSizeY(vol))+0.1,CONNECTIVITY_26,FRONT_PROPAGATION);
-
-          VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-          VipFreeVolume(masked);
-      }
-      else
-      {
+//       if( mean < 0.3 )
+//       {
+//           printf("The volume has been already cutout, redefinition of the threshold...\n");
+//           thresholdedvol = VipCopyVolume(vol,"closing");
+//           if(!thresholdedvol) return(VIP_CL_ERROR);
+//           VipFreeVolume(masked);
+// 
+//           VipSingleThreshold( thresholdedvol, GREATER_OR_EQUAL_TO, thresholdlow, BINARY_RESULT );
+//           masked = VipCopyVolume(thresholdedvol,"opening");
+//           VipConnectivityChamferOpening (masked,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
+// //           VipConnectivityChamferErosion (masked, mVipMax(mVipVolVoxSizeX(vol),
+// //                                          mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
+// 
+//           VipConnectivityChamferClosing (thresholdedvol,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
+//           VipConnectivityChamferDilation (thresholdedvol,mVipMax(mVipVolVoxSizeX(vol), 
+//                                           mVipVolVoxSizeY(vol))+0.1,CONNECTIVITY_26,FRONT_PROPAGATION);
+// 
+//           VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+//           VipFreeVolume(masked);
+//       }
+//       else
+//       {
           thresholdedvol = VipCopyVolume(vol,"closing");
           if(!thresholdedvol) return(VIP_CL_ERROR);
           VipSingleThreshold( thresholdedvol, LOWER_THAN, thresholdlow, BINARY_RESULT );
           VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
           VipFreeVolume(masked);
           VipConnectivityChamferClosing (thresholdedvol,1,CONNECTIVITY_26,FRONT_PROPAGATION);
-      }
-/**/
+//       }
 
       masked = VipCopyVolume(vol,"masked");
       if(!masked) return(VIP_CL_ERROR);
@@ -758,8 +779,8 @@ int main(int argc, char *argv[])
       mask = VipCopyVolume(vol,"mask");
       VipFreeVolume(vol);
 
-      VipMaskVolume(variance_brute,mask);      
-    }          
+      VipMaskVolume(variance_brute,mask);
+    }
 
   vol = VipReadVolumeWithBorder(input,0);
 
@@ -846,7 +867,6 @@ int main(int argc, char *argv[])
 	  printf("Compressing volume (forgetting %d bits)...",compression);
 	  fflush(stdout);
       }
-  
   /* compress anyway because of the following threshold*/
   compressed = VipComputeCompressedVolume( vol, compression);
   if(compressed == PB) return(VIP_CL_ERROR);
@@ -858,6 +878,7 @@ int main(int argc, char *argv[])
   /*
   if(VipWriteTivoliVolume(compressed,"compressed")==PB) return(VIP_CL_ERROR);
   */
+  /*VipWriteVolume(compressed, "compressed");*/
   if(thresholdlowset==VTRUE)
       thresholdlow = thresholdlow >> compression ;
   if(thresholdhighset==VTRUE)
@@ -865,7 +886,6 @@ int main(int argc, char *argv[])
   printf("Low threshold: %d, High threshold: %d (after compression)\n", thresholdlow, thresholdhigh);
   VipDoubleThreshold(compressed,VIP_BETWEEN,thresholdlow,thresholdhigh,GREYLEVEL_RESULT);
 
- 
   if(readridges==VFALSE)
     {
 
@@ -886,14 +906,14 @@ int main(int argc, char *argv[])
       variance = VipCreateDoubleThresholdedVolume(variance_brute,VIP_BETWEEN_OR_EQUAL_TO,
                                                   0,variance_threshold,BINARY_RESULT);
 
-      VipMaskVolume(variance,mask);      
+      VipMaskVolume(variance,mask);
       VipConnectivityChamferErosion( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
 
       target = VipCreateSingleThresholdedVolume( white_crest, GREATER_THAN, 1 , BINARY_RESULT); 
 
       if(!target) return(VIP_CL_ERROR);
       VipMaskVolume(target,variance);
-
+      
       gradient = VipComputeCrestGrad(target, compressed);
       VipFreeVolume(target);
       extrema = VipComputeCrestGradExtrema(gradient, compressed);
@@ -1022,13 +1042,15 @@ int main(int argc, char *argv[])
   if (variance)
     {
       VipConnectivityChamferDilation( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
+//       if (VipConnexVolumeFilter (variance, CONNECTIVITY_26, -1, CONNEX_GREYLEVEL)==PB) return(VIP_CL_ERROR);
+//       VipConnectivityChamferDilation( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
       VipMaskVolume(compressed,variance);
       VipFreeVolume(variance);
     }
      
   if (edges)
     {
-      VipMaskVolume(compressed,edges);
+//       VipMaskVolume(compressed,edges); //test
       VipFreeVolume(edges);
     }
   if (VipConnexVolumeFilter (compressed, CONNECTIVITY_26, -1, CONNEX_GREYLEVEL)==PB) return(VIP_CL_ERROR);
