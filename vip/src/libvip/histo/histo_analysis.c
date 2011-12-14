@@ -170,9 +170,7 @@ int VipWriteT1HistoAnalysis(VipT1HistoAnalysis *ana, char *name)
     else fprintf(f,"sequence: unknown\n");
     if(ana->background!=NULL) fprintf(f,"background: mean: %d\n",
 				      ana->background->mean);
-    if(ana->csf!=NULL)
-      fprintf(f,"csf: mean: %d\n",
-				      ana->csf->mean);
+    if(ana->csf!=NULL) fprintf(f,"csf: mean: %d\n", ana->csf->mean);
     else
       fprintf(f,"csf: mean: %d sigma: %d\n", -1, -1);
     if(ana->gray!=NULL) fprintf(f,"gray: mean: %d sigma: %d\n",
@@ -198,6 +196,7 @@ int VipWriteT1HistoAnalysis(VipT1HistoAnalysis *ana, char *name)
 				      ana->candidate[i]->mean, ana->candidate[i]->sigma);
       else
         fprintf(f,"candidate %d: mean: %d sigma: %d\n", i, -1, -1);
+    fprintf(f,"undersampling: %d\n", ana->undersampling_ratio);
     fclose(f);
 
     return(OK);
@@ -401,7 +400,7 @@ VipT1HistoAnalysis *VipAnalyseCascadesRidge(SSCascade *clist, Vip1DScaleSpaceStr
       printf("gray: mean: %d, sigma:%d\n",ana->gray->mean,ana->gray->sigma);
     }
 
-  ana->sequence = MODE_RIDGE; 
+  ana->sequence = MODE_RIDGE;
   return(ana);
 }
 /*---------------------------------------------------------------------------*/
@@ -652,6 +651,8 @@ static int PutUndersamplingRatio(VipT1HistoAnalysis *ana,int ratio)
       ana->skull->left_sigma*=ratio;
       ana->skull->right_sigma*=ratio;
     }
+  
+  ana->undersampling_ratio = ratio;
   return(OK);
 
 }
@@ -2333,10 +2334,10 @@ int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios
                 
                 printf("\nratio_SigG1 = %.3f, ratio_SigG2 = %.3f\n", ratio_SigG1, ratio_SigG2), fflush(stdout);
                     
-                if((fabs(65.0-ratio_SigG1)<ratio_min) && (ratio_SigG2>20.0))
+                if((fabs(70.0-ratio_SigG1)<ratio_min) && (ratio_SigG2>30.0))
                 {
                     best_ratio = ratios[i][0];
-                    ratio_min = fabs(65.0-ratio_SigG1);
+                    ratio_min = fabs(70.0-ratio_SigG1);
                 }
                 else k++;
             }
