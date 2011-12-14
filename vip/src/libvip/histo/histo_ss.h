@@ -107,6 +107,7 @@ extern "C" {
     typedef struct vip_T1histogram_analysis {
       int sequence;
       int partial_volume_effect;
+      int undersampling_ratio;
       SSObject *background;
       SSObject *brain;
       SSObject *white;
