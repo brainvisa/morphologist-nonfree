@@ -356,7 +356,7 @@ int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivit
     for ( icon=1; icon<volmax; icon++ )
     {
         histo_border_cumule->val[icon] = histo_border->val[icon] + histo_border_cumule->val[icon-1];
-        if(histo_border_cumule->val[icon]>0.80*nb_total)
+        if(histo_border_cumule->val[icon]>0.50*nb_total)
         {
             mediane = icon;
             break;
@@ -786,6 +786,7 @@ float P[3]
   Volume *brain=NULL, *copyvol=NULL, *distmap=NULL, *classif=NULL;
   Volume *skin=NULL, *brainball=NULL;
   Volume *var=NULL, *mask=NULL, *mask2=NULL, *white=NULL;
+  Volume *mean_vol;
   int i, nb_clara;
   int T_VOID_GRAY_1 = 0, T_VOID_GRAY_2 = 0, T_VOID_GRAY_LOW = 0, T_VOID_GRAY_HIGH = 0;
   int T_GRAY_WHITE_LOW = 0, T_GRAY_WHITE_HIGH = 0, T_GRAY_WHITE_SECUREGRAY;
@@ -843,7 +844,8 @@ float P[3]
     }
 
   copyvol = VipCopyVolume(vol,"volcopy");
-
+//   mean_vol = VipComputeMeanVolume( vol );
+  
 /*------ Classification => Masque de la tete ------*/
   classif = VipCSFGrayWhiteFatClassificationRegularisationForRobustApproach( vol, ana, dumb, nb_iterations, T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, T_WHITE_FAT_LOW_2, T_WHITE_FAT_HIGH, T_GRAY_WHITE_LOW);
   if(classif==PB) return(PB);
@@ -888,11 +890,12 @@ float P[3]
 
 //----Creation du noyau de matiere blanche
   white = VipCopyVolume(copyvol, "white");
-  classif = VipGrayWhiteClassificationRegularisationForRobust2005( copyvol, ana, T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, ana->gray->mean + ana->gray->right_sigma, ana->white->mean - ana->white->left_sigma, ana->white->mean + 3*ana->white->sigma, dumb);
-//   classif = VipGrayWhiteClassificationRegularisation( copyvol, ana, dumb);
+  classif = VipGrayWhiteClassificationRegularisationForRobust2005( copyvol, ana, T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, ana->gray->mean + ana->gray->right_sigma, ana->white->mean - ana->white->left_sigma, ana->white->mean + 4*ana->white->sigma, dumb);
+//   classif = VipGrayWhiteClassificationRegularisationForRobust2005( mean_vol, ana, T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, ana->gray->mean + ana->gray->right_sigma, ana->white->mean - ana->white->left_sigma, ana->white->mean + 4*ana->white->sigma, dumb);
+// //   classif = VipGrayWhiteClassificationRegularisation( copyvol, ana, dumb);
   VipSetVolumeLevel(white,0);
   if(VipMerge(white,classif,VIP_MERGE_ONE_TO_ONE,WHITE_LABEL,255) == PB) return(PB);
-// // //   VipDoubleThreshold( white, VIP_BETWEEN_OR_EQUAL_TO, ana->white->mean - ana->white->left_sigma, ana->white->mean + 3*ana->white->sigma, BINARY_RESULT );
+//   VipDoubleThreshold( white, VIP_BETWEEN_OR_EQUAL_TO, (0.1*ana->white->mean + 0.9*ana->gray->mean), ana->white->mean + 3*ana->white->sigma, BINARY_RESULT );
 //   if(VipConnexVolumeFilter( white, CONNECTIVITY_18, -1, CONNEX_BINARY )==PB) return(PB);
 
   VipFreeVolume(classif);
@@ -926,12 +929,13 @@ float P[3]
   if (var_seuil<10) var_seuil = 10;
   
   mask2 = VipCopyVolume(copyvol, "seed2");
-
+//   mask2 = VipCopyVolume(mean_vol, "seed2");
+  
   if((ana->white->mean-2*ana->white->left_sigma) > T_GRAY_WHITE_LOW)
   {
-      if(VipCreateBrainSeed( mask2, variance, ana, ana->white->mean-2*ana->white->left_sigma, T_WHITE_FAT_LOW_1, 5 ) == PB) return(PB);
+      if(VipCreateBrainSeed( mask2, variance, ana, ana->white->mean-2*ana->white->left_sigma, T_WHITE_FAT_LOW_2, 5 ) == PB) return(PB);
   }
-  else VipCreateBrainSeed( mask2, variance, ana, T_GRAY_WHITE_LOW, T_WHITE_FAT_LOW_1, 5 );
+  else VipCreateBrainSeed( mask2, variance, ana, T_GRAY_WHITE_LOW, T_WHITE_FAT_LOW_2, 5 );
   if(VipConnexVolumeFilter( mask2, CONNECTIVITY_26, 200, CONNEX_BINARY ) == PB) return(PB);
 
   vos = VipGetOffsetStructure(skin);
@@ -940,8 +944,9 @@ float P[3]
   while(goodseed==VFALSE)
   {
       mask = VipCopyVolume(copyvol, "seed");
+//       mask = VipCopyVolume(mean_vol, "seed");
       if(VipMerge( mask, white, VIP_MERGE_ONE_TO_ONE, 0, 0 ) == PB) return(PB);
-      if(VipCreateBrainSeed( mask, variance, ana, T_GRAY_WHITE_HIGH, T_WHITE_FAT_LOW_1, var_seuil ) == PB) return(PB);
+      if(VipCreateBrainSeed( mask, variance, ana, T_GRAY_WHITE_HIGH, T_WHITE_FAT_LOW_2, var_seuil ) == PB) return(PB);
       if(VipMerge( mask, mask2, VIP_MERGE_ONE_TO_ONE, 255, 255 ) == PB) return(PB);
       
       if(VipConnexVolumeFilter( mask, CONNECTIVITY_26, -1, CONNEX_BINARY ) == PB) return(PB);
@@ -1030,7 +1035,7 @@ float P[3]
   mask2 = NULL;
   mask2 = VipCopyVolume(mask, "test2");
   
-// // //   for(i=0;i<12;i++)
+// // //   for(i=0;i<19;i++)
 // // //   {
 // // //       VipPropagationConnectivity( mask, var, white, EQUAL_TO, 255, 255, CONNECTIVITY_26 );
 // // //       VipSingleThreshold( mask, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
@@ -1039,10 +1044,10 @@ float P[3]
 // // //   if(VipMerge( mask, mask2, VIP_MERGE_ONE_TO_ONE, 255, 0 ) == PB) return(VIP_CL_ERROR);
 // // //   VipChangeIntLabel(mask,0,-100);
 // // //   if(VipComputeFrontPropagationConnectivityDistanceMap(mask,255,-100,VIP_NO_LIMIT_IN_PROPAGATION,13,CONNECTIVITY_26)==PB) return(PB);
-// // //   /*  VipWriteVolume(mask, "distmap_white");  */
+// // //   VipWriteVolume(mask, "distmap_white"); 
 // // //   VipSingleThreshold( mask, GREATER_OR_EQUAL_TO, 10000, BINARY_RESULT );
   
-  VipPropagationWithRefluxConnectivity( mask, white, var, 12, EQUAL_TO, 255, 0, CONNECTIVITY_26 );
+  VipPropagationWithRefluxConnectivity( mask, white, var, 15, EQUAL_TO, 255, 0, CONNECTIVITY_26 ); //test
   
   if( VipMerge( mask, mask2, VIP_MERGE_ONE_TO_ONE, 255, 255 )== PB) return(PB);
   
@@ -1111,11 +1116,11 @@ float P[3]
 
   vos = VipGetOffsetStructure(skin);
   ptr = VipGetDataPtr_S16BIT( skin ) + vos->oFirstPoint + (int)(CP[1])*vos->oLine;
-  for ( iz = mVipVolSizeZ(skin); iz-- ; )   /* loop on slices */
+  for ( iz=0; iz<mVipVolSizeZ(skin); iz++ )   /* loop on slices */
   {
-      for ( iy = (mVipVolSizeY(skin) - (int)(CP[1])) ; iy-- ; )  /* loop on lines */
+      for ( iy=(int)(CP[1]); iy<mVipVolSizeY(skin); iy++ )  /* loop on lines */
       {
-          for ( ix = mVipVolSizeX(skin); ix-- ; )   /* loop on points */
+          for ( ix=0; ix<mVipVolSizeX(skin); ix++ )   /* loop on points */
           {
               pt = ptPlanHemi[0]*(ix) + ptPlanHemi[1]*(iy) + ptPlanHemi[2]*(iz) - 1000.0;
               if(-180<(int)(pt) && (int)(pt)<180) *ptr = 0;
@@ -1453,6 +1458,8 @@ float P[3]
   if(VipDilateVolumeBorder(copyvol, brain, T_GRAY_CSF, T_WHITE_FAT_LOW_1, CONNECTIVITY_6) == PB) return(PB);
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
 
+  if( VipConnectivityChamferOpening( brain, little_opening_size, CONNECTIVITY_6, FRONT_PROPAGATION) == PB) return(PB);
+  if( VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY ) == PB) return(PB);
   return(OK);
 }
 
