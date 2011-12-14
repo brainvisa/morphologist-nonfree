@@ -777,7 +777,7 @@ int main(int argc, char *argv[])
                         ana = VipAnalyseCascades( clist, volstruct, sequence);
                         if(ana==PB) printf("Erreur in VipAnalyseCascades\n");
                     }
-                    if(ana)
+                    if(ana && ana->white && ana->gray)
                     {
                         if (ana->sequence==MODE_HISTO) VipMarkAnalysedObjectsHisto( ana, volstruct );
                         else VipMarkAnalysedObjects( ana, volstruct );
