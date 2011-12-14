@@ -695,6 +695,85 @@ int VipPourcentageLowerThanThreshold(Volume *vol, int lowthreshold, int pourcent
 	    
 }
 /*---------------------------------------------------------------*/
+Volume *VipComputeMeanVolume(Volume *vol)
+/*---------------------------------------------------------------*/
+{
+  Volume *mean;
+  int loopsize, i;
+  VipOffsetStruct *vos;
+  int ix, iy, iz;
+  Vip_S16BIT *ptr, *mptr;
+  VipConnectivityStruct *vcs;
+  int border = -1111;
+  int connectivity = CONNECTIVITY_6;
+  int n, temp;
+  double m;
+
+  printf("Compute spatial mean...\n");
+  if (mVipVolBorderWidth(vol) < 1)
+    {
+      VipPrintfError("Sorry, VipComputeMeanVolume requires non zero border");
+      VipPrintfExit("VipComputeMeanVolume");
+      return(PB);
+    }
+
+  mean = VipDuplicateVolumeStructure( vol, "mean");
+  if(mean==NULL) return(PB);
+  if(VipAllocateVolumeData(mean)==PB) return(PB);
+  VipSet3DImageLevel(mean,0,0); /*calloc...*/
+  VipSetBorderLevel(vol,border); /*calloc...*/
+
+  vcs = VipGetConnectivityStruct( vol, connectivity );
+  if(vcs==NULL) return(PB);
+  loopsize = vcs->nb_neighbors;
+
+  vos = VipGetOffsetStructure(vol);
+  ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+  mptr = VipGetDataPtr_S16BIT( mean ) + vos->oFirstPoint;
+
+  for ( iz = mVipVolSizeZ(vol); iz-- ; )
+    {
+      for ( iy = mVipVolSizeY(vol); iy-- ; )
+	{
+	  for ( ix = mVipVolSizeX(vol); ix-- ; )
+	    {
+              if(1/*O *ptr*/)
+                {
+                  m = *ptr;
+                  n = 1;
+              
+                  for( i=0; i<loopsize; i++)
+                    {
+                      temp = *(ptr+vcs->offset[i]);
+                      if (temp!=border)
+                        {
+                          n++;
+                          m += temp;
+                        }
+                    }
+                  if (n<=1)
+                    {
+                      VipPrintfError("Incoherence");
+                      VipPrintfExit("VipComputeMeanVolume");
+                      return(PB);
+                    }
+              
+                  m /= n;
+                  *mptr = (int)(m);
+                }
+              else *mptr=0;
+	      ptr++;
+              mptr++;
+	    }
+	  ptr += vos->oPointBetweenLine; 
+	  mptr += vos->oPointBetweenLine; 
+	}
+      ptr += vos->oLineBetweenSlice; 
+      mptr += vos->oLineBetweenSlice; 
+    }
+  return(mean);
+}
+/*---------------------------------------------------------------*/
 Volume *VipComputeVarianceVolume(Volume *vol)
 /*---------------------------------------------------------------*/
 {
@@ -785,7 +864,6 @@ Volume *VipComputeVarianceVolume(Volume *vol)
     }
   return(var);
 }
-
 
 /*---------------------------------------------------------------*/
 VipHisto *VipComputeCleanedUpVolumeHisto(Volume *vol, Volume *discard)
