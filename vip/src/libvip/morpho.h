@@ -114,6 +114,17 @@ extern int VipCustomizedGeodesicChamferDilation (
 );
 /*---------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
+extern int VipHomotopicInsideVolumeDilation ( 
+  Volume *vol1,
+  Volume *vol2,
+  int nb_iteration,
+  int domain,
+  int outside_domain,
+  int front_mode
+);
+/*-------------------------------------------------------------------------*/
+
 /*----------------------------------------------------------------------------*/
 extern int VipErosion(
   Volume *vol,
