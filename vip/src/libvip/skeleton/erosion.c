@@ -30,20 +30,20 @@
 
 
 /*---------------------------------------------------------------------------*/
-static VipIntBucket *VipCreateFrontIntBucketForErosionFromOutside( Volume *vol, int connectivity, int front_value,
-				       int object, int outside);
+//static VipIntBucket *VipCreateFrontIntBucketForErosionFromOutside( Volume *vol, int connectivity, int front_value,
+//				       int object, int outside);
 /*---------------------------------------------------------------------------*/
-
+//
 /*-------------------------------------------------------------------------*/
-static int VipFillNextFrontFromOldFrontForErosionFromOutside(
-  Vip_S16BIT *first_vol_point,
-  VipIntBucket *buck,
-  VipIntBucket *nextbuck,
-  VipConnectivityStruct *vcs,
-  int next_value,
-  int front_value,
-  int outside,
-  int inside);
+//static int VipFillNextFrontFromOldFrontForErosionFromOutside(
+//  Vip_S16BIT *first_vol_point,
+//  VipIntBucket *buck,
+//  VipIntBucket *nextbuck,
+//  VipConnectivityStruct *vcs,
+//  int next_value,
+//  int front_value,
+//  int outside,
+//  int inside);
 /*-------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
@@ -288,8 +288,7 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
       for(i=buck->n_points;i--;)
 	{
 	  ptr = first + *buckptr++;
-	  if (VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT(topo26, ptr, inside, outside)
-             ==TOPO_BORDER_POINT)
+	  if (VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT(topo26, ptr, inside, outside)==TOPO_BORDER_POINT)
 	    {
 	      *ptr = outside;
 	      count++;
@@ -417,7 +416,7 @@ int VipHomotopicErosionFromInside( Volume *vol, Volume *graylevel, int nb_iterat
 }
 
 /*---------------------------------------------------------------------------*/
-static VipIntBucket *VipCreateFrontIntBucketForErosionFromOutside( Volume *vol, int connectivity, int front_value,
+VipIntBucket *VipCreateFrontIntBucketForErosionFromOutside( Volume *vol, int connectivity, int front_value,
 				       int object, int outside)
 /*---------------------------------------------------------------------------*/
 { 
@@ -485,7 +484,7 @@ static VipIntBucket *VipCreateFrontIntBucketForErosionFromOutside( Volume *vol, 
 }
 
 /*-------------------------------------------------------------------------*/
-static int VipFillNextFrontFromOldFrontForErosionFromOutside(
+int VipFillNextFrontFromOldFrontForErosionFromOutside(
   Vip_S16BIT *first_vol_point,
   VipIntBucket *buck,
   VipIntBucket *nextbuck,
@@ -569,4 +568,74 @@ static int VipFillNextFrontFromOldFrontForErosionFromOutside(
     return(OK);
 }
 
+/*-------------------------------------------------------------------------*/
+int VipFillNextFrontFromOldFrontForErosion(
+  Vip_S16BIT *first_vol_point,
+  VipIntBucket *buck,
+  VipIntBucket *nextbuck,
+  VipConnectivityStruct *vcs,
+  int next_value,
+  int front_value,
+  int outside,
+  int inside)
+/*-------------------------------------------------------------------------*/
+{
+    int *buckptr, *dirptr;
+    Vip_S16BIT *ptr, *ptr_neighbor;
+    int i, dir2;
+
+    if(first_vol_point==NULL)
+	{
+	    VipPrintfError("NULL pointer in VipFillNextFrontFromOldFrontForErosion");
+	    VipPrintfExit("VipFillNextFrontFromOldFrontForErosion");
+	    return(PB);
+	}
+    if((buck==NULL) || (nextbuck==NULL))
+	{
+	    VipPrintfError("One NULL bucket in VipFillNextFrontFromOldFrontForErosion");
+	    VipPrintfExit("VipFillNextFrontFromOldFrontForErosion");
+	    return(PB);
+	}
+    if(vcs==NULL)
+	{
+	    VipPrintfError("NULL VipConnectivityStruct pointer in VipFillNextFrontFromOldFrontForErosion");
+	    VipPrintfExit("VipFillNextFrontFromOldFrontForErosion");
+	    return(PB);
+	}
+
+    buckptr = buck->data;
+    for(i=buck->n_points;i--;)
+    {
+	ptr = first_vol_point + *buckptr;
+	if(*ptr==front_value) /*the point was not simple and has not been deleted from the object*/
+	{
+	    if(nextbuck->n_points==nextbuck->size)
+	    {
+		if(VipIncreaseIntBucket(nextbuck,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
+	    }
+	    nextbuck->data[nextbuck->n_points++]=*buckptr;
+	}
+	else if (*ptr==outside) /*the point has been deleted from the object*/
+	{
+	    dirptr = vcs->offset;
+	    for(dir2=vcs->nb_neighbors;dir2--;)
+	    {
+		ptr_neighbor = ptr + *dirptr;
+		if(*ptr_neighbor==next_value) /*NOT ALREADY IN FRONT and not immortal*/
+		{
+		    *ptr_neighbor = front_value;
+		    if(nextbuck->n_points==nextbuck->size)
+		    {
+			if(VipIncreaseIntBucket(nextbuck,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
+		    }
+		    nextbuck->data[nextbuck->n_points++]=*buckptr+*dirptr;
+		}
+		dirptr++;
+	    }
+	}
+	buckptr++;
+    }
+    
+    return(OK);
+}
 
