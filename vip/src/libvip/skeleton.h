@@ -78,6 +78,11 @@ extern int VipHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int 
 /*-------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
+extern int VipHomotopicInsideDilation( Volume *vol, Volume *mask, int nb_iteration,
+				       int object, int inside, int outside, int front_mode );
+/*-------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
 extern int VipFoetusHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int nb_iteration,
 				  int object, int inside, int outside, int front_mode,
 			       float KISING, float mG, float sigmaG, float mW, float sigmaW);
@@ -121,8 +126,7 @@ extern int VipHomotopicCurvePruning( Volume *vol, int inside, int outside );
 extern int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mode );
 
 /*--------------------------------------------------------------------*/
-extern int VipWatershedHomotopicSkeleton( Volume *vol, Volume *altitude, int immortal_elixir,
-					  int inside, int outside);
+extern int VipWatershedHomotopicSkeleton( Volume *vol, Volume *altitude, int immortal_elixir, int inside, int outside);
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 extern Volume *ConvertBrainToAltitude(Volume *brain,float sigma,
@@ -153,6 +157,54 @@ extern int VipCleanUpFrontFromImmortals(
   int *immortals,
   int front_value);
 
+/*---------------------------------------------------------------------------*/
+extern VipIntBucket *VipCreateFrontIntBucketForDilation(
+  Volume *vol,
+  int connectivity,
+  int front_value,
+  int object, 
+  int domain,
+  int front_mode);
+/*-------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------*/
+extern int VipFillNextFrontFromOldFrontForDilation(
+  Vip_S16BIT *first_vol_point,
+  VipIntBucket *buck,
+  VipIntBucket *nextbuck,
+  VipConnectivityStruct *vcs,
+  int next_value,
+  int front_value,
+  int object);
+/*-------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+extern VipIntBucket *VipCreateFrontIntBucketForErosionFromOutside( Volume *vol, int connectivity, int front_value,
+				       int object, int outside);
+/*---------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------*/
+extern int VipFillNextFrontFromOldFrontForErosionFromOutside(
+  Vip_S16BIT *first_vol_point,
+  VipIntBucket *buck,
+  VipIntBucket *nextbuck,
+  VipConnectivityStruct *vcs,
+  int next_value,
+  int front_value,
+  int outside,
+  int inside);
+/*-------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
+extern int VipFillNextFrontFromOldFrontForErosion(
+  Vip_S16BIT *first_vol_point,
+  VipIntBucket *buck,
+  VipIntBucket *nextbuck,
+  VipConnectivityStruct *vcs,
+  int next_value,
+  int front_value,
+  int outside,
+  int inside);
+/*-------------------------------------------------------------------------*/
 
 extern VipIntBucket *VipCreateFrontIntBucketHollowObject( Volume *vol, int connectivity, int front_value, int inside, int outside);
 
