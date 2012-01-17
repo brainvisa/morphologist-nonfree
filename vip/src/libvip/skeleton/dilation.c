@@ -46,27 +46,6 @@ int VipFrontOrderFromDistanceToClosing(VipIntBucket *buck, Volume *vol,
 /*-------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
-static VipIntBucket *VipCreateFrontIntBucketForDilation( 
-							Volume *vol, 
-							int connectivity,
-							int front_value,
-							int object, 
-							int domain,
-							int front_mode);
-/*-------------------------------------------------------------------------*/
-
-/*-------------------------------------------------------------------------*/
-static int VipFillNextFrontFromOldFrontForDilation(
-  Vip_S16BIT *first_vol_point,
-  VipIntBucket *buck,
-  VipIntBucket *nextbuck,
-  VipConnectivityStruct *vcs,
-  int next_value,
-  int front_value,
-  int object);
-/*-------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------*/
 int VipHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int nb_iteration,
 				  int object, int inside, int outside, int front_mode,
 			       float KISING, float mG, float sigmaG, float mW, float sigmaW)
@@ -345,6 +324,225 @@ int VipHomotopicInsideDilationSnakeRidge( Volume *ridge, Volume *vol, Volume *gr
   
   return(OK);
 }      
+
+/*---------------------------------------------------------------------------*/
+int VipHomotopicInsideDilation( Volume *vol, Volume *graylevel, int nb_iteration,
+				  int object, int inside, int outside, int front_mode )
+/*-------------------------------------------------------------------------*/
+{
+  VipIntBucket *buck, *nextbuck;
+  Topology26Neighborhood *topo26;
+  VipConnectivityStruct *vcs6;
+  int loop, count, totalcount;
+  Vip_S16BIT *first, *ptr, *gptr, *gfirst;
+  int *buckptr;
+  int i, m;
+  int max, min;
+  float interval;
+
+
+  if (VipVerifyAll(vol)==PB)
+    {
+      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+      return(PB);
+    }
+  if (VipTestType(vol,S16BIT)!=OK)
+    {
+      VipPrintfError("Sorry,  VipHomotopicInsideDilation is only implemented for S16BIT volume");
+      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+      return(PB);
+    }
+    if (VipVerifyAll(graylevel)==PB)
+    {
+      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+      return(PB);
+    }
+    if (VipTestType(graylevel,S16BIT)!=OK)
+    {
+      VipPrintfError("Sorry,  VipHomotopicInsideDilation is only implemented for S16BIT volume");
+      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+      return(PB);
+    }
+  if (mVipVolBorderWidth(vol) < 1)
+    {
+      VipPrintfError("Sorry, VipHomotopicInsideDilation is only implemented with border");
+      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+      return(PB);
+    }
+    if(VipTestEqualBorderWidth(vol,graylevel)==PB)
+    {
+      VipPrintfError("Sorry, border widths are different");
+      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+      return(PB);
+    }
+  /*
+    printf("Initialization (object:%d, inside:%d, outside:%d)...\n",object,inside,outside);
+  */
+  printf("Homotopic dilation towards inside...\n");
+  VipSetBorderLevel( vol, outside ); 
+
+  buck = VipCreateFrontIntBucketForDilation( vol, CONNECTIVITY_6, VIP_FRONT, object, inside, front_mode);
+  if(buck==PB) return(PB);
+  nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
+  if(nextbuck==PB) return(PB);
+
+  topo26 = VipCreateTopology26Neighborhood( vol);
+  if(topo26==PB) return(PB);
+
+  vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
+
+  nextbuck->n_points = 0;
+
+  first = VipGetDataPtr_S16BIT(vol);
+  gfirst = VipGetDataPtr_S16BIT(graylevel);
+
+  loop=0;
+  count = 1;
+  totalcount = 0;
+  printf("loop: %3d, Added: %6d",loop,0);
+  
+  while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
+  {
+      if(loop==1) count=0;
+      totalcount += count;
+      count = 0;
+      printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Added: %6d",loop,totalcount);
+      fflush(stdout);
+      
+      buckptr = buck->data;
+      for(i=buck->n_points;i--;)
+      {
+          ptr = first + *buckptr;
+          gptr = gfirst + *buckptr++;
+          if(*gptr<200)
+          {
+              if (VipIsASimplePointForLabel_S16BIT(topo26, ptr, object)==VTRUE)
+              {
+                  *ptr = object;
+                  count++;
+              }
+          }
+      }
+      
+      VipFillNextFrontFromOldFrontForDilation(first,buck,nextbuck,vcs6,inside,VIP_FRONT,object);
+      
+      /*bucket permutation*/
+      VipPermuteTwoIntBucket(&buck, &nextbuck);
+      nextbuck->n_points = 0;
+  }
+  
+  printf("\n");
+  
+  VipChangeIntLabel(vol,VIP_FRONT,inside);
+  
+  VipFreeIntBucket(buck);
+  VipFreeIntBucket(nextbuck);
+  
+  return(OK);
+}
+
+/*---------------------------------------------------------------------------*/
+int VipHomotopicInsideVolumeDilation( Volume *vol1, Volume *vol2, int nb_iteration,
+                                      int domain, int outside_domain, int front_mode )
+/*-------------------------------------------------------------------------*/
+{
+    VipIntBucket *buck, *nextbuck;
+    Topology26Neighborhood *topo26;
+    VipConnectivityStruct *vcs6;
+    int loop, count, totalcount;
+    Vip_S16BIT *first1, *ptr1, *ptr2, *first2;
+    int *buckptr;
+    int i;
+
+
+    if (VipVerifyAll(vol1)==PB && VipVerifyAll(vol2)==PB)
+    {
+        VipPrintfExit("(skeleton)VipHomotopicInsideVolumeDilation");
+        return(PB);
+    }
+    if (VipTestType(vol1,S16BIT)!=OK && VipTestType(vol2,S16BIT)!=OK)
+    {
+        VipPrintfError("Sorry,  VipHomotopicInsideVolumeDilation is only implemented for S16BIT volume");
+        VipPrintfExit("(skeleton)VipHomotopicInsideVolumeDilation");
+        return(PB);
+    }
+    if (mVipVolBorderWidth(vol1) < 1)
+    {
+        VipPrintfError("Sorry, VipHomotopicInsideVolumeDilation is only implemented with border");
+        VipPrintfExit("(skeleton)VipHomotopicInsideVolumeDilation");
+        return(PB);
+    }
+    if(VipTestEqualBorderWidth(vol1,vol2)==PB)
+    {
+        VipPrintfError("Sorry, border widths are different");
+        VipPrintfExit("(skeleton)VipHomotopicInsideVolumeDilation");
+        return(PB);
+    }
+    
+    
+    printf("Homotopic dilation...\n");
+    VipSetBorderLevel( vol1, outside_domain );
+    
+    buck = VipCreateFrontIntBucketForDilation( vol1, CONNECTIVITY_6, VIP_FRONT, domain, outside_domain, front_mode);
+    if(buck==PB) return(PB);
+    nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
+    if(nextbuck==PB) return(PB);
+
+    topo26 = VipCreateTopology26Neighborhood( vol1 );
+    if(topo26==PB) return(PB);
+
+    vcs6 = VipGetConnectivityStruct( vol1, CONNECTIVITY_6 );
+
+    nextbuck->n_points = 0;
+
+    first1 = VipGetDataPtr_S16BIT(vol1);
+    first2 = VipGetDataPtr_S16BIT(vol2);
+     
+    /*main loop*/
+    loop=0;
+    count = 1;
+    totalcount = 0;
+    
+    printf("loop:   , Added:      ");
+    while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
+    {
+        totalcount += count;
+        count = 0;
+        printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Added: %5d",loop,totalcount);
+        fflush(stdout);
+        
+        buckptr = buck->data;
+        for(i=buck->n_points;i--;)
+        {
+            ptr1 = first1 + *buckptr;
+            ptr2 = first2 + *buckptr;
+            if(*ptr2==domain)
+            {
+                if (VipComputeTopologicalClassificationForLabel_S16BIT(topo26,ptr1,outside_domain)!=TOPO_VOLUME_POINT)
+                {
+                    *ptr1 = domain;
+                    count++;
+                }
+            }
+            buckptr++;
+        }
+        
+        VipFillNextFrontFromOldFrontForDilation(first1,buck,nextbuck,vcs6,outside_domain,VIP_FRONT,domain);
+        
+        /*bucket permutation*/
+        VipPermuteTwoIntBucket(&buck, &nextbuck);
+        nextbuck->n_points = 0;
+    }
+    
+    printf("\n");
+    
+    VipChangeIntLabel(vol1,VIP_FRONT,outside_domain);
+    
+    VipFreeIntBucket(buck);
+    VipFreeIntBucket(nextbuck);
+    
+    return(OK);
+}
 
 /*---------------------------------------------------------------------------*/
 int VipFoetusHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int nb_iteration,
@@ -649,7 +847,7 @@ int VipHomotopicGeodesicDilation( Volume *vol, int nb_iteration,
 }      
 
 /*---------------------------------------------------------------------------*/
-static VipIntBucket *VipCreateFrontIntBucketForDilation( Volume *vol, int connectivity, int front_value,
+VipIntBucket *VipCreateFrontIntBucketForDilation( Volume *vol, int connectivity, int front_value,
 				       int object, int domain, int front_mode)
 /*---------------------------------------------------------------------------*/
 { 
@@ -693,16 +891,16 @@ static VipIntBucket *VipCreateFrontIntBucketForDilation( Volume *vol, int connec
   NbTotalPts = VipOffsetVolume(vol);
  
   buck = VipAllocIntBucket(VIP_INITIAL_FRONT_SIZE);
-
+  
   for ( i=0; i<NbTotalPts; i++ )
     {
-      if (*ptr == domain)            
-	{	  
+      if (*ptr == domain)
+	{
 	  for ( icon=0; icon<vcs->nb_neighbors;icon++)
 	    {
-	      voisin = ptr + vcs->offset[icon];	      
+	      voisin = ptr + vcs->offset[icon];
 	      if(*voisin==object)
-		{		  		     
+		{
 		  if(buck->n_points==buck->size)
 		    {
 		      if(VipIncreaseIntBucket(buck,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
@@ -711,11 +909,11 @@ static VipIntBucket *VipCreateFrontIntBucketForDilation( Volume *vol, int connec
 		  *ptr = front_value;
 		  break;
 		}
-	    } 	  
+	    }
 	}
       ptr++;
     }
-
+  
   if(VipRandomizeFrontOrder(buck,10)==PB) return(PB); 
 
   if(front_mode==FRONT_RANDOM_AND_DEPTH)
@@ -727,7 +925,7 @@ static VipIntBucket *VipCreateFrontIntBucketForDilation( Volume *vol, int connec
 }
 
 /*-------------------------------------------------------------------------*/
-static int VipFillNextFrontFromOldFrontForDilation(
+int VipFillNextFrontFromOldFrontForDilation(
   Vip_S16BIT *first_vol_point,
   VipIntBucket *buck,
   VipIntBucket *nextbuck,
@@ -880,3 +1078,196 @@ int VipFrontOrderFromDistanceToClosing(VipIntBucket *buck, Volume *vol,
 
     return(OK);
 }
+
+/*---------------------------------------------------------------------------*/
+// int VipHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int nb_iteration,
+// 				  int object, int inside, int outside, int front_mode,
+// 			       float KISING, float mG, float sigmaG, float mW, float sigmaW)
+/*-------------------------------------------------------------------------*/
+// {
+//   VipIntBucket *buck, *nextbuck;
+//   Topology26Neighborhood *topo26;
+//   VipConnectivityStruct *vcs6;
+//   int loop, count, totalcount;
+//   Vip_S16BIT *first, *ptr, *gptr, *voisin, *gfirst;
+//   int *buckptr;
+//   int i;
+//   float KW, KG;
+//   int nnG, nnW;
+//   float deltaU;
+//   int icon;
+// 
+//   if (VipVerifyAll(vol)==PB)
+//     {
+//       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnake");
+//       return(PB);
+//     }
+//   if (VipTestType(vol,S16BIT)!=OK)
+//     {
+//       VipPrintfError("Sorry,  VipHomotopicInsideDilationSnake is only implemented for S16BIT volume");
+//       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnake");
+//       return(PB);
+//     }
+//   if (VipVerifyAll(graylevel)==PB)
+//     {
+//       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnake");
+//       return(PB);
+//     }
+//   if (VipTestType(graylevel,S16BIT)!=OK)
+//     {
+//       VipPrintfError("Sorry,  VipHomotopicInsideDilationSnake is only implemented for S16BIT volume");
+//       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnake");
+//       return(PB);
+//     }
+//   if (mVipVolBorderWidth(vol) < 1)
+//     {
+//       VipPrintfError("Sorry, VipHomotopicInsideDilationSnake is only implemented with border");
+//       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnake");
+//       return(PB);
+//     }
+//   if(VipTestEqualBorderWidth(vol,graylevel)==PB)
+//     {
+//       VipPrintfError("Sorry, border widths are different");
+//       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnake");
+//       return(PB);
+//     }
+//   /*
+//     printf("Initialization (object:%d, inside:%d, outside:%d)...\n",object,inside,outside);
+//   */
+//   printf("Homotopic snake dilation towards inside...\n");
+//   VipSetBorderLevel( vol, outside ); 
+// 
+//   buck = VipCreateFrontIntBucketForDilation( vol, CONNECTIVITY_6, VIP_FRONT, object, inside, front_mode);
+//   if(buck==PB) return(PB);
+//   nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
+//   if(nextbuck==PB) return(PB);
+// 
+//   topo26 = VipCreateTopology26Neighborhood( vol);
+//   if(topo26==PB) return(PB);
+// 
+//   vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
+//   vcs26 = VipGetConnectivityStruct( vol, CONNECTIVITY_26 );
+//   
+//   nextbuck->n_points = 0;
+// 
+//   first = VipGetDataPtr_S16BIT(vol);
+//   gfirst = VipGetDataPtr_S16BIT(graylevel);
+//   cfirst = VipGetDataPtr_S16BIT(classif);
+//   
+//   /*main loop*/
+//   loop=0;
+//   count = 1;
+//   totalcount = 0;
+//   KW = 2*KISING - 0.00001;
+//   KG = 4*KISING + 0.00001;
+//   /*
+//     printf("gray matter (mean:%f, sigma:%f), white matter (mean:%f, sigma:%f)\n",
+//     mG,sigmaG,mW,sigmaW);
+//   */
+//   printf("loop: %3d, Added: %6d",loop,0);
+//   while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
+//     {
+//       if(loop==1) count=0;
+//       totalcount += count;
+//       count = 0;
+//       printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Added: %6d",loop,totalcount);
+//       fflush(stdout);
+// 	  
+//       buckptr = buck->data;
+//       for(i=buck->n_points;i--;)
+// 	{
+// 	  ptr = first + *buckptr;
+// 	  gptr = gfirst + *buckptr++;
+// 	  nnG = 0;
+// 	  nnW = 0;
+// 	  mG = 0.;
+//           mW = 0.;
+//           sG = 0.;
+//           sW = 0.;
+// 	  nbG = 0;
+// 	  nbW = 0;
+// 	  deltaU = 0;
+// 	  for ( icon=0;icon<vcs6->nb_neighbors;icon++)
+// 	    {
+// 	      voisin = ptr + vcs6->offset[icon];	      
+// 	      if(*voisin==object || *voisin==outside) nnG++;
+// 	      else nnW++;
+// 	    }
+// 	  
+// 	  for (icon=0; icon<vcs26->nb_neighbors; icon++)
+// 	  {
+// 	      voisin = ptr + vcs26->offset[icon];
+// 	      gvoisin = gptr + vcs26->offset[icon];
+// 	      cvoisin = cptr + vcs26->offset[icon];
+// 	      if(*voisin==inside)
+// //		              if(*cvoisin>199)
+//                               {
+//                                   mW += (float)(*gvoisin);
+//                                   nbW++;
+//                               }
+// //                              else if(*cvoisin<200 && *cvoisin>11)
+//                               else if(*cvoisin>11)
+//                               {
+//                                   mG += (float)(*gvoisin);
+//                                   nbG++;
+//                               }
+//                           }
+//                       mW /= (float)nbW;
+//                       mG /= (float)nbG;
+//                       for (icon=0; icon<vcs26->nb_neighbors; icon++)
+// 	        	  {
+//                               voisin = ptr + vcs26->offset[icon];
+//                               gvoisin = gptr + vcs26->offset[icon];
+//                               cvoisin = cptr + vcs26->offset[icon]; 	      
+// 		              if(*voisin==inside)
+// //	        	      if(*cvoisin>199)
+//                               {
+//                                   sW += ((float)(*gvoisin) - mW)*((float)(*gvoisin) - mW);
+//                               }
+// //                              else if(*cvoisin<200 && *cvoisin>11)
+//                               else if(*cvoisin>11)
+//                               {
+//                                   sG += ((float)(*gvoisin) - mG)*((float)(*gvoisin) - mG);
+//                               }
+//                           }
+//                       sW = sqrt(sW/nbW);
+//                       sG = sqrt(sG/nbG);
+//                       deltaU = -KISING*(nnW-nnG);
+// 	              deltaU += deltaGPotentialGtoW(*gptr,KG,mG,sG,KW,mW,sW);
+// //	              deltaU += deltaGPotentialWtoG(*gptr,KG,mG,sigmaG,KW,mW,sigmaW);
+// //	              if((deltaU<=0 && *cptr>199) || nbG==0)
+//       	              if(deltaU<=0 && *cptr>199)
+//     		      {
+// 		          *ptr = inside;
+// 		          count++;
+// 		      }
+// 	  deltaU = -KISING*(nnG-nnW);
+// 	  deltaU += deltaGPotentialWtoG(*gptr,KG,mG,sigmaG,KW,mW,sigmaW);
+// 	  if(deltaU<=0)
+// 	    {
+// 	      if (VipIsASimplePointForLabel_S16BIT(topo26, ptr, object)==VTRUE)
+// 		{
+// 		  *ptr = object;
+// 		  count++;
+// 		}
+// 	    }
+// 	}
+// 	      	      			
+//       VipFillNextFrontFromOldFrontForDilation(first,buck,nextbuck,vcs6,inside,VIP_FRONT,object);
+// 		  
+//       /*bucket permutation*/
+//       VipPermuteTwoIntBucket(&buck, &nextbuck);
+//       nextbuck->n_points = 0;
+// 	  
+//     }
+// 
+//   printf("\n");
+//   
+//   VipChangeIntLabel(vol,VIP_FRONT,inside);
+//   
+//   
+//   VipFreeIntBucket(buck);
+//   VipFreeIntBucket(nextbuck);
+//   
+//   return(OK);
+// }
