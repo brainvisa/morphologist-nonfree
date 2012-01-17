@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 	  else
 	    {
 	      VipPrintfError("This format is not implemented for reading");
-	      VipPrintfExit("(commandline)VipDilation");
+	      VipPrintfExit("(commandline)VipHomotopicSnake");
 	      return(VIP_CL_ERROR);
 	    }
 	}
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 	  else
 	    {
 	      VipPrintfError("This format is not implemented for writing");
-	      VipPrintfExit("(commandline)VipDilation");
+	      VipPrintfExit("(commandline)VipHomotopicSnake");
 	      return(VIP_CL_ERROR);
 	    }
 	}    
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
   pyrlab = VipCreateBoundingBoxLabelPyramid( pyr, 3, 255, linside, loutside );
 
   if(ridge==NULL)
-    {
+  {
       /*this first dilation is to be robust to some vasculature or meninge staying alive
         in the segmentation, this could be improve for similar problems inside Sylvian valley*/
 
@@ -284,17 +284,19 @@ int main(int argc, char *argv[])
       VipHomotopicErosionFromInsideSnake(pyrlab->image[0]->volume,pyr->image[0]->volume,
                                          100, 255, linside, loutside,
                                          1., mG, newsG, mW, newsW);
-    }
+  }
   else
-    {
+  {
      /*this first dilation is to be robust to some vasculature or meninge staying alive
         in the segmentation, this could be improve for similar problems inside Sylvian valley*/
       printf("----------------------------------------------------------------------------\n");
       printf("Small homotopic dilation to skip potential remaining vasculature, meninge, Gibbs ringing...\n");
       VipHomotopicGeodesicDilation( pyrlab->image[0]->volume, 2,
 				  255, linside, linside, loutside, FRONT_RANDOM_ORDER );
+      
       /*To prevent the erosion from going back into that area*/
       VipMerge(pyr->image[0]->volume,pyrlab->image[0]->volume,VIP_MERGE_ONE_TO_ONE,255,mG-2*sG);
+      
       /*nothing forbiden*/
       printf("-------------------------------\n");
       printf("Gray/white interface detection using homotopic snake...\n");
@@ -303,11 +305,10 @@ int main(int argc, char *argv[])
       printf("gray matter: mean: %.3f, sigma:%.3f\n",mG,sG);
       printf("white matter: mean: %.3f, sigma:%.3f\n",mW,sW);
 
-	   
       VipHomotopicInsideDilationSnakeRidge(ridge,pyrlab->image[0]->volume,pyr->image[0]->volume,
-                                      100, 255, linside, loutside, FRONT_RANDOM_ORDER,
-                                      1., mG, sG, mW, sW);
-//       /*
+                                           100, 255, linside, loutside, FRONT_RANDOM_ORDER,
+                                           1., mG, sG, mW, sW);
+      
       newsG = sG/2.+ sG*(float)(100-pressure)/200.;
       newsW = sW+ sW*(float)(pressure)/200.;
       if(pressure!=0)
@@ -317,8 +318,7 @@ int main(int argc, char *argv[])
       VipHomotopicErosionFromInsideSnake(pyrlab->image[0]->volume,pyr->image[0]->volume,
                                          100, 255, linside, loutside,
                                          1., mG, newsG, mW, newsW);
-//       */
-    }
+  }
 
   printf("-------------------------\n");
   printf("Writing %s...\n",output);
@@ -329,7 +329,6 @@ int main(int argc, char *argv[])
   else
     if(VipWriteVolume(pyrlab->image[0]->volume,output)==PB) return(VIP_CL_ERROR);
   
-
   return(0);
 
 }
