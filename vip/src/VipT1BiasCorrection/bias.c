@@ -192,6 +192,7 @@ int main(int argc, char *argv[])
   int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
   int j=0, k=0, l=0;
   float contrast = 0, ratio_GW = 0;
+  float little_opening_size;
   
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -551,12 +552,18 @@ int main(int argc, char *argv[])
   min_volume = VipGetVolumeMin(vol);
   VipFreeVolume(vol);
   
+  little_opening_size = 0.5;
+  if(mVipVolVoxSizeX(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeX(vol)+0.1;
+  if(mVipVolVoxSizeY(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeY(vol)+0.1;
+  if(mVipVolVoxSizeZ(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(vol)+0.1;
+  
   if(tauto==VTRUE)
     {
       /*je plonge le volume ds un plus grand a cause des images normalisees,
         a la SPM, avec la tete coupee. Il n'y a plus de contour sur les bords
         et on chope trop de tissus avec extedge*/   
       vol = VipReadVolumeWithBorder(input,3);
+
       if(mVipVolType(vol)==U8BIT)
       {
 	  converter = VipTypeConversionToS16BIT(vol,RAW_TYPE_CONVERSION);
@@ -609,6 +616,7 @@ int main(int argc, char *argv[])
       
       VipSetBorderLevel( vol,0);
       VipResizeBorder( vol, 0 );
+
       /*
       VipSet3DSize(vol,mVipVolSizeX(vol)+4,mVipVolSizeY(vol)+4,mVipVolSizeZ(vol)+4);
       VipSetBorderWidth(vol,0); j'attend de voir la fin du plug aimsIO*/
@@ -638,10 +646,14 @@ int main(int argc, char *argv[])
       }
       VipResizeBorder( deriche, 3 );
       if (writeedges==VTRUE) VipWriteVolume( deriche, edgesname);
+
+      VipResizeBorder( vol, 3 );
       
       deriche_norm = VipCopyVolume(vol,"deriche_norm");
       if (deriche_norm==PB) return(VIP_CL_ERROR);
       if(VipDeriche3DGradientNorm(deriche_norm, 2., DERICHE_NORM, 0.)==PB) return(VIP_CL_ERROR);
+      
+      VipResizeBorder( vol, 0 );
       
       max_gradient = VipGetVolumeMax(deriche_norm);
 
@@ -670,8 +682,10 @@ int main(int argc, char *argv[])
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
       /*VipWriteVolume(deriche_norm, "deriche_norm");*/
       thresholdedvol = VipCreateSingleThresholdedVolume( deriche_norm, GREATER_THAN, threshold_edges, BINARY_RESULT);
+      VipResizeBorder( thresholdedvol, 1 );
+      VipCustomizedChamferOpening(thresholdedvol , 1.4*little_opening_size, 3, 3, 3, VIP_USUAL_DISTMAP_MULTFACT, FRONT_PROPAGATION);
       if (VipExtRayCorner(thresholdedvol, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
-      
+      VipResizeBorder( thresholdedvol, 0 );
       masked = VipCopyVolume(vol,"voxel_nul");
       VipResizeBorder( masked, 1 );
       if (VipSingleThreshold(masked, LOWER_OR_EQUAL_TO, min_volume, BINARY_RESULT)==PB) return(VIP_CL_ERROR);
@@ -688,7 +702,7 @@ int main(int argc, char *argv[])
       VipResizeBorder( thresholdedvol, 3 );
       VipResizeBorder( masked, 3 );
       
-      VipComputeRobustStatInMaskVolume(vol,thresholdedvol, &mean, &sigma, VTRUE);
+      VipComputeRobustStatInMaskVolume(vol,thresholdedvol, &mean, &sigma, VFALSE);
       //debug
       /*VipWriteTivoliVolume( thresholdedvol, "outside");*/ 
       
@@ -697,7 +711,7 @@ int main(int argc, char *argv[])
 
       printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
       thresholdlowset=VTRUE;
-      thresholdlow = (int)(mean+2*sigma+0.5);
+      thresholdlow = (int)(mean+1*sigma+0.5);
       printf("threshold for corner background/tissue: %d\n", thresholdlow);
 
 //       masked = VipCopyVolume(vol,"extray");
