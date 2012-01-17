@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
     VIP_DEC_VOLUME(copypyr);
     Pyramid *pyr, *pyrlab;
     char *input = NULL;
+    char mode = 'H';
     char output[VIP_NAME_MAXLEN] = "brain";
     char *cortexname = NULL;
     Volume *cortex = NULL;
@@ -85,6 +86,18 @@ int main(int argc, char *argv[])
 	  if (++i >= argc || !strncmp(argv[i],"-",1)) return Usage();
 	  strcpy(output,argv[i]);
 	}
+      else if (!strncmp (argv[i], "-mode", 2)) 
+        {
+            if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+            else if(argv[i][0]=='H') mode = 'H';
+            else if(argv[i][0]=='C') mode = 'C';
+            else
+            {
+                VipPrintfError("This mode is unknown");
+                VipPrintfExit("(commandline)VipHomotopic");
+                return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-Cortex", 2)) 
         {
             if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -135,7 +148,7 @@ int main(int argc, char *argv[])
       (void)fprintf(stderr,"Can not open this image: %s\n",input);
       return(VIP_CL_ERROR);
    }
-   if (cortexname==NULL) 
+   if (cortexname==NULL && mode=='H') 
    {
        VipPrintfError("cortex arg is required by VipHomotopic");
        return(Usage());
@@ -148,29 +161,30 @@ int main(int argc, char *argv[])
   else
     vol = VipReadVolumeWithBorder(input,1);
   if (vol==NULL) return (VIP_CL_ERROR);
-
-  printf("Reading cortex...\n");
-  cortex = VipReadVolumeWithBorder(cortexname,1);
-  if(!cortex) return(VIP_CL_ERROR);
-  printf("Reading squeleton...\n");
-  squeleton = VipReadVolumeWithBorder(squeletonname,1);
-  if(!squeleton) return(VIP_CL_ERROR);
   
-  
-  printf("-------------------------------\n");
-  printf("Masking %s with the sulcus...\n",vol->name);
-  printf("-------------------------------\n");
-  mask = VipCreateSingleThresholdedVolume( squeleton, GREATER_OR_EQUAL_TO, 19, BINARY_RESULT );
-  extedge = VipCopyVolume( mask, "extedge" );
-  VipExtedge( extedge, EXTEDGE3D_ALL, SAME_VOLUME );
-  VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-  VipFreeVolume(extedge);
-  extedge = VipCreateSingleThresholdedVolume( squeleton, EQUAL_TO, 80, BINARY_RESULT );
-
-  VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 255 );
-  VipMerge( vol, mask, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-  VipFreeVolume(extedge);
-  
+  if(mode=='H')
+  {
+      printf("Reading cortex...\n");
+      cortex = VipReadVolumeWithBorder(cortexname,1);
+      if(!cortex) return(VIP_CL_ERROR);
+      printf("Reading squeleton...\n");
+      squeleton = VipReadVolumeWithBorder(squeletonname,1);
+      if(!squeleton) return(VIP_CL_ERROR);
+      
+      printf("-------------------------------\n");
+      printf("Masking %s with the sulcus...\n",vol->name);
+      printf("-------------------------------\n");
+      mask = VipCreateSingleThresholdedVolume( squeleton, GREATER_OR_EQUAL_TO, 19, BINARY_RESULT );
+      extedge = VipCopyVolume( mask, "extedge" );
+      VipExtedge( extedge, EXTEDGE3D_ALL, SAME_VOLUME );
+      VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+      VipFreeVolume(extedge);
+      extedge = VipCreateSingleThresholdedVolume( squeleton, EQUAL_TO, 80, BINARY_RESULT );
+      
+      VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 255 );
+      VipMerge( vol, mask, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+      VipFreeVolume(extedge);
+  }
   
   printf("-------------------------------\n");
   printf("Computing closing of %s...\n",vol->name);
@@ -180,22 +194,56 @@ int main(int argc, char *argv[])
   if (VipClosing ( closing, CHAMFER_BALL_3D, fclosingsize )== PB) return (VIP_CL_ERROR);
   VipChangeIntLabel( closing, 255, 1 );
   VipMerge( closing, vol, VIP_MERGE_SAME_VALUES, 0, 0);
-  
-  
-  printf("-------------------------------\n");
-  printf("CSF/Gray interface detection using homotopic erosion of %s...\n", cortexname);
-  printf("-------------------------------\n");
-  VipHomotopicErosionFromInside( cortex, closing, 100, 255, linside, loutside );
-  
+  VipFreeVolume(vol);
+
+  if(mode=='C')
+  {
+      printf("-------------------------------\n");
+      printf("Computing pyramid and bounding box deflation...\n");
+      printf("-------------------------------\n");
+      
+      pyr = VipPutVolumeInPyramidAndCreatePyramid( closing, 3, PYR_MAX );
+      pyrlab = VipCreateBoundingBoxLabelPyramid( pyr, 3, 255, linside, loutside );
+      
+      printf("-------------------------------\n");
+      printf("Gray/white interface detection...\n");
+      printf("-------------------------------\n");
+      
+      VipHomotopicInsideDilation(pyrlab->image[0]->volume, pyr->image[0]->volume, 100, 255, linside, loutside, FRONT_RANDOM_ORDER);
+  }
+  else if(mode=='H')
+  {
+      printf("-------------------------------\n");
+      printf("CSF/Gray interface detection using homotopic erosion of %s...\n", cortexname);
+      printf("-------------------------------\n");
+      
+      VipHomotopicErosionFromInside( cortex, closing, 100, 255, linside, loutside );
+  }
   
   printf("-------------------------\n");
   printf("Writing %s...\n",output);
   if (writelib == TIVOLI)
   {
-      if(VipWriteTivoliVolume(cortex,output)==PB) return(VIP_CL_ERROR);
+      if(mode=='C')
+      {
+          if(VipWriteTivoliVolume(pyrlab->image[0]->volume,output)==PB) return(VIP_CL_ERROR);
+      }
+      else
+      {
+          if(VipWriteTivoliVolume(cortex,output)==PB) return(VIP_CL_ERROR);
+      }
   }
   else
-      if(VipWriteVolume(cortex,output)==PB) return(VIP_CL_ERROR);
+  {
+      if(mode=='C')
+      {
+          if(VipWriteTivoliVolume(pyrlab->image[0]->volume,output)==PB) return(VIP_CL_ERROR);
+      }
+      else
+      {
+          if(VipWriteVolume(cortex,output)==PB) return(VIP_CL_ERROR);
+      }
+  }
 
     return(0);
     
@@ -205,8 +253,9 @@ int main(int argc, char *argv[])
 static int Usage()
 {
     (void)fprintf(stderr,"Usage: VipHomotopic\n");
-    (void)fprintf(stderr,"        -i[nput] {segmented brain image name}\n");
+    (void)fprintf(stderr,"        -i[nput] {segmented brain image name for H mode and grey/white classification for C mode}\n");
     (void)fprintf(stderr,"        [-o[utput] {image name (default:\"cortex\")}]\n");
+    (void)fprintf(stderr,"        [-m[ode] {char: C[ortical interface] or H[emisphere surface]}]\n");
     (void)fprintf(stderr,"        [-C[ortex] {cortex image name}]\n");
     (void)fprintf(stderr,"        [-S[keleton] {skeleton image name}]\n");
     (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
@@ -221,8 +270,11 @@ static int Help()
     VipPrintfInfo("Homotopic segmentation of an object defined by the external hull");
     (void)printf("of the brain (the surface of a brain closing) and by the CSF/gray interface\n");
     (void)printf("Usage: VipHomotopicSnake\n");
-    (void)printf("        -i[nput] {brain image name}\n");
+    (void)printf("        -i[nput] {brain image name for H mode and grey/white classification for C mode}\n");
     (void)printf(" a brain (or hemisphere) segmentation usually obtained with VipGetBrain\n");
+    (void)printf("        [-m[ode] {char: C[ortical interface] or H[emisphere surface]}]\n");
+    (void)printf("Cortical interface: compute a spherical cortical interface from the classification.\n");
+    (void)printf("Hemisphere interface: compute a spherical hemisphere interface.\n");
     (void)printf("        [-C[ortex] {cortex image name}]\n");
     (void)printf(" a white matter segmentation obtained with VipHomotopicSnake\n");
     (void)printf("        [-S[keleton] {skeleton image name}]\n");
