@@ -271,8 +271,27 @@ extern Volume *VipGrayWhiteClassificationRegularisationForVoxelBasedAna(Volume *
 int dumb, int nb_iterations, float KPOTTS, int connectivity);
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
+extern Volume *VipGrayWhiteClassificationForVoxelBasedAna(Volume *vol, VipT1HistoAnalysis *ana, float threshold);
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 extern Volume *VipCSFBrainFatClassificationRegularisation(Volume *vol,VipT1HistoAnalysis *ana,
 int dumb, int nb_iterations);
+/*---------------------------------------------------------------------------*/
+extern int VipGrayWhiteClassificationForVoxelBasedNeighbourhood(Volume *vol, Volume *classif, Volume *matter, int dumb, int nb_iterations, int threshold, int connectivity, int label);
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+extern Volume *VipGrayWhiteRegularisationForVoxelBasedAna(Volume *vol, Volume *classif, VipT1HistoAnalysis *ana, int dumb, int nb_iterations, float KPOTTS, int connectivity);
+/*---------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------*/
+extern int VipGrayRegularisation(Volume *vol);
+/*-------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+extern int VipCleaningTopo(Volume *vol, Volume *matter, Volume *classif, int dumb, int nb_iterations, int label, int threshold);
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+extern int VipCleaningConnectivity(Volume *vol, int connectivity, int type);
 /*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
@@ -297,6 +316,26 @@ Volume *VipGrayWhiteClassificationRegularisationForRobust2005(Volume *vol,VipT1H
                                                               int T_GRAY_WHITE_LOW, int T_GRAY_WHITE_HIGH,
                                                               int T_WHITE_FAT, int dumb);
 /*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+extern int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, VipT1HistoAnalysis *ana, int nb_iteration, int object, int inside, int outside );
+/*-------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+extern int VipHomotopicErosionFromInsideSnakeNeighbourhood(
+Volume *vol,
+Volume *graylevel,
+Volume *classif,
+int nb_iteration,
+int object,
+int inside,
+int outside,
+float KISING,
+float sigmaG,
+float sigmaW,
+int label
+);
+/*-------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
