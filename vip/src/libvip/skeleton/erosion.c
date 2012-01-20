@@ -156,7 +156,7 @@ int VipHomotopicErosionFromInsideSnake( Volume *vol, Volume *graylevel, int nb_i
 	      deltaU += deltaGPotentialGtoW(*gptr,KG,mG,sigmaG,KW,mW,sigmaW);
 	      if(deltaU<=0)
 		  {
-		      if (VipComputeTopologicalClassificationForTwoLabel_S16BIT(topo26, ptr, inside, outside)
+		      if (VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT(topo26, ptr, inside, outside)
 			  ==TOPO_BORDER_POINT)
 			  {
 			      *ptr = inside;
@@ -392,7 +392,7 @@ int VipHomotopicErosionFromInside( Volume *vol, Volume *graylevel, int nb_iterat
           gptr = gfirst + *buckptr++;
           if(*gptr>1)
           {
-              if (VipComputeTopologicalClassificationForTwoLabel_S16BIT(topo26, ptr, inside, outside)==TOPO_BORDER_POINT)
+              if(VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT(topo26,ptr,inside,outside)==TOPO_BORDER_POINT)
               {
                   *ptr = inside;
                   count++;
