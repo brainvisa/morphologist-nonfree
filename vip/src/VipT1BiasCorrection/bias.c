@@ -573,30 +573,30 @@ int main(int argc, char *argv[])
 	  vol = converter;
       }
 
-      if(Last==3000)
-      {
-          if(GetCommissureCoordinates(vol, point_filename, &tal,
-			xCA, yCA, zCA,
-			xCP, yCP, zCP,
-			xP, yP, zP, talset)!=PB)
-          {
-              coord = &tal;
-              xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
-              xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
-              xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
-          
-              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
-              if(Last<0) Last = 0;
-          }
-          else
-          {
-              printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
-              Last = 0;
-          }
-      }
-      printf("deleting last %d slices\n",Last);
-      for(i=0;i<Last;i++)
-        VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
+//       if(Last==3000)
+//       {
+//           if(GetCommissureCoordinates(vol, point_filename, &tal,
+// 			xCA, yCA, zCA,
+// 			xCP, yCP, zCP,
+// 			xP, yP, zP, talset)!=PB)
+//           {
+//               coord = &tal;
+//               xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+//               xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+//               xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
+//           
+//               Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+//               if(Last<0) Last = 0;
+//           }
+//           else
+//           {
+//               printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+//               Last = 0;
+//           }
+//       }
+//       printf("deleting last %d slices\n",Last);
+//       for(i=0;i<Last;i++)
+//         VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
   
 //       boundingbox = VipCreateSingleThresholdedVolume( vol, EQUAL_TO, 0 , BINARY_RESULT);
 //       VipSetBorderLevel( boundingbox,255);
@@ -680,7 +680,6 @@ int main(int argc, char *argv[])
       else threshold_edges = (int)(i*1);
     
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
-      /*VipWriteVolume(deriche_norm, "deriche_norm");*/
       thresholdedvol = VipCreateSingleThresholdedVolume( deriche_norm, GREATER_THAN, threshold_edges, BINARY_RESULT);
       VipResizeBorder( thresholdedvol, 1 );
       VipCustomizedChamferOpening(thresholdedvol , 1.4*little_opening_size, 3, 3, 3, VIP_USUAL_DISTMAP_MULTFACT, FRONT_PROPAGATION);
