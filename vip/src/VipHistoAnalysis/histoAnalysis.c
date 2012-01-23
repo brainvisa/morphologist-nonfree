@@ -809,6 +809,7 @@ int main(int argc, char *argv[])
             else u+=(undersampling_factor+1)/2;
         }
         u = VipIterateToGetPropUndersampledRatio(shorthisto, &undersampling_factor, undersampling_factor_possible, j);
+        if(u==PB) return(VIP_CL_ERROR);
         printf("\nu=%d, ", u), fflush(stdout);
 
         undersampling_factor *= 2;
