@@ -2258,7 +2258,7 @@ int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios
     int k = 0;
     int ratio_min, best_ratio;
     
-    if(j==0) return(*ratio);
+    if(j==0) return(PB);
     
     if(j>2)
     {
@@ -2344,7 +2344,7 @@ int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios
 
         }
     }
-    if((j-k)==0) return(*ratio);
+    if((j-k)==0) return(PB);
 
     return(best_ratio);
 }
