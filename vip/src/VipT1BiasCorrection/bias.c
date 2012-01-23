@@ -552,11 +552,6 @@ int main(int argc, char *argv[])
   min_volume = VipGetVolumeMin(vol);
   VipFreeVolume(vol);
   
-  little_opening_size = 0.5;
-  if(mVipVolVoxSizeX(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeX(vol)+0.1;
-  if(mVipVolVoxSizeY(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeY(vol)+0.1;
-  if(mVipVolVoxSizeZ(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(vol)+0.1;
-  
   if(tauto==VTRUE)
     {
       /*je plonge le volume ds un plus grand a cause des images normalisees,
@@ -573,6 +568,12 @@ int main(int argc, char *argv[])
 	  vol = converter;
       }
 
+      little_opening_size = 0.5;
+      if(mVipVolVoxSizeX(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeX(vol)+0.1;
+      if(mVipVolVoxSizeY(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeY(vol)+0.1;
+      if(mVipVolVoxSizeZ(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(vol)+0.1;
+      printf("little_opening_size=%f\n", little_opening_size), fflush(stdout);
+      
 //       if(Last==3000)
 //       {
 //           if(GetCommissureCoordinates(vol, point_filename, &tal,
@@ -659,7 +660,7 @@ int main(int argc, char *argv[])
 
 //       VipMaskVolume(deriche,boundingbox);
 //       VipFreeVolume(boundingbox);
-
+      VipWriteVolume(deriche_norm, "deriche_norm");
       histo_edges = VipComputeVolumeHisto(deriche_norm);
       if (histo_edges==PB) return(VIP_CL_ERROR);
       
@@ -681,8 +682,10 @@ int main(int argc, char *argv[])
     
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
       thresholdedvol = VipCreateSingleThresholdedVolume( deriche_norm, GREATER_THAN, threshold_edges, BINARY_RESULT);
+      VipWriteVolume(thresholdedvol, "thresholdedvol");
       VipResizeBorder( thresholdedvol, 1 );
       VipCustomizedChamferOpening(thresholdedvol , 1.4*little_opening_size, 3, 3, 3, VIP_USUAL_DISTMAP_MULTFACT, FRONT_PROPAGATION);
+      VipWriteVolume(thresholdedvol, "thresholdedvol_op");
       if (VipExtRayCorner(thresholdedvol, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
       VipResizeBorder( thresholdedvol, 0 );
       masked = VipCopyVolume(vol,"voxel_nul");
