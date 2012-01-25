@@ -769,13 +769,22 @@ int main(int argc, char *argv[])
                     {
                         printf("Analysing histogram knowing white ridge statistics...\n");
                         ana = VipAnalyseCascadesRidge( clist, volstruct, mean);
-                        if(ana==PB) printf("Erreur in VipAnalyseCascadesRidge\n");
+                        if(ana==PB)
+                        {
+                          printf("Erreur in VipAnalyseCascadesRidge\n");
+                          return VIP_CL_ERROR;
+                        }
                     }
                     else
                     {
                         printf("Analysing histogram D1 and D2 singularities...\n"), fflush(stdout);
                         ana = VipAnalyseCascades( clist, volstruct, sequence);
-                        if(ana==PB) printf("Erreur in VipAnalyseCascades\n");
+                        if(ana==PB)
+                        {
+                          printf("Erreur in VipAnalyseCascades\n");
+                          return VIP_CL_ERROR;
+                        }
+                        
                     }
                     if(ana && ana->white && ana->gray)
                     {
@@ -823,6 +832,8 @@ int main(int argc, char *argv[])
 	    else nderivative=1;
 
 	    volstruct = VipCompute1DScaleSpaceStructFromHisto(shorthisto,nbiter,dscale,offset,nderivative,undersampling_factor );
+            if( volstruct == PB )
+              return VIP_CL_ERROR;
     }
     else if(mode!='h' && mode!='v')
 	{

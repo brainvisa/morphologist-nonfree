@@ -1460,6 +1460,13 @@ int VipComputeSSSingularitySimpleSpeedMinima( SSSingularity *s )
   
   DetectLengthExtrema(segmentlength,lengthextrema,nsegments,&nmin,&nmax);
 
+  /* Denis 2012/01/25: nmax is sometimes wrong, I don't know why. For the
+     moment, I recount them */
+  nmax = 0;
+  for(i=0;i<nsegments;i++)
+    if (lengthextrema[i]==MAX1D)
+      nmax++;
+
   s->scale_extrema = VipCalloc(nmax+1,sizeof(int),"VipComputeSSSingularitySimpleSpeedMinima");
   if(s->scale_extrema==PB) return(PB);
 
