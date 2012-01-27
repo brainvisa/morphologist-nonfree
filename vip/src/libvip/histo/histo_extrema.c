@@ -1458,14 +1458,7 @@ int VipComputeSSSingularitySimpleSpeedMinima( SSSingularity *s )
   segmentloc[nsegments]=segmentloc[nsegments-1];
   nsegments++;
   
-  DetectLengthExtrema(segmentlength,lengthextrema,nsegments,&nmin,&nmax);
-
-  /* Denis 2012/01/25: nmax is sometimes wrong, I don't know why. For the
-     moment, I recount them */
-  nmax = 0;
-  for(i=0;i<nsegments;i++)
-    if (lengthextrema[i]==MAX1D)
-      nmax++;
+  DetectLengthExtrema(segmentlength,lengthextrema,nsegments,&nmax,&nmin);
 
   s->scale_extrema = VipCalloc(nmax+1,sizeof(int),"VipComputeSSSingularitySimpleSpeedMinima");
   if(s->scale_extrema==PB) return(PB);
@@ -2801,8 +2794,8 @@ Vip_DOUBLE *val)
 	{
 	  last = extrema[i];
 	  lasti = i;
-	 if(extrema[i]==MAX1D) *numberplus +=1;
-	 else *numbermoins +=1;
+	  if(extrema[i]==MAX1D) *numberplus +=1;
+	  else *numbermoins +=1;
 	}
       i++;
     }
@@ -2838,9 +2831,12 @@ Vip_DOUBLE *val)
 			{
 			  last = extrema[i];
 			  lasti = i;
+                          if(extrema[i]==MAX1D) *numberplus +=1;
+                          else *numbermoins +=1;
 			}
 		      i++;
 		    }
+		    i--;
 		}
 	    }
 	  else
@@ -2880,8 +2876,8 @@ int *val)
 	{
 	  last = extrema[i];
 	  lasti = i;
-	 if(extrema[i]==MAX1D) *numberplus +=1;
-	 else *numbermoins +=1;
+	  if(extrema[i]==MAX1D) *numberplus +=1;
+	  else *numbermoins +=1;
 	}
       i++;
     }
@@ -2917,9 +2913,12 @@ int *val)
 			{
 			  last = extrema[i];
 			  lasti = i;
+                          if(extrema[i]==MAX1D) *numberplus +=1;
+                          else *numbermoins +=1;
 			}
 		      i++;
 		    }
+		    i--;
 		}
 	    }
 	  else
