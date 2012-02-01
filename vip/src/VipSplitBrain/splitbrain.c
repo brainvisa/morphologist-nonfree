@@ -75,7 +75,9 @@ static int GetCutAlongTheLineBucket(
   Vip3DBucket_S16BIT **buck,
   char mode);
 /*----------------------------------------------------------------------------*/
-
+/*----------------------------------------------------------------------------*/
+static int VipGetNonZeroMaxZCoord( Volume *vol );
+/*----------------------------------------------------------------------------*/
 /*------------------------------------------------------------------*/
 static int Usage();
 static int Help();
@@ -546,10 +548,20 @@ int main(int argc, char *argv[])
 
   /* VipWriteTivoliVolume(vol,"seuil"); */
   printf("Keep only the largest 6 connected component...\n");
-  if(VipConnexVolumeFilter(vol,CONNECTIVITY_6,-1,CONNEX_BINARY)==PB)
-    return(VIP_CL_ERROR);
+  if(VipConnexVolumeFilter(vol, CONNECTIVITY_6, -1, CONNEX_BINARY)==PB)
+      return(VIP_CL_ERROR);
 
+  if(VipInvertBinaryVolume(vol)==PB) return(VIP_CL_ERROR);
+  if(VipConnexVolumeFilter(vol, CONNECTIVITY_6, -1, CONNEX_BINARY)==PB)
+      return(VIP_CL_ERROR);
+  
+//   if(VipErosion(vol,CHAMFER_BALL_3D,1.6)==PB) return(VIP_CL_ERROR);
+//   if(VipConnexVolumeFilter(vol, CONNECTIVITY_6, -1, CONNEX_BINARY)==PB)
+//       return(VIP_CL_ERROR);
+//   if(VipDilation(vol,CHAMFER_BALL_3D,1.6)==PB) return(VIP_CL_ERROR);
+  if(VipInvertBinaryVolume(vol)==PB) return(VIP_CL_ERROR);
 
+  
   printf("Opening of size 1.6mm ...\n");
   if(VipOpening(vol,CHAMFER_BALL_3D,1.6)==PB) return(VIP_CL_ERROR);
   printf("Closing of size 1.6mm ...\n");
@@ -921,7 +933,7 @@ int main(int argc, char *argv[])
 
         d[0] = d[1] = d[2] = 1000.0;
         Vip3DPlanesResolution(CA, CP, P, d, &(ptPlanHemi[0]), &(ptPlanHemi[1]), &(ptPlanHemi[2]));
-//        printf("a = %f, b = %f, c = %f, d = %f\n", ptPlanHemi[0], ptPlanHemi[1], ptPlanHemi[2], d[0]), fflush(stdout);
+//         printf("a = %f, b = %f, c = %f, d = %f\n", ptPlanHemi[0], ptPlanHemi[1], ptPlanHemi[2], d[0]), fflush(stdout);
 
         vos = VipGetOffsetStructure( plan_hemi );
         ptr = VipGetDataPtr_S16BIT( plan_hemi ) + vos->oFirstPoint;
@@ -940,7 +952,6 @@ int main(int argc, char *argv[])
             }
             ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
         }
-        /* VipWriteVolume(plan_hemi,"planHemi"); */
 
         printf("Calculation of the maximum and minimum intensities...\n");
         mask1 = VipCopyVolume(brain, "white_matter");
@@ -961,19 +972,8 @@ int main(int argc, char *argv[])
         VipFreeVolume(mask1);
 
         VipMerge(vol,seed,VIP_MERGE_SAME_VALUES,0,0);
-        /* VipWriteVolume(vol,"domain"); */
 
         VipWatershedFrontPropagation(vol, brain, plan_hemi, int_min, int_max, 255, 0, nb_interval, CONNECTIVITY_6);
-
-// // //   VipMaskVolume(mask, hemi_strip);
-// // //   VipMerge(vol, mask, VIP_MERGE_SAME_VALUES, 0, 0);
-// // //   VipChangeIntLabel( vol, -103, 0 );
-// // //
-// // //   VipWriteVolume(vol,"avant_voronoi");
-// // //   voronoi = VipComputeCustomizedFrontPropagationGeodesicVoronoi (vol, 255, 0, 3, 3, 3, 50);
-// // //   VipFreeVolume(vol);
-// // //
-// // //   VipWriteVolume(voronoi,"voronoi");
 
         VipFreeVolume(seed);
         seed = VipCreateSingleThresholdedVolume(vol, GREATER_THAN, 0, GREYLEVEL_RESULT);
@@ -1047,7 +1047,6 @@ int main(int argc, char *argv[])
             return(VIP_CL_ERROR);
 
         VipMerge(vol,seed,VIP_MERGE_SAME_VALUES,0,0);
-//         VipWriteVolume(vol,"domain2");
 
         printf("Calculation of the maximum and minimum intensities...\n");
         mask2 = VipCreateSingleThresholdedVolume(seed, EQUAL_TO, 0, BINARY_RESULT);
@@ -1469,7 +1468,43 @@ static int VipGetLabelsFromTemplate(
   return(OK);
 }
 
-
+/*----------------------------------------------------------------------------*/
+static int VipGetNonZeroMaxZCoord( Volume *vol )
+/*----------------------------------------------------------------------------*/
+{
+    int iy, ix, iz;
+    VipOffsetStruct *vos;
+    VipConnectivityStruct *vcs;
+    Vip_S16BIT *ptr;
+    
+    if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
+    {
+        VipPrintfExit("(VipGetNonZeroMinZCoord");
+        return(PB);
+    }
+    
+    vos = VipGetOffsetStructure(vol);
+    ptr = VipGetDataPtr_S16BIT( vol ) + vos->oLastPoint;
+    
+    for ( iz = mVipVolSizeZ(vol); iz-- ; )      /* loop on slices */
+    {
+        for ( iy = mVipVolSizeY(vol); iy-- ; )      /* loop on lines */
+        {
+            for ( ix = mVipVolSizeX(vol); ix-- ; )      /* loop on points */
+            {
+                if(*ptr)
+                {
+                    printf("MaxZCoord : %d\n", iz);
+                    return(iz);
+                }
+                ptr--;
+            }
+            ptr -= vos->oPointBetweenLine;  /*skip border points*/
+        }
+        ptr -= vos->oLineBetweenSlice; /*skip border lines*/
+    }
+    return(iz);
+}
 
 /*-----------------------------------------------------------------------------------------*/
 
