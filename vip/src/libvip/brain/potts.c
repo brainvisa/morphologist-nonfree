@@ -2366,7 +2366,6 @@ int dumb, int nb_iterations, int threshold, int connectivity, int label)
         VipPermuteTwoIntBucket(&buck, &nextbuck);
         nextbuck->n_points = 0;
     }
-    VipWriteVolume(classif,"classif_ap");
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
     
@@ -2405,7 +2404,7 @@ int VipCleaningTopo(Volume *vol, Volume *matter, Volume *classif, int dumb, int 
     nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
     if(nextbuck==PB) return(PB);
     nextbuck->n_points = 0;
-    VipWriteVolume(vol, "buck");
+
     data_first = VipGetDataPtr_S16BIT( vol );
     matter_first = VipGetDataPtr_S16BIT( matter );
     classif_first = VipGetDataPtr_S16BIT( classif );

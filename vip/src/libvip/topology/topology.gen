@@ -273,6 +273,28 @@ int VipComputeCbarForTwoLabelComplement_GENSTRING(Topology26Neighborhood *top,
 #FUNCTION_END
 #TYPED_FUNC_END
 
+/*----------------------------------------------------------------------------*/
+#TYPED_FUNC_BEGIN VipComputeCbarForTwoLabel_GENSTRING
+#TYPE_LIST_EXTERN ANY_INT
+#PROTOTYPE_BEGIN
+/*----------------------------------------------------------------------------*/
+int VipComputeCbarForTwoLabel_GENSTRING(Topology26Neighborhood *top, 
+                                        GENTYPE *adresse, int label1, int label2)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{ 
+
+  if(top==NULL || adresse==NULL)
+    {
+      VipPrintfError("arguments in VipComputeCbarForTwoLabel_GENSTRING");
+      VipPrintfExit("VipComputeCbarForTwoLabel_GENSTRING");
+      return(TOPO_PB);
+    }
+  VipFill26NeighborhoodForTwoLabelComplement_GENSTRING(top,adresse,label1,label2);
+  return(VipGetNumberOfComponentsIn18Neighborhood(top,CONNECTIVITY_6,CC_6_ADJACENT));
+}
+#FUNCTION_END
+#TYPED_FUNC_END
 
 /*----------------------------------------------------------------------------*/
 #TYPED_FUNC_BEGIN VipComputeLocalCCNumbersForLabel_GENSTRING

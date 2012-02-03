@@ -660,7 +660,7 @@ int main(int argc, char *argv[])
 
 //       VipMaskVolume(deriche,boundingbox);
 //       VipFreeVolume(boundingbox);
-      VipWriteVolume(deriche_norm, "deriche_norm");
+
       histo_edges = VipComputeVolumeHisto(deriche_norm);
       if (histo_edges==PB) return(VIP_CL_ERROR);
       
@@ -682,10 +682,8 @@ int main(int argc, char *argv[])
     
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
       thresholdedvol = VipCreateSingleThresholdedVolume( deriche_norm, GREATER_THAN, threshold_edges, BINARY_RESULT);
-      VipWriteVolume(thresholdedvol, "thresholdedvol");
       VipResizeBorder( thresholdedvol, 1 );
       VipCustomizedChamferOpening(thresholdedvol , 1.4*little_opening_size, 3, 3, 3, VIP_USUAL_DISTMAP_MULTFACT, FRONT_PROPAGATION);
-      VipWriteVolume(thresholdedvol, "thresholdedvol_op");
       if (VipExtRayCorner(thresholdedvol, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
       VipResizeBorder( thresholdedvol, 0 );
       masked = VipCopyVolume(vol,"voxel_nul");

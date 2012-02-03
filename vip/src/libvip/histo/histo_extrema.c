@@ -2836,7 +2836,7 @@ Vip_DOUBLE *val)
 			}
 		      i++;
 		    }
-		    i--;
+		  i--;
 		}
 	    }
 	  else
@@ -2918,7 +2918,7 @@ int *val)
 			}
 		      i++;
 		    }
-		    i--;
+		  i--;
 		}
 	    }
 	  else
