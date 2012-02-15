@@ -330,115 +330,115 @@ int VipHomotopicInsideDilation( Volume *vol, Volume *graylevel, int nb_iteration
 				  int object, int inside, int outside, int front_mode )
 /*-------------------------------------------------------------------------*/
 {
-  VipIntBucket *buck, *nextbuck;
-  Topology26Neighborhood *topo26;
-  VipConnectivityStruct *vcs6;
-  int loop, count, totalcount;
-  Vip_S16BIT *first, *ptr, *gptr, *gfirst;
-  int *buckptr;
-  int i, m;
-  int max, min;
-  float interval;
+    VipIntBucket *buck, *nextbuck;
+    Topology26Neighborhood *topo26;
+    VipConnectivityStruct *vcs6;
+    int loop, count, totalcount;
+    Vip_S16BIT *first, *ptr, *gptr, *gfirst;
+    int *buckptr;
+    int i, m;
+    int max, min;
+    float interval;
 
 
-  if (VipVerifyAll(vol)==PB)
+    if (VipVerifyAll(vol)==PB)
+        {
+        VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+        return(PB);
+        }
+    if (VipTestType(vol,S16BIT)!=OK)
+        {
+        VipPrintfError("Sorry,  VipHomotopicInsideDilation is only implemented for S16BIT volume");
+        VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+        return(PB);
+        }
+        if (VipVerifyAll(graylevel)==PB)
+        {
+        VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+        return(PB);
+        }
+        if (VipTestType(graylevel,S16BIT)!=OK)
+        {
+        VipPrintfError("Sorry,  VipHomotopicInsideDilation is only implemented for S16BIT volume");
+        VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+        return(PB);
+        }
+    if (mVipVolBorderWidth(vol) < 1)
+        {
+        VipPrintfError("Sorry, VipHomotopicInsideDilation is only implemented with border");
+        VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+        return(PB);
+        }
+        if(VipTestEqualBorderWidth(vol,graylevel)==PB)
+        {
+        VipPrintfError("Sorry, border widths are different");
+        VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
+        return(PB);
+        }
+    /*
+        printf("Initialization (object:%d, inside:%d, outside:%d)...\n",object,inside,outside);
+    */
+    printf("Homotopic dilation towards inside...\n");
+    VipSetBorderLevel( vol, outside ); 
+
+    buck = VipCreateFrontIntBucketForDilation( vol, CONNECTIVITY_6, VIP_FRONT, object, inside, front_mode);
+    if(buck==PB) return(PB);
+    nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
+    if(nextbuck==PB) return(PB);
+
+    topo26 = VipCreateTopology26Neighborhood( vol);
+    if(topo26==PB) return(PB);
+
+    vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
+
+    nextbuck->n_points = 0;
+
+    first = VipGetDataPtr_S16BIT(vol);
+    gfirst = VipGetDataPtr_S16BIT(graylevel);
+    
+    for(m=0; m<3; m++)
     {
-      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
-      return(PB);
+        loop=0;
+        count = 1;
+        totalcount = 0;
+        printf("loop: %3d, Added: %6d",loop,0);
+        
+        while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
+        {
+            if(loop==1) count=0;
+            totalcount += count;
+            count = 0;
+            printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Added: %6d",loop,totalcount);
+            fflush(stdout);
+            
+            buckptr = buck->data;
+            for(i=buck->n_points;i--;)
+            {
+                ptr = first + *buckptr;
+                gptr = gfirst + *buckptr++;
+                if(*gptr<(50*(m+2)))
+                {
+                    if (VipIsASimplePointForLabel_S16BIT(topo26, ptr, object)==VTRUE)
+                    {
+                        *ptr = object;
+                        count++;
+                    }
+                }
+            }
+            VipFillNextFrontFromOldFrontForDilation(first,buck,nextbuck,vcs6,inside,VIP_FRONT,object);
+            /*bucket permutation*/
+            VipPermuteTwoIntBucket(&buck, &nextbuck);
+            nextbuck->n_points = 0;
+        }
+        printf("\n");
     }
-  if (VipTestType(vol,S16BIT)!=OK)
-    {
-      VipPrintfError("Sorry,  VipHomotopicInsideDilation is only implemented for S16BIT volume");
-      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
-      return(PB);
-    }
-    if (VipVerifyAll(graylevel)==PB)
-    {
-      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
-      return(PB);
-    }
-    if (VipTestType(graylevel,S16BIT)!=OK)
-    {
-      VipPrintfError("Sorry,  VipHomotopicInsideDilation is only implemented for S16BIT volume");
-      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
-      return(PB);
-    }
-  if (mVipVolBorderWidth(vol) < 1)
-    {
-      VipPrintfError("Sorry, VipHomotopicInsideDilation is only implemented with border");
-      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
-      return(PB);
-    }
-    if(VipTestEqualBorderWidth(vol,graylevel)==PB)
-    {
-      VipPrintfError("Sorry, border widths are different");
-      VipPrintfExit("(skeleton)VipHomotopicInsideDilation");
-      return(PB);
-    }
-  /*
-    printf("Initialization (object:%d, inside:%d, outside:%d)...\n",object,inside,outside);
-  */
-  printf("Homotopic dilation towards inside...\n");
-  VipSetBorderLevel( vol, outside ); 
-
-  buck = VipCreateFrontIntBucketForDilation( vol, CONNECTIVITY_6, VIP_FRONT, object, inside, front_mode);
-  if(buck==PB) return(PB);
-  nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
-  if(nextbuck==PB) return(PB);
-
-  topo26 = VipCreateTopology26Neighborhood( vol);
-  if(topo26==PB) return(PB);
-
-  vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
-
-  nextbuck->n_points = 0;
-
-  first = VipGetDataPtr_S16BIT(vol);
-  gfirst = VipGetDataPtr_S16BIT(graylevel);
-
-  loop=0;
-  count = 1;
-  totalcount = 0;
-  printf("loop: %3d, Added: %6d",loop,0);
-  
-  while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
-  {
-      if(loop==1) count=0;
-      totalcount += count;
-      count = 0;
-      printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Added: %6d",loop,totalcount);
-      fflush(stdout);
-      
-      buckptr = buck->data;
-      for(i=buck->n_points;i--;)
-      {
-          ptr = first + *buckptr;
-          gptr = gfirst + *buckptr++;
-          if(*gptr<200)
-          {
-              if (VipIsASimplePointForLabel_S16BIT(topo26, ptr, object)==VTRUE)
-              {
-                  *ptr = object;
-                  count++;
-              }
-          }
-      }
-      
-      VipFillNextFrontFromOldFrontForDilation(first,buck,nextbuck,vcs6,inside,VIP_FRONT,object);
-      
-      /*bucket permutation*/
-      VipPermuteTwoIntBucket(&buck, &nextbuck);
-      nextbuck->n_points = 0;
-  }
-  
-  printf("\n");
-  
-  VipChangeIntLabel(vol,VIP_FRONT,inside);
-  
-  VipFreeIntBucket(buck);
-  VipFreeIntBucket(nextbuck);
-  
-  return(OK);
+    
+    VipChangeIntLabel(vol,VIP_FRONT,inside);
+    
+    VipFreeIntBucket(buck);
+    VipFreeIntBucket(nextbuck);
+    
+    return(OK);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -2312,7 +2312,8 @@ int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios
         }
     }
     
-    if((j-k)==1)
+    if((j-k)==0) return(PB);
+    else if((j-k)==1)
     {
         for(i=0;i<j;i++)
         {
@@ -2350,7 +2351,7 @@ int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios
                 {
                     ratio_SigG1 = 100*(float)(histo->val[ratios[i][1] - ratios[i][2]])/(float)(histo->val[ratios[i][1]]);
                     ratio_SigG2 = 100*(float)(histo->val[ratios[i][1] - 2*ratios[i][2]])/(float)(histo->val[ratios[i][1]]);
-                    if((fabs(70.0-ratio_SigG1)<ratio_min) && (ratio_SigG2>20.0) && (ratio_SigG1>60.0))
+                    if(fabs(70.0-ratio_SigG1)<ratio_min)
                     {
                         best_ratio = ratios[i][0];
                         ratio_min = fabs(70.0-ratio_SigG1);

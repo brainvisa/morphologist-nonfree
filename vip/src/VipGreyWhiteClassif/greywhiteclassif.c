@@ -774,7 +774,7 @@ static int Help()
   (void)printf("N: classification with local propagation\n");
   (void)printf("        -m[ask] {brain/hemisphere/cerebellum mask}\n");
   (void)printf(" a binary mask\n");
-  (void)printf("        -h[ana] {histogram scale-space analysis name (?.han)}]\n");
+  (void)printf("        -h[ana] {histogram scale-space analysis name (?.han)}\n");
   (void)printf(" the T1-MR histo analysis usually obtained with VipHistoAnalysis\n");
   (void)printf("        -ed[ges] {edges image name}\n");
   (void)printf("        -P[oints] {AC,PC,IH coord filename (*.tal)}\n");
