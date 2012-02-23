@@ -78,8 +78,10 @@ int main(int argc, char *argv[])
   int bwidth = 1;
   int skeletonization = VTRUE;
   int wprune = 3;
+//   VipT1HistoAnalysis *hana = NULL;
+//   char *hananame = NULL;
 
- 
+
   int i;
 
   readlib = VIDA;
@@ -117,7 +119,12 @@ int main(int argc, char *argv[])
 	  {
 	    prune = argv[i];
 	  }
-	} 
+	}
+//       else if (!strncmp (argv[i], "-hana", 2)) 
+//         {
+//           if (++i >= argc || !strncmp(argv[i],"-",1)) return Usage();
+//           hananame = argv[i];
+//         }
       else if (!strncmp (argv[i], "-lzero", 3)) 
 	{
 	  if(++i >= argc ) return(Usage());
@@ -300,7 +307,27 @@ int main(int argc, char *argv[])
 					     mcsigma, lzero, lup, erosion,
 					     bwidth,mcthreshold);
 	  if(altitude==PB) return(VIP_CL_ERROR);
-	  VipFreeVolume(volridge);	   
+	  VipFreeVolume(volridge);
+
+//             if(hananame==NULL)
+//           {
+//               VipPrintfError("With the Cortical mode, you have to provide an histogram analysis (-hana)\n");
+//               return Usage();
+//           }
+//           else
+//           {
+//               hana = VipReadT1HistoAnalysis(hananame);
+//               if(hana==PB)
+//               {
+//                   VipPrintfError("Can not read this histogram analysis");
+//                   return (VIP_CL_ERROR);
+//               }
+//               if(hana->white==NULL || hana->gray==NULL)
+//               {
+//                   VipPrintfError("Can not use this poor histogram analysis (no gray/white modes)");
+//                   return (VIP_CL_ERROR);
+//               }
+//           }
 
 	  printf("--------------------\n");
 	  printf("Reading %s...\n",input);
@@ -309,8 +336,28 @@ int main(int argc, char *argv[])
 	  else
 	    vol = VipReadVolumeWithBorder(input,bwidth);
 	  printf("--------------------\n");
-
-	  if(vol==NULL) return(VIP_CL_ERROR);   
+	  if(vol==NULL) return(VIP_CL_ERROR);
+          
+          /*hana->gray->mean = (int)(hana->gray->mean - hana->gray->sigma);
+          hana->white->mean = (int)(hana->white->mean - hana->white->sigma);
+          greywhite = VipGrayWhiteClassificationRegularisationForVoxelBasedAna( volridge, hana, VFALSE, 10, 20, CONNECTIVITY_26 );
+          
+          VipMerge( greywhite, vol, VIP_MERGE_ONE_TO_ONE, 0, 200 );
+          VipSingleThreshold( greywhite, EQUAL_TO, 200, BINARY_RESULT );
+          VipConnexVolumeFilter( greywhite, CONNECTIVITY_6, -1, CONNEX_BINARY );
+          VipCleaningConnectivity( greywhite, CONNECTIVITY_6, 1 );
+          VipInvertBinaryVolume( greywhite );
+          VipCleaningConnectivity( greywhite, CONNECTIVITY_6, 2 );
+          VipInvertBinaryVolume( greywhite );
+          
+          mask = VipCreateSingleThresholdedVolume( volridge, NOT_EQUAL_TO, 0, BINARY_RESULT  );
+          VipSingleThreshold( altitude, GREATER_OR_EQUAL_TO, -1, BINARY_RESULT  );
+          VipMerge( mask, altitude, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+          VipMerge( altitude, mask, VIP_MERGE_ONE_TO_ONE, 255, -11 );
+          VipMerge( altitude, greywhite, VIP_MERGE_ONE_TO_ONE, 255, -111 );
+          VipWriteVolume( altitude, "altitude" );
+          VipChangeIntLabel( altitude, 255, 15);*/
+          
 	  if(VipWatershedHomotopicSkeleton( vol, altitude, immortal_flag, linside, loutside) == PB) return(VIP_CL_ERROR);
 	  VipFreeVolume(altitude);
 

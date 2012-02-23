@@ -232,7 +232,6 @@ int main(int argc, char *argv[])
       VipInvertBinaryVolume(copy_grey);
       VipCleaningConnectivity(copy_grey, CONNECTIVITY_6, 2);
       VipInvertBinaryVolume(copy_grey);
-      VipWriteVolume(copy_grey, "classif_grey1");
       
       VipChangeIntLabel( greylevel, 200, 100 );
       VipChangeIntLabel( greylevel, 100, 50 );
@@ -242,7 +241,6 @@ int main(int argc, char *argv[])
       hana->gray->mean = (int)(mG - hana->gray->sigma);
       hana->white->mean = (int)(mW - hana->white->sigma);
       copy_grey = VipGrayWhiteClassificationRegularisationForVoxelBasedAna(vol, hana, VFALSE, 10, 20, CONNECTIVITY_26);
-      VipWriteVolume(copy_grey, "classif_grey2");
       
       VipMerge(copy_grey, classif, VIP_MERGE_ONE_TO_ONE, 200, 200);
       VipSingleThreshold( copy_grey, EQUAL_TO, 200, BINARY_RESULT );
@@ -400,5 +398,4 @@ static int Help()
     (void)printf("        [-h[elp]\n");
     return(VIP_CL_ERROR);
 }
-
 /******************************************************/
