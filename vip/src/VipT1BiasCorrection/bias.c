@@ -664,7 +664,7 @@ int main(int argc, char *argv[])
       histo_edges = VipComputeVolumeHisto(deriche_norm);
       if (histo_edges==PB) return(VIP_CL_ERROR);
       
-      for(i=1;i<=histo_edges->range_max-3;i++) 
+      for(i=5;i<=histo_edges->range_max-3;i++) 
         {
            if ((histo_edges->val[i]<=histo_edges->val[i-1])
                && (histo_edges->val[i]<=histo_edges->val[i+1])
