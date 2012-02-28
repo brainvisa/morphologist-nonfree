@@ -769,22 +769,13 @@ int main(int argc, char *argv[])
                     {
                         printf("Analysing histogram knowing white ridge statistics...\n");
                         ana = VipAnalyseCascadesRidge( clist, volstruct, mean);
-                        if(ana==PB)
-                        {
-                          printf("Erreur in VipAnalyseCascadesRidge\n");
-                          return VIP_CL_ERROR;
-                        }
+                        if(ana==PB) printf("Erreur in VipAnalyseCascadesRidge\n");
                     }
                     else
                     {
                         printf("Analysing histogram D1 and D2 singularities...\n"), fflush(stdout);
                         ana = VipAnalyseCascades( clist, volstruct, sequence);
-                        if(ana==PB)
-                        {
-                          printf("Erreur in VipAnalyseCascades\n");
-                          return VIP_CL_ERROR;
-                        }
-                        
+                        if(ana==PB) printf("Erreur in VipAnalyseCascades\n");
                     }
                     if(ana && ana->white && ana->gray)
                     {
@@ -811,7 +802,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    VipPrintfError("Sorry, the analysis can not proceed further");
+                    VipPrintfError("Sorry, this analysis can not proceed further");
                 }
             }
             if(u<undersampling_factor && u!=1) u+=undersampling_factor/4;
