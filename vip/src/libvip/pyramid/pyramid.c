@@ -17,7 +17,7 @@
  * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
  *--------------------|--------------|---------------------------------------
  *              / /   |              |
- *            19/08/99| V Frouin     | Le borderwith forcé à 1 des volumes
+ *            19/08/99| V Frouin     | Le borderwith force a 1 des volumes
  *                    |              | internes aux pyramides est remplace 
  *                    |              | par un heritage du borderw du haut
  *                    |              | ou du bas de la pyramide.
@@ -143,7 +143,9 @@ PyramidVolume *VipConvertVolumeToPyramidVolume(Volume *vol)
       return((PyramidVolume *)NULL);
     }
 
-  *new->volume = *vol;
+  if( new->volume != NULL )
+    VipFreeVolume( new->volume );
+  new->volume = VipDuplicateVolumeStructure( vol, "" );
   new->nx = mVipVolSizeX(new->volume);
   new->ny = mVipVolSizeY(new->volume);
   new->nz = mVipVolSizeZ(new->volume);
@@ -245,6 +247,9 @@ PyramidVolume *VipGetUpLevelPyramidVolume(PyramidVolume *down, int type)
       VipFree(medtab);
       return((PyramidVolume *)NULL);
     }
+#ifdef VIP_CARTO_VOLUME_WRAPPING
+    VipVolumeCartoCopyStruct( down->volume, up->volume );
+#endif
 
   vx = mVipVolVoxSizeX(down->volume)*(float)winsize;
   vy = mVipVolVoxSizeY(down->volume)*(float)winsize;
@@ -338,6 +343,9 @@ PyramidVolume *VipGetDownLevelPyramidVolume(PyramidVolume *up)
 
   winsize = 2;
   down = VipCreateEmptyPyramidVolume();
+#ifdef VIP_CARTO_VOLUME_WRAPPING
+    VipVolumeCartoCopyStruct( up->volume, down->volume );
+#endif
   VipSet3DSize(down->volume, up->nx*winsize+up->rx, up->ny*winsize+up->ry,
 	       up->nz*winsize+up->rz);
   vx = mVipVolVoxSizeX(up->volume)/(float)winsize;
