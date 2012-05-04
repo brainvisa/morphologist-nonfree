@@ -143,9 +143,10 @@ PyramidVolume *VipConvertVolumeToPyramidVolume(Volume *vol)
       return((PyramidVolume *)NULL);
     }
 
-  if( new->volume != NULL )
-    VipFreeVolume( new->volume );
-  new->volume = VipDuplicateVolumeStructure( vol, "" );
+  *new->volume = *vol;
+#ifdef VIP_CARTO_VOLUME_WRAPPING
+    VipVolumeCartoCopyStruct( vol, new->volume );
+#endif
   new->nx = mVipVolSizeX(new->volume);
   new->ny = mVipVolSizeY(new->volume);
   new->nz = mVipVolSizeZ(new->volume);
