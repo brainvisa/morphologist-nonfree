@@ -278,6 +278,7 @@ int main(int argc, char *argv[])
       printf("-------------------------------\n");
 
       VipHomotopicInsideDilation(pyrlab->image[0]->volume, pyr->image[0]->volume, 100, 255, linside, loutside, FRONT_RANDOM_ORDER);
+      VipCopyVolumeHeader( closing, pyrlab->image[0]->volume );
   }
   
   else if(mode=='H')

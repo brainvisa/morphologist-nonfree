@@ -891,6 +891,17 @@ long			VipOffsetSliceBetweenVolume
 
 
 /*----------------------------------------------------------------------------*/
+        extern
+        void      *VipCopyVolumeHeader
+
+/*----------------------------------------------------------------------------*/
+(
+        Volume      *sourceVolume,
+        Volume      *destVolume
+);
+
+
+/*----------------------------------------------------------------------------*/
 	extern
 	int			VipAllocateVolumeData
 	

@@ -221,19 +221,39 @@ namespace
   template<typename T>
   void cartoCopyHdr( ::Volume *volumeR, ::Volume *volumeW )
   {
+    if( !volumeR->carto || !volumeR->carto->vol.get()
+      || !volumeW->carto || !volumeW->carto->vol.get() )
+      return;
+    try
+    {
+      rc_ptr<carto::Volume<T> >	volR = volumeR->carto->vol
+        ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
+      rc_ptr<carto::Volume<T> >	volW = volumeW->carto->vol
+        ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
+      copyHeader( *volR, *volW );
+    }
+    catch( ... )
+    {
+    }
+  }
+
+
+  template<typename T>
+  void cartoCopyStruct( ::Volume *volumeR, ::Volume *volumeW )
+  {
     if( !volumeR->carto || !volumeR->carto->vol.get() )
       return;
     try
-      {
-        rc_ptr<carto::Volume<T> >	volR = volumeR->carto->vol
-          ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
-        rc_ptr<carto::Volume<T> >	volW( new carto::Volume<T> );
-        copyHeader( *volR, *volW );
-        volumeW->carto->vol = Object::value( volW );
-      }
+    {
+      rc_ptr<carto::Volume<T> >       volR = volumeR->carto->vol
+        ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
+      rc_ptr<carto::Volume<T> >       volW( new carto::Volume<T> );
+      copyHeader( *volR, *volW );
+      volumeW->carto->vol = Object::value( volW );
+    }
     catch( ... )
-      {
-      }
+    {
+    }
   }
 
 }
@@ -280,6 +300,47 @@ void VipVolumeCartoCopyStruct( ::Volume * volumeR, ::Volume *volumeW )
   switch( volumeR->type )
     {
     case U8BIT:
+      cartoCopyStruct<uint8_t>( volumeR, volumeW );
+      break;
+    case S8BIT:
+      cartoCopyStruct<int8_t>( volumeR, volumeW );
+      break;
+    case U16BIT:
+      cartoCopyStruct<uint16_t>( volumeR, volumeW );
+      break;
+    case S16BIT:
+      cartoCopyStruct<int16_t>( volumeR, volumeW );
+      break;
+    case U32BIT:
+      cartoCopyStruct<uint32_t>( volumeR, volumeW );
+      break;
+    case S32BIT:
+      cartoCopyStruct<int32_t>( volumeR, volumeW );
+      break;
+    case VFLOAT:
+      cartoCopyStruct<float>( volumeR, volumeW );
+      break;
+    case VDOUBLE:
+      cartoCopyStruct<double>( volumeR, volumeW );
+      break;
+    default:
+      cerr << "VipVolumeCartoCopyStruct: unknown type " << volumeR->type 
+           << endl;
+      volumeW->carto->vol = Object();
+    }
+}
+
+
+void VipVolumeCartoCopyHeader( ::Volume * volumeR, ::Volume *volumeW )
+{
+#ifdef VIP_CARTOVOL_DEBUG
+  cout << "VipVolumeCartoCopyStruct " << volumeR->name << " -> "
+       << volumeW->name << endl;
+#endif
+
+  switch( volumeR->type )
+    {
+    case U8BIT:
       cartoCopyHdr<uint8_t>( volumeR, volumeW );
       break;
     case S8BIT:
@@ -304,7 +365,7 @@ void VipVolumeCartoCopyStruct( ::Volume * volumeR, ::Volume *volumeW )
       cartoCopyHdr<double>( volumeR, volumeW );
       break;
     default:
-      cerr << "VipVolumeCartoCopyStruct: unknown type " << volumeR->type 
+      cerr << "VipVolumeCartoCopyStruct: unknown type " << volumeR->type
            << endl;
       volumeW->carto->vol = Object();
     }

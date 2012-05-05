@@ -151,6 +151,7 @@ PyramidVolume *VipConvertVolumeToPyramidVolume(Volume *vol)
   new->ry = 0;
   new->rz = 0;
   new->winsize = 1;  
+  VipCopyVolumeHeader( vol, new->volume );
 
   return(new);
 }
@@ -245,6 +246,7 @@ PyramidVolume *VipGetUpLevelPyramidVolume(PyramidVolume *down, int type)
       VipFree(medtab);
       return((PyramidVolume *)NULL);
     }
+  VipCopyVolumeHeader( down->volume, up->volume );
 
   vx = mVipVolVoxSizeX(down->volume)*(float)winsize;
   vy = mVipVolVoxSizeY(down->volume)*(float)winsize;
@@ -345,6 +347,7 @@ PyramidVolume *VipGetDownLevelPyramidVolume(PyramidVolume *up)
   vz = mVipVolVoxSizeZ(up->volume)/(float)winsize;
   VipSet3DVoxelSize(down->volume, vx, vy, vz);
   VipSetBorderWidth( down->volume, mVipVolBorderWidth(up->volume) );
+  VipCopyVolumeHeader( up->volume, down->volume );
 
 
   VipAllocateDataSpacePyramidVolume(down);
@@ -406,6 +409,7 @@ Volume *VipConvertPyramidVolumeToVolume(PyramidVolume *pyr)
     }
 
   *new = *pyr->volume;
+  VipCopyVolumeHeader( pyr->volume, new );
 
   return(new);
 }

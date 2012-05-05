@@ -47,6 +47,7 @@ extern "C"
   extern int VipTestCartoImageFileExist( const char *ima_name );
   extern int VipVolumeCartoResizeBorder( Volume* volume, int borderWidth );
   // extern int VipTransferCartoVolumeData( Volume* volumeR, Volume* volumeW );
+  extern void VipVolumeCartoCopyHeader( Volume *volumeR, Volume *volumeW );
 
 #endif
 

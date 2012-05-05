@@ -2481,6 +2481,20 @@ Volume	    *VipDeclare4DVolumeStructure
 }
 
 /*----------------------------------------------------------------------------*/
+void      *VipCopyVolumeHeader
+
+/*----------------------------------------------------------------------------*/
+(
+        Volume      *sourceVolume,
+        Volume      *destVolume
+)
+{
+#ifdef VIP_CARTO_VOLUME_WRAPPING
+    VipVolumeCartoCopyHeader( sourceVolume, destVolume );
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
 	int			VipAllocateVolumeData
 	
 /*----------------------------------------------------------------------------*/
