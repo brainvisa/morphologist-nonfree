@@ -219,6 +219,7 @@ int main(int argc, char *argv[])
     enum RenderMode { GnuPlot, MatPlotlib };
     int renderMode = GnuPlot;
     int renderRes;
+    int random_seed = time(NULL);
     /*    char mask_name[256], temp_string[256];*/
 
     readlib = ANY_FORMAT;
@@ -295,7 +296,11 @@ int main(int argc, char *argv[])
 			    VipPrintfExit("(commandline)VipHistoAnalysis");
 			    return(VIP_CL_ERROR);
 			}
-		}    
+		}
+	    else if (!strncmp(argv[i], "-srand", 6)){
+	    	  if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+	    	  random_seed = atoi(argv[i]);
+	    }
 	    else if (!strncmp (argv[i], "-SAVE", 2)) 
 		{
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -491,6 +496,8 @@ int main(int argc, char *argv[])
 	    VipPrintfError("input arg is required by VipHistoAnalysis");
 	    return(Usage());
 	}
+
+    srand(random_seed);
 
     strcpy(tmphisto,VipTmpDirectory());
     strcat(tmphisto,"/");
@@ -1050,6 +1057,7 @@ static int Usage()
   (void)fprintf(stderr,"        [--matplotlib {char: n[o], s[creen], f[ile], p[ostscript], default:n}]\n");
   (void)fprintf(stderr,"        [-T[itle] {char y/n (default:y)}]\n"); 
   (void)fprintf(stderr,"        [-r[eadformat] {char: v, s, t, or a (default:a)}]\n");
+  (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
   return(VIP_CL_ERROR);
 
@@ -1118,6 +1126,8 @@ static int Help()
   (void)printf("put title in gnuplot drawings\n"); 
   (void)printf("        [-r[eadformat] {char: v, s, t or a (default:a)}]\n");
   (void)printf("Forces the reading of VIDA, SPM, TIVOLI(GIS) or ANY image file format\n");
+  (void)printf("       [-srand {int (default: time}]\n");
+  (void)printf("Initialization of the random seed, useful to get reproducible results\n");
   printf("More information in:\n");
   printf("Robust brain segmentation using histogram\n");
   printf("scale-space analysis and mathematical morphology\n");

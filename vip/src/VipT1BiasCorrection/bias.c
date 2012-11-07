@@ -193,6 +193,7 @@ int main(int argc, char *argv[])
   int j=0, k=0, l=0;
   float contrast = 0, ratio_GW = 0;
   float little_opening_size;
+  int random_seed = time(NULL);
   
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -200,7 +201,7 @@ int main(int argc, char *argv[])
   /*loop on command line arguments*/
 
   for(i=1;i<argc;i++)
-    {	
+    {
       if (!strncmp (argv[i], "-input", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -385,6 +386,10 @@ int main(int argc, char *argv[])
               return(VIP_CL_ERROR);
             }
         }
+      else if (!strncmp(argv[i], "-srand", 6)){
+    	  if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+    	  random_seed = atoi(argv[i]);
+      }
       else if (!strncmp (argv[i], "-sampling", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -538,6 +543,8 @@ int main(int argc, char *argv[])
       (void)fprintf(stderr,"Can not open this image: %s\n",input);
       return(VIP_CL_ERROR);
     }
+
+  srand(random_seed);
 
   if (fieldtype == F2D_REGULARIZED_FIELD ) printf("2D field regularization\n");
   if (fieldtype == F3D_REGULARIZED_FIELD ) printf("3D field regularization\n");
@@ -1282,7 +1289,7 @@ int main(int argc, char *argv[])
 
 static int Usage()
 {
-  (void)fprintf(stderr,"Usage: VipBiasCorrection\n");
+  (void)fprintf(stderr,"Usage: VipT1BiasCorrection\n");
   (void)fprintf(stderr,"        -i[nput] {image name}\n");
   (void)fprintf(stderr,"        [-o[utput] {image name (default:\"nobias\")}]\n");
   (void)fprintf(stderr,"        [-m[ode] {char: s, g (default:g)}]\n");
@@ -1324,6 +1331,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-Dc[orrect] {Do the biais correction: y/n (default:y)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: a, v, s or t (default:t)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v, s or t (default:t)}]\n");
+  (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
   return(VIP_CL_ERROR);
 
@@ -1337,7 +1345,7 @@ static int Help()
   (void)printf("This field aims at minimizing the volume entropy (= minimizing information...).\n");
   (void)printf("A tradeoff is found between this entropy and the internal energy of a membrane using annealing.\n");
   (void)printf("\n");
-  (void)printf("Usage: VipBiasCorrection\n");
+  (void)printf("Usage: VipT1BiasCorrection\n");
   (void)printf("        -i[nput] {image name}\n");
   (void)printf("        [-o[utput] {image name (default:\"nobias\")}]\n");
   (void)printf("        [-m[ode] {char: s,g (default:g)}]\n");
@@ -1411,6 +1419,8 @@ static int Help()
   (void)printf("Write the images as hfiltered or whiteridge whithout doing the bias correction if it has been done by another software\n");
   (void)printf("        [-r[eadformat] {char: a, v, s or t (default:any)}]\n");
   (void)printf("        [-w[riteformat] {char: v, s or t (default:t)}]\n");
+  (void)printf("       [-srand {int (default: time}]\n");
+  (void)printf("Initialization of the random seed, useful to get reproducible results\n");
   (void)printf("        [-h[elp]\n");
   printf("More information in:\n");
   printf("Entropy minimization for automatic correction\n");

@@ -147,6 +147,7 @@ int main(int argc, char *argv[])
   int ix, iy, iz;
   float pt = 0.0;
   float little_opening_size;
+  int random_seed = time(NULL);
   
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -367,7 +368,11 @@ int main(int argc, char *argv[])
 	      VipPrintfExit("(commandline)VipSplitBrain");
 	      return(VIP_CL_ERROR);
 	    }
-	}    
+	}
+    else if (!strncmp(argv[i], "-srand", 6)){
+      	    	  if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      	    	  random_seed = atoi(argv[i]);
+    }
       else if (!strncmp(argv[i], "-help",2)) return(Help());
       else return(Usage());
     }
@@ -395,6 +400,8 @@ int main(int argc, char *argv[])
       (void)fprintf(stderr,"Can not open this brain image: %s\n",brainname);
       return(VIP_CL_ERROR);
     }
+
+  srand(random_seed);
 
   if(Zover==-1) Zover = zCA+10;
 
@@ -1541,6 +1548,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-Z[over] {int (default :zCA+10)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: a, s, v or t (default:any)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: s, v or t (default:t)}]\n");
+  (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
   return(VIP_CL_ERROR);
  
@@ -1615,6 +1623,8 @@ static int Help()
   (void)printf("in order to modify the competion between the 3 seeds for influence\n");
   (void)printf("        [-r[eadformat] {char: a, s, v or t (default:any)}]\n");
   (void)printf("        [-w[riteformat] {char: s, v or t (default:t)}]\n");
+  (void)printf("       [-srand {int (default: time}]\n");
+  (void)printf("Initialization of the random seed, useful to get reproducible results\n");
   (void)printf("        [-h[elp]\n");
   (void)printf("Some more information in:\n");
   (void)printf("Shape bottlenecks and Conservative Flow systems\n");
