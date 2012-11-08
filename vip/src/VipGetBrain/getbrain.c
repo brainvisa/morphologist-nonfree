@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
   Volume *var = NULL;
   int Seuil_Gray_White = 0;
   /**/
+  int random_seed = time(NULL);
 
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -422,6 +423,10 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
 	}
+      else if (!strncmp(argv[i], "-srand", 6)){
+	    	  if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+	    	  random_seed = atoi(argv[i]);
+      }
       else if (!strncmp (argv[i], "-stat", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -513,6 +518,8 @@ int main(int argc, char *argv[])
 	  }
       if(vol==PB) return(VIP_CL_ERROR);
     }
+
+  srand(random_seed);
 
   if(bdilationflag == VFALSE) bdilation = berosion + 0.5;
   
