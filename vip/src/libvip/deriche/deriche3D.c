@@ -698,14 +698,8 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
   VipTransferDataToFloatVolume(vol,newv);
   VolumeGradientDeriche3DZ(newv,alpha);
   PreserveFloatVolume_S16BIT(newv,gz,&gzabsmax);
-  
-  VipWriteTivoliVolume(gx, "gx.ima");
-  VipWriteTivoliVolume(gy, "gy.ima");
-  VipWriteTivoliVolume(gz, "gz.ima");
 
   Compute3DNorm(newv,gx,gy,gz,gxabsmax,gyabsmax,gzabsmax,threshold);
-  
-  VipWriteTivoliVolume(newv, "norm.ima");
 
   switch(mode)
     {
