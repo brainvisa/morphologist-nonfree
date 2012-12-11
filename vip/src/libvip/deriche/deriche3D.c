@@ -405,9 +405,8 @@ float threshold)
 
   VipGet3DSize(fvol,&xsize,&ysize,&zsize);
   slicesize = xsize * ysize;
-
+  
   /* offset pour atteindre les 8 voisins dans le plan */
-
   offset10 = 1;
   offset11 = 1+xsize;
   offset01 = xsize;
@@ -433,124 +432,128 @@ float threshold)
   if (threshold<0.00001f) threshold = 0.1f;
 
   size_zoffsettab = (int)(rapztox + 0.5);
+  
   /*NB: par soucis de simplicite, les images sont supposees carrees*/
-  if(size_zoffsettab==0) size_zoffsettab = 1;
-  if (size_zoffsettab<2) settozero = 2;
+  if(size_zoffsettab == 0) size_zoffsettab = 1;
+  if (size_zoffsettab < 2) settozero = 2;
   else settozero = size_zoffsettab;
 
+  
+  int32_t i = 0;
+  
   for(ix=2*slicesize;ix--;) *extptr++ = VFALSE;
   ptrx += 2*slicesize;
   ptry += 2*slicesize;
   ptrz += 2*vos->oSlice;
   fptr += 2*slicesize;
   for(iz=zsize-4;iz--;)
-    {
-      for(ix=settozero*xsize;ix--;) *extptr++ = VFALSE;
-      ptrx += settozero*xsize;
-      ptry += settozero*xsize;
-      ptrz += settozero*vos->oLine;
-      fptr += settozero*xsize;
+  {
+    for(ix=settozero*xsize;ix--;) *extptr++ = VFALSE;
+    ptrx += settozero*xsize;
+    ptry += settozero*xsize;
+    ptrz += settozero*vos->oLine;
+    fptr += settozero*xsize;
 
-      for(iy=ysize-2*settozero;iy--;)
-	{
-	  for(ix=settozero;ix--;) *extptr++ = VFALSE;
-          ptrx += settozero;
-          ptry += settozero;
-          ptrz += settozero;
-          fptr += 2;
-          for(ix=xsize-2*settozero;ix--;)
-	    {
-              if(*fptr<threshold)
-		{
-                   fptr++;
-                   *extptr++ = VFALSE;
-                   ptrx++;
-                   ptry++;
-                   ptrz++;
-		}
-               else
-		 {
-		   temp = (float)*ptrz * gzabsmax;
-		   if(fabs((double)temp)>0.0001)
-		     {
-		       /* intersection avec les plans contigus */
-		       temp = rapztox/temp;
-		       xplanz = (int)(temp * *ptrx * gxabsmax + 0.5);
-		       yplanz = (int)(temp * *ptry * gyabsmax + 0.5);
-		       if((abs(xplanz)<=size_zoffsettab)
-			  && (abs(yplanz)<=size_zoffsettab) )
-			 /* le point reste ds le cube de cote zvoxsize */
-			 {
-                           temp = *fptr;
-			   offset = xplanz + yplanz*xsize + slicesize;
-			   if ((fptr[offset]>temp) || (fptr[-offset]>temp) )
-			     {
-			       *extptr++ = VFALSE;
-			     }
-			   else *extptr++ = VTRUE;
-			   fptr++;
-			   ptrx++;
-			   ptry++;
-			   ptrz++;
-			   continue;
-                         }	
-		     }
-		   temp = *ptrx * gxabsmax;
-		   if(fabs((double)temp)<0.00001)
-		     {
-		       offset = offset01;
-		     }
-		   else
-		     {
-		       ysurx = *ptry * gyabsmax / temp;
-		       absysurx = (float)fabs((double)ysurx);
-		       if (absysurx<tanpisur8)
-			 {
-			   offset = offset10;
-			 }
-		       else if(absysurx>tan3pisur8)
-			 {
-			   offset = offset01;
-			 }
-		       else if(ysurx>0)
-			 {
-			   offset = offset11;
-			 }
-		       else
-			 {
-			   offset = offset1m1;
-			 }
-		     }
-		   temp = *fptr;
-		   if ((fptr[offset]>temp) || (fptr[-offset]>temp) )
-		     {
-		       *extptr++ = VFALSE;
-		     }
-		   else *extptr++ = VTRUE;
-		   fptr++;
-		   ptrx++;
-		   ptry++;
-		   ptrz++;
-		 }
-	    }
-	  for(ix=settozero;ix--;) *extptr++ = VFALSE;
-          ptrx += settozero;
-          ptry += settozero;
-          ptrz += settozero + vos->oPointBetweenLine;
-          fptr += settozero;
-	}
-      for(ix=settozero*xsize;ix--;) *extptr++ = VFALSE;
-      ptrx += settozero*xsize;
-      ptry += settozero*xsize;
-      ptrz += settozero*xsize + vos->oLineBetweenSlice;
-      fptr += settozero*xsize;
+    for(iy=ysize-2*settozero;iy--;)
+    {
+      for(ix=settozero;ix--;) *extptr++ = VFALSE;
+      ptrx += settozero;
+      ptry += settozero;
+      ptrz += settozero;
+      fptr += settozero;
+      for(ix=xsize-2*settozero;ix--;)
+      {
+        if(*fptr<threshold)
+        {
+          fptr++;
+          *extptr++ = VFALSE;
+          ptrx++;
+          ptry++;
+          ptrz++;
+        }
+        else
+        {
+          temp = (float)*ptrz * gzabsmax;
+          if(fabs((double)temp)>0.0001)
+          {
+            /* intersection avec les plans contigus */
+            temp = rapztox/temp;
+            xplanz = (int)(temp * *ptrx * gxabsmax + 0.5);
+            yplanz = (int)(temp * *ptry * gyabsmax + 0.5);
+            if((abs(xplanz)<=size_zoffsettab)
+              && (abs(yplanz)<=size_zoffsettab) )
+            /* le point reste ds le cube de cote zvoxsize */
+            {
+              temp = *fptr;
+              offset = xplanz + yplanz*xsize + slicesize;
+              if ((fptr[offset]>temp) || (fptr[-offset]>temp) )
+              {
+                *extptr++ = VFALSE;
+              }
+              else *extptr++ = VTRUE;
+              fptr++;
+              ptrx++;
+              ptry++;
+              ptrz++;
+              continue;
+            }
+          }
+          
+          temp = *ptrx * gxabsmax;
+          if(fabs((double)temp)<0.00001)
+          {
+            offset = offset01;
+          }
+          else
+          {
+            ysurx = *ptry * gyabsmax / temp;
+            absysurx = (float)fabs((double)ysurx);
+            if (absysurx<tanpisur8)
+            {
+              offset = offset10;
+            }
+            else if(absysurx>tan3pisur8)
+            {
+              offset = offset01;
+            }
+            else if(ysurx>0)
+            {
+              offset = offset11;
+            }
+            else
+            {
+              offset = offset1m1;
+            }
+          }
+          temp = *fptr;
+          if ((fptr[offset]>temp) || (fptr[-offset]>temp) )
+          {
+            *extptr++ = VFALSE;
+          }
+          else *extptr++ = VTRUE;
+          fptr++;
+          ptrx++;
+          ptry++;
+          ptrz++;
+        }
+      }
+      for(ix=settozero;ix--;) *extptr++ = VFALSE;
+      ptrx += settozero;
+      ptry += settozero;
+      ptrz += settozero + vos->oPointBetweenLine;
+      fptr += settozero;
     }
+    for(ix=settozero*xsize;ix--;) *extptr++ = VFALSE;
+    ptrx += settozero*xsize;
+    ptry += settozero*xsize;
+    ptrz += settozero*xsize + vos->oLineBetweenSlice;
+    fptr += settozero*xsize;
+  }
   for(ix=2*slicesize;ix--;) *extptr++ = VFALSE;
 
   VipMaskVolume_U8BIT(fvol,ext);  
   VipFreeVolume(ext);
   VipFree(ext);
-
   VipFree(vos);
 
   return(OK);
@@ -647,7 +650,7 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
       return(PB);
     }
 
-  if ((mVipVolType(vol) == S16BIT) && (mVipVolBorderWidth(vol) == 0)) 
+  if ((mVipVolType(vol) == S16BIT) && (mVipVolBorderWidth(vol) == 0))
     gz = vol; /*WARNING tricky*/
   else
     {
@@ -657,10 +660,10 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
       VipSetType(gz,S16BIT);
       VipSetBorderWidth(gz,0);
       if(VipAllocateVolumeData(gz)==PB)
-	{
-	  VipPrintfExit("VipDeriche3DGradientNorm");
-	  return(PB);
-	}
+        {
+          VipPrintfExit("VipDeriche3DGradientNorm");
+          return(PB);
+        }
     }
 
   (void)strcpy(name,mVipVolName(vol));
@@ -695,8 +698,14 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
   VipTransferDataToFloatVolume(vol,newv);
   VolumeGradientDeriche3DZ(newv,alpha);
   PreserveFloatVolume_S16BIT(newv,gz,&gzabsmax);
+  
+  VipWriteTivoliVolume(gx, "gx.ima");
+  VipWriteTivoliVolume(gy, "gy.ima");
+  VipWriteTivoliVolume(gz, "gz.ima");
 
   Compute3DNorm(newv,gx,gy,gz,gxabsmax,gyabsmax,gzabsmax,threshold);
+  
+  VipWriteTivoliVolume(newv, "norm.ima");
 
   switch(mode)
     {
@@ -706,25 +715,26 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
       VipFreeVolume(gy);
       VipFree(gy);
       if(gz!=vol)
-	{
-	  VipFreeVolume(gz);
-	  VipFree(gz);
-	}
+      {
+        VipFreeVolume(gz);
+        VipFree(gz);
+      }
       VipTransferDataFromFloatVolume(vol,newv);
       VipFreeVolume(newv);
       VipFree(newv);
       break;
     case DERICHE_EXTREMA:
+      printf("Entering Extract3DMaxima\n");
       Extract3DMaxima(newv,gx,gy,gz,gxabsmax,gyabsmax,gzabsmax,threshold);
       VipFreeVolume(gx);
       VipFree(gx);
       VipFreeVolume(gy);
       VipFree(gy);
       if(gz!=vol)
-	{
-	  VipFreeVolume(gz);
-	  VipFree(gz);
-	}
+      {
+        VipFreeVolume(gz);
+        VipFree(gz);
+      }
       VipTransferDataFromFloatVolume(vol,newv);
       VipFreeVolume(newv);
       VipFree(newv);
@@ -734,20 +744,20 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
       nextrema = VipGetNumberNonZeroPoints(newv);
       thebuck = VipAllocG3DBucket(nextrema);
       if(!thebuck)
-	{
-	  VipFreeVolume(gx);
-	  VipFree(gx);
-	  VipFreeVolume(gy); 
-	  VipFree(gy);
-	  if(gz!=vol) 
-	    {
-	      VipFreeVolume(gz);
-	      VipFree(gz);
-	    }
-	  VipFreeVolume(newv);
-	  VipFree(newv);
-	  return(PB);
-	}
+      {
+        VipFreeVolume(gx);
+        VipFree(gx);
+        VipFreeVolume(gy); 
+        VipFree(gy);
+        if(gz!=vol) 
+          {
+            VipFreeVolume(gz);
+            VipFree(gz);
+          }
+        VipFreeVolume(newv);
+        VipFree(newv);
+        return(PB);
+      }
       *gbuck = thebuck;
       vos = VipGetOffsetStructure(gz);
       /*in case gz is the initial volume and has non zero borderwidth*/
@@ -769,31 +779,31 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
       zsize = mVipVolSizeZ(newv);
 
       for(z=0;z<zsize;z++)
-	{
-	  for(y=0;y<ysize;y++)
-	    {
-	      for(x=0;x<xsize;x++)
-		{
-		  if(*fptr)
-		    {
-		      gptr->p.x = x;
-		      gptr->p.y = y;
-		      gptr->p.z = z;
-		      gptr->g3D.x = *gxptr * gxabsmax / *fptr;
-		      gptr->g3D.y = *gyptr * gyabsmax / *fptr;
-		      gptr->g3D.z = *gzptr * gzabsmax / *fptr;
-		      gptr++;
-		      thebuck->n_points++;
-		    }
-		  fptr++;
-		  gxptr++;
-		  gyptr++;
-		  gzptr++;
-		}
-	      gzptr += vos->oPointBetweenLine;
-	    }
-	  gzptr += vos->oLineBetweenSlice;
-	}
+      {
+        for(y=0;y<ysize;y++)
+          {
+            for(x=0;x<xsize;x++)
+            {
+              if(*fptr)
+                {
+                  gptr->p.x = x;
+                  gptr->p.y = y;
+                  gptr->p.z = z;
+                  gptr->g3D.x = *gxptr * gxabsmax / *fptr;
+                  gptr->g3D.y = *gyptr * gyabsmax / *fptr;
+                  gptr->g3D.z = *gzptr * gzabsmax / *fptr;
+                  gptr++;
+                  thebuck->n_points++;
+                }
+              fptr++;
+              gxptr++;
+              gyptr++;
+              gzptr++;
+            }
+            gzptr += vos->oPointBetweenLine;
+          }
+        gzptr += vos->oLineBetweenSlice;
+      }
       VipTransferDataFromFloatVolume(vol,newv);
       VipFreeVolume(newv);
       VipFree(newv);
@@ -802,10 +812,10 @@ int VipDeriche3DGradientNormAndReturnG3DBucket(
       VipFreeVolume(gy);
       VipFree(gy);
       if (gz!=vol)
-	{
-	  VipFreeVolume(gz);
-	  VipFree(gz);
-	}
+      {
+        VipFreeVolume(gz);
+        VipFree(gz);
+      }
       VipFree(vos);
       break;
     default:
