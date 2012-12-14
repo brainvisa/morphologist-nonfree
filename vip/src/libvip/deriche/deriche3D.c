@@ -438,9 +438,6 @@ float threshold)
   if (size_zoffsettab < 2) settozero = 2;
   else settozero = size_zoffsettab;
 
-  
-  int32_t i = 0;
-  
   for(ix=2*slicesize;ix--;) *extptr++ = VFALSE;
   ptrx += 2*slicesize;
   ptry += 2*slicesize;
