@@ -151,15 +151,12 @@ int VipVolumeCartoResizeBorder( ::Volume* volume, int borderWidth )
 namespace
 {
 
-  template<typename T>
-  void copyHeader( const carto::Volume<T> & volR, carto::Volume<T> & volW )
+  void copyHeader2( const PropertySet & psr, PropertySet & psw )
   {
-    const PropertySet	& psr = volR.header();
-    PropertySet		& psw = volW.header();
-    Object		i = psr.objectIterator();
-    static set<string>	forbidden;
-    set<string>::const_iterator	allowed = forbidden.end();
-    string		key;
+    Object              i = psr.objectIterator();
+    static set<string>  forbidden;
+    set<string>::const_iterator allowed = forbidden.end();
+    string              key;
 
     if( forbidden.empty() )
       {
@@ -177,6 +174,42 @@ namespace
         if( forbidden.find( key ) == allowed )
           psw.setProperty( key, i->currentValue() );
       }
+  }
+
+  template<typename T>
+  void copyHeader( const carto::Volume<T> & volR, carto::Volume<T> & volW )
+  {
+    const PropertySet	& psr = volR.header();
+    PropertySet		& psw = volW.header();
+    copyHeader2( psr, psw );
+  }
+
+
+  // retreive volume header even after a type change on Vip side
+  PropertySet *getAlienHeader( ::Volume *volume )
+  {
+    Object ovol = volume->carto->vol;
+    if( ovol.get() )
+    {
+      string dt = ovol->type();
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<int8_t> > >::name() )
+        return getCartoHeader<int8_t>( volume );
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<uint8_t> > >::name() )
+        return getCartoHeader<uint8_t>( volume );
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<int16_t> > >::name() )
+        return getCartoHeader<int16_t>( volume );
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<uint16_t> > >::name() )
+        return getCartoHeader<uint16_t>( volume );
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<int32_t> > >::name() )
+        return getCartoHeader<int32_t>( volume );
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<uint32_t> > >::name() )
+        return getCartoHeader<uint32_t>( volume );
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<float> > >::name() )
+        return getCartoHeader<float>( volume );
+      if( dt == DataTypeCode<rc_ptr<carto::Volume<double> > >::name() )
+        return getCartoHeader<double>( volume );
+    }
+    return 0;
   }
 
 
@@ -200,9 +233,7 @@ namespace
     if( volume->carto->vol.get() )
       try
         {
-          copyHeader( *volume->carto->vol
-                      ->GenericObject::value<rc_ptr<carto::Volume<T> > >(), 
-                      *vol );
+          copyHeader2( *getAlienHeader( volume ), vol->header() );
         }
       catch( ... )
         {
