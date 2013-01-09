@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
     int linside = 0;
     int loutside = 11;
     int readlib, writelib;
+    int random_seed = time(NULL);
     
     readlib = VIDA;
     writelib = TIVOLI;
@@ -120,6 +121,10 @@ int main(int argc, char *argv[])
             if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
             cortexname = argv[i];
         }
+	    else if (!strncmp(argv[i], "-srand", 6)){
+	    	  if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+	    	  random_seed = atoi(argv[i]);
+	    }
       else if (!strncmp (argv[i], "-squeleton", 2)) 
         {
             if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -181,6 +186,7 @@ int main(int argc, char *argv[])
        return(Usage());
    }
 
+  srand(random_seed);
   printf("Reading %s...\n",input);
   if (readlib == TIVOLI)
     vol = VipReadTivoliVolumeWithBorder(input,1);
