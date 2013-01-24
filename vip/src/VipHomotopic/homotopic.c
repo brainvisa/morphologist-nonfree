@@ -81,7 +81,6 @@ int main(int argc, char *argv[])
     writelib = TIVOLI;
 
   /*loop on command line arguments*/
-
   for (i=1;i<argc;i++)
     {	
       if (!strncmp (argv[i], "-input", 2)) 
@@ -187,6 +186,7 @@ int main(int argc, char *argv[])
    }
 
   srand(random_seed);
+  
   printf("Reading %s...\n",input);
   if (readlib == TIVOLI)
     vol = VipReadTivoliVolumeWithBorder(input,1);
@@ -291,6 +291,8 @@ int main(int argc, char *argv[])
   {
       printf("Reading cortex...\n");
       cortex = VipReadVolumeWithBorder(cortexname,1);
+      //need to reset the random seed here because something in VipReadVolumeWithBorder changes it
+      srand(random_seed);  
       if(!cortex) return(VIP_CL_ERROR);
       if(squeletonname==NULL)
       {
@@ -330,7 +332,8 @@ int main(int argc, char *argv[])
       printf("-------------------------------\n");
       printf("CSF/Grey interface detection using homotopic erosion of %s...\n", cortexname);
       printf("-------------------------------\n");
-      
+
+    
       VipHomotopicErosionFromInside( cortex, closing, 100, 255, linside, loutside );
   }
   

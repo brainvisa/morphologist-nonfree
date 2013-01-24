@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
   int bwidth = 1;
   int skeletonization = VTRUE;
   int wprune = 3;
+  int random_seed = time(NULL);
 //   VipT1HistoAnalysis *hana = NULL;
 //   char *hananame = NULL;
 
@@ -90,8 +91,12 @@ int main(int argc, char *argv[])
   /*loop on command line arguments*/
 
   for(i=1;i<argc;i++)
-    {	
-     if (!strncmp (argv[i], "-immortality", 3)) 
+    {
+      if (!strncmp(argv[i], "-srand", 6)){
+        if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          random_seed = atoi(argv[i]);
+        }
+     else if (!strncmp (argv[i], "-immortality", 3)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  {
@@ -271,7 +276,9 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
       }
-	  
+
+  srand(random_seed);	
+  
   if(algo=='a') immortal_flag = NON_SIMPLE_AND_NON_VOLUME_BECOME_IMMORTAL;
   else if(algo=='c') immortal_flag = CURVES_BECOME_IMMORTAL;
   else if(algo=='s') immortal_flag = SURFACES_BECOME_IMMORTAL;
@@ -478,6 +485,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-gct[hreshold] {float (default:-0.05)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:v)}]\n");
+  (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
   return(VIP_CL_ERROR);
 
@@ -547,6 +555,8 @@ static int Help()
   (void)printf("cf. geometry help\n");
   (void)printf("        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)printf("        [-w[riteformat] {char: v or t (default:v)}]\n");
+  (void)printf("       [-srand {int (default: time}]\n");
+  (void)printf("Initialization of the random seed, useful to get reproducible results\n");
   (void)printf("        [-h[elp]\n");
   return(VIP_CL_ERROR);
 

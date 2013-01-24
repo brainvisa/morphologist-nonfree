@@ -375,14 +375,14 @@ int VipHomotopicErosionFromInside( Volume *vol, Volume *graylevel, int nb_iterat
   loop=0;
   count = 1;
   totalcount = 0;
-  printf("loop: %3d, Added %6d",loop,0);
+  printf("loop: %3d, Deleted %6d",loop,0);
 
   while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
   {
       if(loop==1) count=0;
       totalcount += count;
       count = 0;
-      printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Deleted: %6d",loop,totalcount);
+      printf("\rloop: %3d, Deleted: %6d",loop,totalcount);
       fflush(stdout);
       
       buckptr = buck->data;
