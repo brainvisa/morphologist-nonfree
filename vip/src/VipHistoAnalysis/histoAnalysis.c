@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
     Volume *mask = NULL;
     char stripped_input[1024];
     char output[256]="";
+    char his_output[256]="";
     char tmphisto[512];
     char systemcommand[256];
     int readlib, writelib;
@@ -244,7 +245,12 @@ int main(int argc, char *argv[])
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 		    maskname = argv[i];
 		}
-	    else if (!strncmp (argv[i], "-output", 2)) 
+	    else if (!strcmp (argv[i], "-output-his")) 
+		{
+		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+		    strcpy(his_output,argv[i]);
+		}
+	    else if (!strncmp (argv[i], "-output", 2))
 		{
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 		    strcpy(output,argv[i]);
@@ -642,7 +648,8 @@ int main(int argc, char *argv[])
 		    if(mode!='e')
 			{
 			    printf("Writing histogram...\n");
-			    if(VipWriteHisto(shorthisto,output,WRITE_HISTO_ASCII)==PB)
+                            if(!strcmp(his_output,""))strcpy(his_output,output);
+			    if(VipWriteHisto(shorthisto,his_output,WRITE_HISTO_ASCII)==PB)
 				VipPrintfWarning("I can not write the histogram but I am going further");
 			}
 		}
@@ -1032,6 +1039,7 @@ static int Usage()
   (void)fprintf(stderr,"Usage: VipHistoAnalysis\n");
   (void)fprintf(stderr,"        -i[nput] {image name/histo name with extension (image.his)}\n");
   (void)fprintf(stderr,"        [-o[utput] {histo analysis name (default: input))}]\n");
+  (void)fprintf(stderr,"        [-output-his {histogram name (default: output))}]\n");
   (void)fprintf(stderr,"        [-S[AVE] {y/n (default:n)}]\n");   
   (void)fprintf(stderr,"        [-R[idge] {White ridge image name (default: not used)}]\n");
   (void)fprintf(stderr,"        [-M[ask] {mask to compute histogram (default: not used)}]\n");
@@ -1074,6 +1082,7 @@ static int Help()
   (void)printf("NB: if the histogram already exists (file name.his or name.his_bin)\n"); 
   (void)printf("it will not be computed again (the volume is not read)"); 
   (void)fprintf(stderr,"        [-o[utput] {histo analysis name (default input))}]\n");
+  (void)fprintf(stderr,"        [-output-his] {histogram name (default output))}]\n");
   (void)printf("analysis will get the han extension\n"); 
   (void)printf("        [-S[AVE] {y/n (default:n)}]\n");
   (void)printf("        [-R[idge] {White ridge image name (default: not used)}]\n");
