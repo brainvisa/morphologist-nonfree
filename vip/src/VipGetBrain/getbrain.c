@@ -45,6 +45,8 @@ static int VipCheckBrainMask( Volume* vol );
 int main(int argc, char *argv[])
 {     
   char *ridgename = NULL;
+  char new_ridgename[1024];
+  new_ridgename[0] = '\0';
   char *variancename = NULL;
   char *edgesname = NULL;
   Volume *ridge=NULL;
@@ -137,6 +139,11 @@ int main(int argc, char *argv[])
        {
          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
          ridgename = argv[i];
+       }
+     else if (!strcmp (argv[i], "-output-Ridge")) 
+       {
+         if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+         strcpy(new_ridgename, argv[i]);
        }
      else if (!strncmp (argv[i], "-Variance", 2)) 
        {
@@ -828,7 +835,8 @@ int main(int argc, char *argv[])
       VipMaskVolume(ridge, classif);
       VipFreeVolume(classif);
       VipConnexVolumeFilter( ridge, CONNECTIVITY_26, -1, CONNEX_BINARY );
-      VipWriteVolume(ridge,ridgename);
+      if (new_ridgename[0] == '\0') strcpy(new_ridgename, ridgename);
+      VipWriteVolume(ridge, new_ridgename);
   }
 
   /* check if the mask is empty or fills the whole volume */
