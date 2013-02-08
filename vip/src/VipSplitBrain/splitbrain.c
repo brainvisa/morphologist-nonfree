@@ -825,13 +825,18 @@ int main(int argc, char *argv[])
     {
       if(mode=='V')
       {
-          vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO,
-                  (int)(0.5*ana->white->mean+0.5*ana->gray->mean), ana->white->mean + 2 * ana->white->sigma, BINARY_RESULT );
+          vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO, (int)(0.5*ana->white->mean+0.5*ana->gray->mean), ana->white->mean + 2 * ana->white->sigma, BINARY_RESULT );
       }
       else if(mode=='W')
       {
-          vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO,
-                  wthreshold, ana->white->mean + 2 * ana->white->sigma, BINARY_RESULT );
+          if(walgo!='r')
+          {
+              vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO, wthreshold, ana->white->mean + 2 * ana->white->sigma, BINARY_RESULT );
+          }
+          else
+          {
+              vol = VipCreateDoubleThresholdedVolume( brain, VIP_BETWEEN_OR_EQUAL_TO, (int)(0.5*ana->white->mean+0.5*ana->gray->mean), ana->white->mean + 2*ana->white->sigma, BINARY_RESULT );
+          }
       }
       /*2005 vol = VipCreateSingleThresholdedVolume(brain, GREATER_THAN, (int)(0.5*ana->white->mean+0.5*ana->gray->mean) , BINARY_RESULT);*/
       if(vol==PB) return(VIP_CL_ERROR);
