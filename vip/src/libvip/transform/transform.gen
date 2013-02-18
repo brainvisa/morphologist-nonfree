@@ -34,7 +34,6 @@ typedef struct
 
 #H_EXPAND_END
 
-
 #TYPED_FUNC_BEGIN VipTranformationMatrix_GENSTRING
 #TYPE_LIST_EXTERN FLOAT DOUBLE
 #PROTOTYPE_BEGIN
@@ -49,7 +48,7 @@ VipMatrix_GENSTRING *VipTransformationMatrix_GENSTRING(
   VipMatrix_GENSTRING *rotX, *rotY, *rotZ, *trans, *grT, *grTmoins, *scale;
   VipMatrix_GENSTRING *result, *prod1, *prod2, *prod3, *prod4, *prod5;
   GENTYPE **rotXptr, **rotYptr, **rotZptr, **transptr, **grTptr, **grTmoinsptr;
-  GENTYPE **scaleptr, theCos, theSin;
+  GENTYPE **scaleptr, theCos, theSin, tmp;
   int i;
 
   rotX = VipAllocationMatrix_GENSTRING(4, 4, "");
@@ -137,27 +136,29 @@ VipMatrix_GENSTRING *VipTransformationMatrix_GENSTRING(
   grTmoinsptr = VipGetMatrixPtr_GENSTRING(grTmoins);
   scaleptr = VipGetMatrixPtr_GENSTRING(scale);
 
+  tmp = (M_PI / 180.0);
+
   /***** Matrice de rotation en X *****/
-  theCos = cos(M_PI/180.0*transfo->rotation.x);
-  theSin = sin(M_PI/180.0*transfo->rotation.x);
+  theCos = cos(tmp * transfo->rotation.x);
   rotXptr[0][0] = rotXptr[3][3] = 1.0;
   rotXptr[1][1] = rotXptr[2][2] = theCos;
+  theSin = sin(tmp * transfo->rotation.x);
   rotXptr[2][1] = -theSin;
   rotXptr[1][2] = theSin;
 
   /***** Matrice de rotation en Y *****/
-  theCos = cos(M_PI/180.0*transfo->rotation.y);
-  theSin = sin(M_PI/180.0*transfo->rotation.y);
+  theCos = cos(tmp * transfo->rotation.y);
   rotYptr[1][1] = rotYptr[3][3] = 1.0;
   rotYptr[0][0] = rotYptr[2][2] = theCos;
+  theSin = sin(tmp * transfo->rotation.y);
   rotYptr[2][0] = theSin;
   rotYptr[0][2] = -theSin;
 
   /***** Matrice de rotation en Z *****/
-  theCos = cos(M_PI/180.0*transfo->rotation.z);
-  theSin = sin(M_PI/180.0*transfo->rotation.z);
+  theCos = cos(tmp * transfo->rotation.z);
   rotZptr[2][2] = rotZptr[3][3] = 1.0;
   rotZptr[0][0] = rotZptr[1][1] = theCos;
+  theSin = sin(tmp * transfo->rotation.z);
   rotZptr[1][0] = -theSin;
   rotZptr[0][1] = theSin;
 
@@ -256,6 +257,7 @@ Volume *VipTransformation_GENSTRING(
   zdec = vos->oSlice;
 
   transform = VipTransformationMatrix_GENSTRING(transfo);
+
   pt = VipGetMatrixPtr_GENSTRING(transform);
   printf("\nTransformation matrix (homogeneous coordinates) : \n");
   VipPrintMatrix_GENSTRING(NULL, transform);
