@@ -18,32 +18,34 @@
  *--------------------|--------------|---------------------------------------
  *              / /   |              |
  ****************************************************************************/
+
+
+
+
 /*##############################################################################
 
-	I N C L U S I O N S
+        I N C L U S I O N S
 
 ##############################################################################*/
-
-
 #include "vip/histo.h"
 #include "vip/brain.h"
 #include "vip/talairach.h"
 #include "vip/bucket.h"
 #include "vip/distmap.h"
 #include "vip/connex.h"
-/**/
+
 #include <vip/deriche.h>
 #include <vip/gaussian.h>
 
-/*----------------------------------------------------------------------------*/
-/*------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
 static int Usage();
 static int Help();
 static int VipCheckBrainMask( Volume* vol );
-/*-----------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 
 int main(int argc, char *argv[])
-{     
+{
   char *ridgename = NULL;
   char new_ridgename[1024];
   new_ridgename[0] = '\0';
@@ -478,8 +480,6 @@ int main(int argc, char *argv[])
     }
 
   /*check that all required arguments have been given*/
-
-
   if(analyse == 'n' && mode!='f' && (gmean<=0 || gsigma<=0 || wmean<=0 || wsigma<=0))
     {
       VipPrintfError("You have to give gray and white matter statistics if you bypass histogram analysis");
@@ -631,25 +631,24 @@ int main(int argc, char *argv[])
   
   if(layeronly=='n')
   {
-  	if(gmean>0 && ana->gray) ana->gray->mean = gmean;
- 	 if(wmean>0 && ana->white) ana->white->mean = wmean;
-  	if(gsigma>0 && ana->gray)
-    {
-      ana->gray->left_sigma = gsigma;
-      ana->gray->sigma = gsigma;
-      ana->gray->right_sigma = gsigma;
-    }
-  	if(wsigma>0 && ana->white)
-    {
-      ana->white->left_sigma = wsigma;
-      ana->white->sigma = wsigma;
-      ana->white->right_sigma = wsigma;
-    }
-  
-
+      if(gmean>0 && ana->gray) ana->gray->mean = gmean;
+      if(wmean>0 && ana->white) ana->white->mean = wmean;
+      if(gsigma>0 && ana->gray)
+      {
+          ana->gray->left_sigma = gsigma;
+          ana->gray->sigma = gsigma;
+          ana->gray->right_sigma = gsigma;
+      }
+      if(wsigma>0 && ana->white)
+      {
+          ana->white->left_sigma = wsigma;
+          ana->white->sigma = wsigma;
+          ana->white->right_sigma = wsigma;
+      }
+    
     if(mode=='f')
     {
-      if(Tlow<=0) 
+      if(Tlow<=0)
 	{
 	  if(ana && ana->gray)
 	    {
@@ -660,7 +659,7 @@ int main(int argc, char *argv[])
 	    }
 	  else if(ana && ana->brain)
 	    {
-		Tlow = ana->brain->mean - (int)(2.5*ana->brain->left_sigma);	     
+		Tlow = ana->brain->mean - (int)(2.5*ana->brain->left_sigma);
 	    }
 	  else
 	    {
@@ -668,15 +667,15 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
 	}
-      if(Thigh<=0) 
+      if(Thigh<=0)
 	{
 	  if(ana && ana->white)
 	    {
-		Thigh = ana->white->mean + (4*ana->white->left_sigma);	      
+		Thigh = ana->white->mean + (4*ana->white->left_sigma);
 	    }
 	  else if(ana && ana->brain)
 	    {
-		Thigh = ana->brain->mean + (4*ana->brain->left_sigma);	      
+		Thigh = ana->brain->mean + (4*ana->brain->left_sigma);
 	    }
 	  else
 	    {
@@ -749,15 +748,15 @@ int main(int argc, char *argv[])
   switch(mode)
     {
     case 'V': if(VipGetBrain2010(vol,variance,edges,ridge,ana,NO,debugflag,berosion,vthreshold,niterations,CA,CP,P)==PB) return(VIP_CL_ERROR);
-      break;    
+      break;
     case '5': if(VipGetBrain2005(vol,ana,NO,debugflag,1.6,5,berosion,10,niterations,ridge)==PB) return(VIP_CL_ERROR);
-      break;    
+      break;
     case 'S': if(VipGetBrainStandard(vol,ana,NO,debugflag,berosion,brecover,niterations,VTRUE)==PB) return(VIP_CL_ERROR);
-      break;    
+      break;
     case 's': if(VipGetBrainStandard(vol,ana,NO,debugflag,berosion,brecover,niterations,VFALSE)==PB) return(VIP_CL_ERROR);
       break;
     case 'R': if(VipGetBrainCustomized(vol,ana,NO,debugflag,berosion,brecover,werosion,wrecover,niterations,talptr,VTRUE)==PB) return(VIP_CL_ERROR);
-      break;    
+      break;
     case 'r': if(VipGetBrainCustomized(vol,ana,NO,debugflag,berosion,brecover,werosion,wrecover,niterations,talptr,VFALSE)==PB) return(VIP_CL_ERROR);
       break;
     case 'f': if(VipGetBrainForRenderingFastCustomized(vol,NO,debugflag,berosion,bdilation,Tlow,Thigh)==PB) return(VIP_CL_ERROR);
@@ -766,7 +765,7 @@ int main(int argc, char *argv[])
       VipPrintfError("Not implemented yet\n");
       return(VIP_CL_ERROR);
     }
- }	
+ }
   
     /*2009 Try to add a hack to fill up some  partial volume voxels in order to get result stable to the variability
       of the histogram analysis*/
@@ -788,11 +787,11 @@ int main(int argc, char *argv[])
   if(fillwhite=='y' && ana &&layeronly!='y')
     {
       if(vol2==NULL)
-	{
-	  printf("Reading volume once again for masking...\n");
-	  vol2 = VipReadVolumeWithBorder(input,1);
-	}
-      if(vol2==PB) return(VIP_CL_ERROR);	 
+      {
+          printf("Reading volume once again for masking...\n");
+          vol2 = VipReadVolumeWithBorder(input,1);
+      }
+      if(vol2==PB) return(VIP_CL_ERROR);
       printf("Filling spurious cavities in white matter \n");
       fflush(stdout);
       VipSingleThreshold( vol, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
@@ -800,48 +799,12 @@ int main(int argc, char *argv[])
     }
   if(vol2!=NULL)
     {
-      VipFreeVolume(vol2);		    
-      vol2 = NULL; 
+      VipFreeVolume(vol2);
+      vol2 = NULL;
     }
 
-  if (mode=='V')
-  {
-      printf("\n---------------------------------\n");
-      printf("Correction of the white_ridge...\n");
-      printf("---------------------------------\n");
-      
-      vol2 = VipReadVolumeWithBorder(input,1);
-      VipMaskVolume(vol2, vol);
-      
-      classif = VipGrayWhiteClassificationRegularisationForVoxelBasedAna(vol2, ana, VFALSE, 5, 20, CONNECTIVITY_26);
-      VipChangeIntLabel(classif,VOID_LABEL,0);
-      
-      VipSingleThreshold( vol2, GREATER_THAN, 0, BINARY_RESULT );
-      copy = VipCopyVolume(vol2, "copyvol2");
-      VipErosion( vol2, CHAMFER_BALL_3D, 3 );
-      VipMerge( copy, vol2, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-      VipMerge( classif, copy, VIP_MERGE_ALL_TO_ONE, 255, GRAY_LABEL );
-      VipFreeVolume(vol2);
-      VipFreeVolume(copy);
-      
-      //   vol2 = VipExtedge(classif,EXTEDGE3D_ALL,NEW_VOLUME);
-      //   VipMerge(classif,vol2,VIP_MERGE_ALL_TO_ONE,255,GRAY_LABEL);
-      //   VipFreeVolume(vol2);
-      
-      VipSingleThreshold(classif, EQUAL_TO, WHITE_LABEL, BINARY_RESULT );
-      VipConnexVolumeFilter( classif, CONNECTIVITY_6, -1, CONNEX_BINARY );
-      
-      printf("\nCleaning white_ridge...\n\n");
-      VipMaskVolume(ridge, classif);
-      VipFreeVolume(classif);
-      VipConnexVolumeFilter( ridge, CONNECTIVITY_26, -1, CONNEX_BINARY );
-      if (new_ridgename[0] == '\0') strcpy(new_ridgename, ridgename);
-      VipWriteVolume(ridge, new_ridgename);
-  }
-
   /* check if the mask is empty or fills the whole volume */
-  if( VipCheckBrainMask( vol ) == PB )
-    return VIP_CL_ERROR;
+  if( VipCheckBrainMask(vol)==PB ) return VIP_CL_ERROR;
 
   if(close=='y')
     {
@@ -863,7 +826,7 @@ int main(int argc, char *argv[])
 	      }
 	  printf("Reading volume once again for masking...\n");
 	  brain = VipReadVolumeWithBorder(input,1);
-	  if(brain==PB) return(VIP_CL_ERROR);	 
+	  if(brain==PB) return(VIP_CL_ERROR);
 	  VipMaskVolumeLevel(brain,vol,128);
 	  VipMerge(brain,vol,VIP_MERGE_ONE_TO_ONE,255,1);
 	  VipFreeVolume(vol);
@@ -897,9 +860,9 @@ int main(int argc, char *argv[])
 			      converter = NULL;
 			  }
 		      else if (writelib==SPM)
-			  VipWriteSPMVolume( vol,brainname );	
+			  VipWriteSPMVolume( vol,brainname );
 		      else if (writelib==TIVOLI)
-			  VipWriteTivoliVolume( vol,brainname );	
+			  VipWriteTivoliVolume( vol,brainname );
 		      else VipWriteVolume( vol,brainname );
 		  }
 	      printf("Applying closing of size %3.1fmm to the brain segmentation\n",closingsize);
@@ -914,11 +877,11 @@ int main(int argc, char *argv[])
 		      VipWriteTivoliVolume( vol,closedname );
 		  }
 	      else if (writelib==SPM)
-		  VipWriteSPMVolume( vol,closedname );	
+		  VipWriteSPMVolume( vol,closedname );
 	      else if (writelib==TIVOLI)
 		  VipWriteTivoliVolume( vol,closedname );
 	      else VipWriteVolume( vol,closedname );
-	  }  
+	  }
     }
   else
       {
@@ -933,14 +896,14 @@ int main(int argc, char *argv[])
 	      {
 		  printf("Reading volume %s once again for masking...\n",input);
 		  brain = VipReadVolumeWithBorder(input,1);
-		  VipMaskVolume(brain,vol);			      	  
+		  VipMaskVolume(brain,vol);
 		  VipFreeVolume(vol);
 		  vol = NULL;
 		  
 		  printf("Writing %s...\n",brainname);
-		  if(flag8bit==VTRUE || writelib==TIVOLI) VipWriteTivoliVolume( brain,brainname );		     
+		  if(flag8bit==VTRUE || writelib==TIVOLI) VipWriteTivoliVolume( brain,brainname );
 		  else if (writelib==SPM)
-		      VipWriteSPMVolume( brain,brainname );	
+		      VipWriteSPMVolume( brain,brainname );
 		  else VipWriteVolume( brain,brainname );
 	      }
 	  else
@@ -953,16 +916,11 @@ int main(int argc, char *argv[])
 	      }
       }
   
-   
-
-  
   return(0);
-  
 }
 
 
 /*---------------------------------------------------------------------------*/
-
 int VipCheckBrainMask( Volume* vol )
 {
   VipOffsetStruct *vos;
@@ -994,8 +952,8 @@ int VipCheckBrainMask( Volume* vol )
   return OK;
 }
 
-/*-----------------------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
 static int Usage()
 {
   (void)fprintf(stderr,"Usage: VipGetBrain\n");
@@ -1008,7 +966,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-V[ariance] {Variance image name (default: not used)}]\n");
   (void)fprintf(stderr,"        [-E[dges] {Edges image name (default: not used)}]\n");
   (void)fprintf(stderr,"        [-m[ode] {char: V[2010], 5[2005], S[tandard], R[obust], s[tandard], r[obust], f[ast], default:S}]\n");
-  (void)fprintf(stderr,"        [-n[iter] {int nb iteration of classif. regularization (def:1)}]\n"); 
+  (void)fprintf(stderr,"        [-n[iter] {int nb iteration of classif. regularization (def:1)}]\n");
   (void)fprintf(stderr,"        [-p[atho] {pathology binary mask, default:no}]\n");
   (void)fprintf(stderr,"        [-f[ill] {char y/n: fill white cavities ,default:y}]\n");
   (void)fprintf(stderr,"        [-l[ayer] {int nb of extension into partial volume (def:0, max 2)}]\n");
@@ -1019,19 +977,19 @@ static int Usage()
   (void)fprintf(stderr,"        [-Cn[ame] {closed brain image name, default:closed_input}]\n");
   (void)fprintf(stderr,"        [-de[bug] {char y/n: debug mode, default:n}]\n");
   (void)fprintf(stderr,"        [-be[rosion] {float: brain erosion size (default:2.1mm)}]\n");
-  (void)fprintf(stderr,"        [-bd[ilation] {float: brain dilation size (fast mode) (default:be+0.5mm)}]\n");  
+  (void)fprintf(stderr,"        [-bd[ilation] {float: brain dilation size (fast mode) (default:be+0.5mm)}]\n");
   (void)fprintf(stderr,"        [-br[ecover] {float: brain recovering size (default:3.mm)}]\n"); 
-  (void)fprintf(stderr,"        [-we[rosion] {float: white matter erosion size (default:2.1mm)}]\n"); 
+  (void)fprintf(stderr,"        [-we[rosion] {float: white matter erosion size (default:2.1mm)}]\n");
   (void)fprintf(stderr,"        [-wr[ecover] {float: white matter  recovering size (default:30.mm)}]\n");
   (void)fprintf(stderr,"        [-a[nalyse] {char y/n/r: automatic histogram analysis, default:y}]\n");
   (void)fprintf(stderr,"        [-hn[ame] {histo analysis, default:input}]\n");
-  (void)fprintf(stderr,"        [-gm[ean] {int : gray matter mean (default:automatic)}]\n"); 
-  (void)fprintf(stderr,"        [-gs[igma] {int : gray matter standard deviation (default:automatic)}]\n"); 
-  (void)fprintf(stderr,"        [-wm[ean] {int : white matter mean (default:automatic)}]\n"); 
+  (void)fprintf(stderr,"        [-gm[ean] {int : gray matter mean (default:automatic)}]\n");
+  (void)fprintf(stderr,"        [-gs[igma] {int : gray matter standard deviation (default:automatic)}]\n");
+  (void)fprintf(stderr,"        [-wm[ean] {int : white matter mean (default:automatic)}]\n");
   (void)fprintf(stderr,"        [-ws[igma] {int : white matter standard deviation (default:automatic)}]\n");
-  (void)fprintf(stderr,"        [-Tl[ow] {int : low threshold (default:automatic)}]\n"); 
-  (void)fprintf(stderr,"        [-Th[igh] {int : high threshold (default:automatic)}]\n");  
-  (void)fprintf(stderr,"        [-d[scale] {float: (default:0.5)}]\n"); 
+  (void)fprintf(stderr,"        [-Tl[ow] {int : low threshold (default:automatic)}]\n");
+  (void)fprintf(stderr,"        [-Th[igh] {int : high threshold (default:automatic)}]\n");
+  (void)fprintf(stderr,"        [-d[scale] {float: (default:0.5)}]\n");
   (void)fprintf(stderr,"        [-t[rack] {int (default:5)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: a, v, s or t (default:any)}]\n");
   (void)fprintf(stderr,"        [-P[oints] {AC,PC,IH coord filename (*.tal) (default:not used)}]\n");
@@ -1047,13 +1005,11 @@ static int Usage()
   (void)fprintf(stderr,"        [-w[riteformat] {char: v, s or t (default:t)}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
   return(VIP_CL_ERROR);
-
 }
 /*****************************************************/
 
 static int Help()
 {
- 
   VipPrintfInfo("Performs brain segmentation using T1-histogram scale space analysis and morphomath");
   (void)printf("Note that the goal is to get a mask of the brain to further segment hemispheres");
   (void)printf("Therefore, the cerebellum may be eroded or connected to some other tissues,");
@@ -1103,38 +1059,38 @@ static int Help()
   (void)printf("        [-de[bug] {char y/n: debug mode, default:n}]\n");
   (void)printf("Write some images, WARNING: the white matter image should not be used as segmentation\n");
   (void)printf("    indeed, it is overregularised for robustness of the morphological processing\n");
-  (void)printf("        [-be[rosion] {float: brain erosion size (default:2.mm)}]\n"); 
-  (void)printf("It should be noted that erosion size is dedicated to standard use of the best mode}]\n"); 
-  (void)printf("With the other procedures, you may have to increase it a bit to get more robustness,}]\n"); 
-  (void)printf("It should also be noted that with a lower erosion size, you could improve}]\n"); 
-  (void)printf("the final result with atrophic brains but with a lower robustness relatively to the whole process}]\n"); 
-  (void)printf("        [-bd[ilation] {float: brain dilation size (fast mode) (default:be+0.5mm)}]\n");  
-  (void)printf("        [-br[ecover] {float: brain recovering size (default:3.mm)}]\n"); 
-  (void)printf("dilation of size (erosion+recover) followed by erosion of size (recover)\n"); 
-  (void)printf("        [-we[rosion] {float: white matter erosion size (default:2.1mm)}]\n"); 
+  (void)printf("        [-be[rosion] {float: brain erosion size (default:2.mm)}]\n");
+  (void)printf("It should be noted that erosion size is dedicated to standard use of the best mode}]\n");
+  (void)printf("With the other procedures, you may have to increase it a bit to get more robustness,}]\n");
+  (void)printf("It should also be noted that with a lower erosion size, you could improve}]\n");
+  (void)printf("the final result with atrophic brains but with a lower robustness relatively to the whole process}]\n");
+  (void)printf("        [-bd[ilation] {float: brain dilation size (fast mode) (default:be+0.5mm)}]\n");
+  (void)printf("        [-br[ecover] {float: brain recovering size (default:3.mm)}]\n");
+  (void)printf("dilation of size (erosion+recover) followed by erosion of size (recover)\n");
+  (void)printf("        [-we[rosion] {float: white matter erosion size (default:2.1mm)}]\n");
   (void)printf("        [-wr[ecover] {float: white matter  recovering size (default:30.mm)}]\n");
   (void)printf("dilation of size (erosion+recover) followed by erosion of size (recover)\n");
   (void)printf("This parameter are stranges because they are dedicated to the robust approach\n");
   (void)printf("where a failure like taking extra white matter tissue) is not problematic\n");
   (void)printf("while missing some white matter may be more problematic (but not catastrophic)\n");
-  (void)printf("        [-a[nalyse] {char y/n/r: automatic histogram analysis, default:y}]\n"); 
+  (void)printf("        [-a[nalyse] {char y/n/r: automatic histogram analysis, default:y}]\n");
   (void)printf("y: automatic, r: read input.his, n: use -gm,-gs,-wm,-ws\n");
   (void)printf("        [-hn[ame] {histo analysis, default:input )}]\n");
   (void)printf("read when -a r is set, this file has the .han extension (VipHistoAnalysis)\n");
-  (void)printf("        [-gm[ean] {int : gray matter mean (default:automatic)}]\n"); 
-  (void)printf("        [-gs[igma] {int : gray matter standard deviation (default:automatic)}]\n"); 
-  (void)printf("        [-wm[ean] {int : white matter mean (default:automatic)}]\n"); 
-  (void)printf("        [-ws[igma] {int : white matter standard deviation (default:automatic)}]\n"); 
-  (void)printf("        [-Tl[ow] {int : low threshold (default:automatic)}]\n"); 
-  (void)printf("        [-Th[igh] {int : high threshold (default:automatic)}]\n"); 
-  (void)printf("For fast segmentation, brain tissues = ]Tlow,Thigh[ range\n"); 
+  (void)printf("        [-gm[ean] {int : gray matter mean (default:automatic)}]\n");
+  (void)printf("        [-gs[igma] {int : gray matter standard deviation (default:automatic)}]\n");
+  (void)printf("        [-wm[ean] {int : white matter mean (default:automatic)}]\n");
+  (void)printf("        [-ws[igma] {int : white matter standard deviation (default:automatic)}]\n");
+  (void)printf("        [-Tl[ow] {int : low threshold (default:automatic)}]\n");
+  (void)printf("        [-Th[igh] {int : high threshold (default:automatic)}]\n");
+  (void)printf("For fast segmentation, brain tissues = ]Tlow,Thigh[ range\n");
   (void)printf("        [-d[scale] {float: (default:0.5)}]\n");
-  (void)printf("Scale discretization (0.5 is the maximum step for stability)\n"); 
-  (void)printf("        [-t[rack] {int (default:5)}]\n"); 
-  (void)printf("Track singularities reaching at least this scale\n"); 
+  (void)printf("Scale discretization (0.5 is the maximum step for stability)\n");
+  (void)printf("        [-t[rack] {int (default:5)}]\n");
+  (void)printf("Track singularities reaching at least this scale\n");
   (void)printf("        [-s[tat] {char y/n: write old input.stat file (default:'n')}]\n");
   (void)printf("This file is used by an old topologically deformable model stuff\n"); 
-  (void)printf("dedicated to g/w interface detection, it should not be used by somebody else...\n"); 
+  (void)printf("dedicated to g/w interface detection, it should not be used by somebody else...\n");
   (void)printf("simple Talairach normalisation may be used to improve sinus deletion\n");
   (void)printf("        [-P[oints] {AC,PC,IH coord filename (*.tal) (default:not used)}]\n");
   (void)printf("Correct format for the commissure coordinate file toto.APC:\n");
@@ -1153,15 +1109,13 @@ static int Help()
   (void)printf("        [-w[riteformat] {char: v, s or t (default:t)}]\n");
   (void)printf("Forces the writing of VIDA, SPM, or TIVOLI image file format\n");
   (void)printf("        [-h[elp]\n");
-  printf("More information in:\n"); 
+  printf("More information in:\n");
   printf("Robust brain segmentation using histogram\n");
   printf("scale-space analysis and mathematical morphology\n");
   printf("J.-F. Mangin, O. Coulon, and V. Frouin\n");
   printf("MICCAI, MIT, LNCS-1496, Springer Verlag\n");
   printf("1230-1241, 1998\n");
-
   return(VIP_CL_ERROR);
-
 }
 
 
