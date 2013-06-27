@@ -508,6 +508,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-lz[ero] {(float) lowest mean curvature for watershed (default:0.3)}]\n");
   (void)fprintf(stderr,"        [-lu[p] {(float) highest mean curvature for watershed(default:1)}]\n");
   (void)fprintf(stderr,"        [-e[rosion] {(float) wave erosion for watershed (default:0.1)}]\n");
+  (void)fprintf(stderr,"        [-readmc {mean_curvature image name (default:nothing)}]\n");
   (void)fprintf(stderr,"        [-mcs[igma] {float (mm)  (default:1mm)}]\n");
   (void)fprintf(stderr,"        [-gcs[igma] {float (mm)  (default:2mm)}]\n");
   (void)fprintf(stderr,"        [-mct[hreshold] {float (default:0.2)}]\n");
@@ -575,6 +576,7 @@ static int Help()
   (void)printf("        [-lz[ero] {(float) lowest mean curvature for watershed (default:0.3)}]\n");
   (void)printf("        [-lu[p] {(float) highest mean curvature for watershed(default:1)}]\n");
   (void)printf("        [-e[rosion] {(float) wave erosion for watershed (default:0.1)}]\n");
+  (void)printf("        [-readmc {mean_curvature image name (default:nothing)}]\n");
   (void)printf("        [-mcs[igma] {float (mm)  (default:1mm)}]\n");
   (void)printf("the sigma of the Gaussian smoothing before mean curvature computation\n");
   (void)printf("        [-gcs[igma] {float (mm)  (default:2mm)}]\n");
