@@ -129,8 +129,23 @@ extern int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mod
 extern int VipWatershedHomotopicSkeleton( Volume *vol, Volume *altitude, int immortal_elixir, int inside, int outside);
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
-extern Volume *ConvertBrainToAltitude(Volume *brain,float sigma,
-			       float level0, float levelmax, float wave_erosion, int bwidth, float threshold);
+extern Volume *ConvertBrainToAltitude(
+  Volume *brain,
+  float sigma,
+  float level0,
+  float levelmax,
+  float wave_erosion,
+  int bwidth,
+  float threshold);
+/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+extern Volume *ConvertMeanCurvToAltitude(
+  Volume *meancurv,
+  float level0,
+  float levelmax,
+  float wave_erosion,
+  int bwidth,
+  float threshold);
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 extern int VipFillNextFrontFromOldFront(
