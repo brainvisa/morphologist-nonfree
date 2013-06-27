@@ -34,6 +34,7 @@
 #include <vip/skeleton.h>
 #include <vip/skeleton_static.h>
 
+
 /*--------------------------------------------------------------------*/
 Volume *ConvertBrainToAltitude(Volume *brain,float sigma,
 			       float level0, float levelmax, float wave_erosion, int bwidth, float threshold)
@@ -146,14 +147,116 @@ Volume *ConvertBrainToAltitude(Volume *brain,float sigma,
    VipFreeVolume(meancurv);
   /*
    printf("Writing altitude...\n");
-   VipWriteTivoliVolume(altitude,"altitude");
+   VipWriteVolume(altitude,"altitude");
   */
    return(altitude);
 }
- 
 
 
 /*--------------------------------------------------------------------*/
+Volume *ConvertMeanCurvToAltitude(Volume *meancurv,
+                                  float level0,
+                                  float levelmax,
+                                  float wave_erosion,
+                                  int bwidth,
+                                  float threshold)
+/*--------------------------------------------------------------------*/
+{
+    Volume *altitude;
+    VipOffsetStruct *vosalt, *vosmc;
+    int ix, iy, iz;
+    int xsize, ysize, zsize;
+    Vip_FLOAT *ptrmc;
+    Vip_S16BIT *ptralt;
+    int amax;
+    float temp;
+    char name[VIP_NAME_MAXLEN];
+    int base = 0;
+    
+    if (VipVerifyAll(meancurv)==PB)
+    {
+        VipPrintfExit("(skeleton)ConvertMeanCurvToAltitude");
+        return(PB);
+    }
+    if((bwidth<0)||(bwidth>50))
+    {
+        VipPrintfError("Strange border width\n");
+        VipPrintfExit("(skeleton)ConvertMeanCurvToAltitude");
+        return(PB);
+    }
+    
+    printf("Watershed based on: init level: %.3f, max level: %.3f, wave erosion: %.3f (threshold %.3f)\n", level0, levelmax, wave_erosion, threshold);
+    
+    if((wave_erosion<=0.)||(levelmax<level0))
+    {
+        VipPrintfError("Strange erosion parameters\n");
+        VipPrintfExit("(skeleton)ConvertMeanCurvToAltitude");
+        return(PB);
+    }
+    if(threshold>level0)
+    {
+        VipPrintfWarning("threshold higher than the water zero level in ConvertMeanCurvToAltitude");
+    }
+    
+    amax = (int)((levelmax-level0)/wave_erosion)+1;
+    if(amax>120)
+    {
+        VipPrintfError("This erosion will last thousand years...\n");
+        VipPrintfExit("(skeleton)ConvertMeanCurvToAltitude");
+        return(PB);
+    }
+    
+    (void)strcpy(name, mVipVolName(meancurv));
+    (void)strcat(name, "_altitude");
+    altitude = VipDuplicateVolumeStructure(meancurv, name);
+    VipSetType(altitude, S16BIT);
+    VipSetBorderWidth(altitude, bwidth);
+    if(VipAllocateVolumeData(altitude)==PB)
+    {
+        VipPrintfExit("ConvertMeanCurvToAltitude");
+        return(PB);
+    }
+    
+    vosalt = VipGetOffsetStructure(altitude);
+    ptralt = VipGetDataPtr_S16BIT(altitude) + vosalt->oFirstPoint;
+    vosmc = VipGetOffsetStructure(meancurv);
+    ptrmc = VipGetDataPtr_VFLOAT(meancurv) + vosmc->oFirstPoint;
+    xsize = mVipVolSizeX(altitude);
+    ysize = mVipVolSizeY(altitude);
+    zsize = mVipVolSizeZ(altitude);
+    
+    for ( iz = 0; iz < zsize; iz++ )                /* loop on slices */
+    {
+        for ( iy = 0; iy < ysize; iy++ )             /* loop on lines */
+        {
+            for ( ix = 0; ix < xsize; ix++ )          /* loop on points */
+            {
+                temp = *ptrmc;
+                if(temp>=levelmax) *ptralt = base+amax;
+                else if(temp<=level0)
+                {
+                    if(temp>=threshold) *ptralt = -1;
+                    else *ptralt = VIP_CANNOT_BECOME_IMMORTAL;
+                }
+                else *ptralt = base+(int)((temp-level0)/wave_erosion)+1;
+                ptralt++;
+                ptrmc++;
+            }
+            ptralt += vosalt->oPointBetweenLine;  /*skip border points*/
+            ptrmc += vosmc->oPointBetweenLine;  /*skip border points*/
+        }
+        ptralt += vosalt->oLineBetweenSlice; /*skip border lines*/
+        ptrmc += vosmc->oLineBetweenSlice; /*skip border lines*/
+    }
+  /*
+   printf("Writing altitude...\n");
+   VipWriteVolume(altitude, "altitude2");
+  */
+   return(altitude);
+}
+
+
+/*---------------------------------------------------------------------------*/
 /*Points become immortals according to immortal_elixir*/ 
 /*The front is managed according to front_mode*/
 /*WARNING: the erosion is restricted to inside side*/
