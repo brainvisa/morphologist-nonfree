@@ -24,7 +24,7 @@
 
 /*##############################################################################
 
-	I N C L U S I O N S
+        I N C L U S I O N S
 
 ##############################################################################*/
 #include <stdio.h>
@@ -52,24 +52,36 @@
 #define GEOMETRY 543
 
 
-
-/*------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 static int Usage();
 static int Help();
-/*-----------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol);
 static Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol);
 // extern int  VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
+/*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
-extern Volume *VipComputeT1BiasFieldMultiGrid(int mode, int dumb, Volume *vol, Volume *crest, float undersampling, 
-				     float Kentropy,
-                                              float Kregularization, float Kcrest, float Koffset,
-				     float amplitude,
-				     float Tinit, float geom,int fieldtype,
-				     int nb_sample_proba, float increment,
-					    int ngrid, float RegulZTuning);
+extern Volume *VipComputeT1BiasFieldMultiGrid(
+int mode,
+int dumb,
+Volume *vol,
+Volume *crest,
+float undersampling,
+float Kentropy,
+float Kregularization,
+float Kcrest,
+float Koffset,
+float amplitude,
+float Tinit,
+float geom,
+int fieldtype,
+int nb_sample_proba,
+float increment,
+int ngrid,
+float RegulZTuning);
 /*---------------------------------------------------------------------------*/
+
 /*---------------------------------------------------------------------------*/
 extern Volume *VipResampleField(Volume *field, Volume *ima);
 /*---------------------------------------------------------------------------*/
@@ -87,17 +99,13 @@ extern Volume *VipComputeCrestGrad(Volume *crest, Volume *vol);
 /*---------------------------------------------------------------------------*/
 
 int main(int argc, char *argv[])
-{     
-
+{
   /*declarations and initializations*/
-
   VIP_DEC_VOLUME(target);
   VIP_DEC_VOLUME(arrow);
   VIP_DEC_VOLUME(variance_brute);
   VIP_DEC_VOLUME(mask);
-
   VIP_DEC_VOLUME(vol);
-//   VIP_DEC_VOLUME(boundingbox);
   VIP_DEC_VOLUME(deriche);
   VIP_DEC_VOLUME(deriche_norm);
   VIP_DEC_VOLUME(thresholdedvol);
@@ -105,17 +113,18 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(converter);
   VIP_DEC_VOLUME(compressed);
   VIP_DEC_VOLUME(result);
-  VIP_DEC_VOLUME(fullresult);  
-  VIP_DEC_VOLUME(mc); 
-  VIP_DEC_VOLUME(smooth);   
-  VIP_DEC_VOLUME(white_crest);  
-  VIP_DEC_VOLUME(white_cresttemp);  
+  VIP_DEC_VOLUME(fullresult);
+  VIP_DEC_VOLUME(mc);
+  VIP_DEC_VOLUME(smooth);
+  VIP_DEC_VOLUME(white_crest);
+  VIP_DEC_VOLUME(white_cresttemp);
   VIP_DEC_VOLUME(gradient);
-  VIP_DEC_VOLUME(extrema);    
+  VIP_DEC_VOLUME(extrema);
   VIP_DEC_VOLUME(variance);
   VIP_DEC_VOLUME(classif);
   VIP_DEC_VOLUME(copyvol);
   VIP_DEC_VOLUME(copyvol2);
+  VIP_DEC_VOLUME(bias);
   int flag8bit = VFALSE;
   char *input = NULL;
   char fieldname[VIP_NAME_MAXLEN] = "biasfield";
@@ -134,73 +143,74 @@ int main(int argc, char *argv[])
   char output[VIP_NAME_MAXLEN] = "nobias";
   float amplitude = 1.1;
   int Last = 0;
-  /* temporary stuff */
+  float mcsigma = 1.;
+  /*temporary stuff*/
   int readlib, writelib;
   int compression = 0;
   int compressionset = VFALSE;
   int tauto = VTRUE;
+  int thbackground = 15;
   int thresholdlow = 15;
   int thresholdlowset = VFALSE;
   int thresholdhigh = 100000;
   int thresholdhighset = VFALSE;
   float mult_factor = 10.;
-  int nInc =2;
+  int nInc = 2;
   float Inc = 1.03;
-  float Kentropy=1.;
-  float Kregul=50.;
-  float Koffset=0.5;
-  float Kcrest=20.;
+  float Kentropy = 1.;
+  float Kregul = 50.;
+  float Koffset = 0.5;
+  float Kcrest = 20.;
   float sampling = 16.;
   float temperature = 10.;
   float geom = 0.97;
   int dumb = VTRUE;
   VipHisto *histo, *comphisto;
-  int ratio=0;
+  int ratio = 0;
   int fieldtype = F3D_REGULARIZED_FIELD;
   int ngrid = 2;
-  float RegulZTuning=1.;
+  float RegulZTuning = 1.;
   int variance_threshold = -1;
   int variance_pourcentage = -1;
   int deriche_edges = -1;
   float lemax, tlow, thigh;
-  int connectivity=CONNECTIVITY_26;
-  Volume *edges=NULL;
+  int connectivity = CONNECTIVITY_26;
+  Volume *edges = NULL;
   int mode = GEOMETRY;
   float max_gradient;
   float min_volume;
-  float mean=0;
+  float mean = 0;
   float sigma = 0;
   VipHisto *histo_edges; 
   int i;
   int threshold_edges = 2;
   int controlled = VFALSE;
-  int xCA=0, yCA=0, zCA=0; 
-  int xCP=0, yCP=0, zCP=0;
-  int xP=0, yP=0, zP=0;
-  char point_filename[VIP_NAME_MAXLEN]="";
+  int xCA = 0, yCA = 0, zCA = 0; 
+  int xCP = 0, yCP = 0, zCP = 0;
+  int xP = 0, yP = 0, zP = 0;
+  char point_filename[VIP_NAME_MAXLEN] = "";
   int talset = VFALSE;
-  VipTalairach tal, *coord=NULL;
+  VipTalairach tal, *coord = NULL;
   int docorrection = VTRUE;
   VipHisto *shorthisto, *historesamp = NULL;
   Vip1DScaleSpaceStruct *volstruct;
-  SSSingularity *slist=NULL;
-  SSCascade *clist=NULL, *chigh;
+  SSSingularity *slist = NULL;
+  SSCascade *clist = NULL, *chigh;
   VipT1HistoAnalysis *ana = 0;
   int undersampling_factor = 0;
   int factor;
   int n, u;
   int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
-  int j=0, k=0, l=0;
+  int j = 0, k = 0, l = 0;
   float contrast = 0, ratio_GW = 0;
   float little_opening_size;
   int random_seed = time(NULL);
   
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
-
+  
   /*loop on command line arguments*/
-
-  for(i=1;i<argc;i++)
+  for(i=1; i<argc; i++)
     {
       if (!strncmp (argv[i], "-input", 2)) 
 	{
@@ -421,6 +431,11 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
 	}
+     else if (!strncmp (argv[i], "-mcsigma", 4)) 
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          mcsigma = atof(argv[i]);
+        }
      else if (!strncmp (argv[i], "-Last", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -530,52 +545,51 @@ int main(int argc, char *argv[])
 	  return(Usage());
 	}
     }
-
+  
   /*check that all required arguments have been given*/
-
   if (input==NULL)
-    {
-      VipPrintfError("input arg is required by VipBiasCorrection");
+  {
+      VipPrintfError("Input arg is required by VipBiasCorrection");
       return(Usage());
-    }
+  }
   if (VipTestImageFileExist(input)==PB)
-    {
+  {
       (void)fprintf(stderr,"Can not open this image: %s\n",input);
       return(VIP_CL_ERROR);
-    }
-
+  }
+  
   srand(random_seed);
-
-  if (fieldtype == F2D_REGULARIZED_FIELD ) printf("2D field regularization\n");
-  if (fieldtype == F3D_REGULARIZED_FIELD ) printf("3D field regularization\n");
-
+  
+  if (fieldtype==F2D_REGULARIZED_FIELD) printf("2D field regularization\n");
+  if (fieldtype==F3D_REGULARIZED_FIELD) printf("3D field regularization\n");
+  
   /* PREPROCESSING: better estimation of histo
      estimation of white matter crest line */
-
+  
   /*decembre 04, Montreal, develop automatic definition
     of threshold for tissues/background*/
-
+  
   vol = VipReadVolumeWithBorder(input,0);
   min_volume = VipGetVolumeMin(vol);
   VipFreeVolume(vol);
   
   if(tauto==VTRUE)
-    {
+  {
       /*je plonge le volume ds un plus grand a cause des images normalisees,
         a la SPM, avec la tete coupee. Il n'y a plus de contour sur les bords
-        et on chope trop de tissus avec extedge*/   
+        et on chope trop de tissus avec extedge*/
       vol = VipReadVolumeWithBorder(input,3);
 
       if(mVipVolType(vol)==U8BIT)
       {
-	  converter = VipTypeConversionToS16BIT(vol,RAW_TYPE_CONVERSION);
-	  if(converter==PB) return(VIP_CL_ERROR);
-	  flag8bit = VTRUE;
-	  VipFreeVolume(vol);
-	  vol = converter;
+          converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
+          if(converter==PB) return(VIP_CL_ERROR);
+          flag8bit = VTRUE;
+          VipFreeVolume(vol);
+          vol = converter;
       }
 
-      little_opening_size = 0.5;
+      little_opening_size = 0.1;
       if(mVipVolVoxSizeX(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeX(vol)+0.1;
       if(mVipVolVoxSizeY(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeY(vol)+0.1;
       if(mVipVolVoxSizeZ(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(vol)+0.1;
@@ -622,139 +636,113 @@ int main(int argc, char *argv[])
 //       VipWriteTivoliVolume( masked, "boundingbox2");
 //       VipFreeVolume(masked);
       
-      VipSetBorderLevel( vol,0);
-      VipResizeBorder( vol, 0 );
-
-      /*
-      VipSet3DSize(vol,mVipVolSizeX(vol)+4,mVipVolSizeY(vol)+4,mVipVolSizeZ(vol)+4);
-      VipSetBorderWidth(vol,0); j'attend de voir la fin du plug aimsIO*/
+      VipSetBorderLevel(vol, 0);
+      VipResizeBorder(vol, 0);
       
-      deriche = VipCopyVolume(vol,"deriche");
+      deriche = VipCopyVolume(vol, "deriche");
       if (deriche==PB) return(VIP_CL_ERROR);
-      if(VipDeriche3DGradientNorm(deriche, 2., DERICHE_EXTREMA, 0.)==PB) return(VIP_CL_ERROR);
+      if (VipDeriche3DGradientNorm(deriche, 2., DERICHE_EXTREMA, 0.)==PB) return(VIP_CL_ERROR);
       /*compress to prevent spurious minima related to too many bins*/
-      if(compressionset==VFALSE)
+      if (compressionset==VFALSE)
       {
           histo = VipComputeVolumeHisto(deriche);
           ratio = 0;
-          comphisto = VipGetPropUndersampledHisto( histo, 50, &ratio, &compression, 1, 100 );
-          printf("gradient image compression: %d\n",ratio);
+          comphisto = VipGetPropUndersampledHisto(histo, 50, &ratio, &compression, 1, 100);
+          printf("Gradient image compression: %d\n", ratio);
           VipFreeHisto(comphisto);
-          VipFreeHisto(histo);	  
+          VipFreeHisto(histo);
       }
       if (compression!=0)
       {
-          printf("Compressing volume (forgetting %d bits)...",compression);
-          compressed = VipComputeCompressedVolume( deriche, compression);
-          if(compressed == PB) return(VIP_CL_ERROR);
-          printf("\n");
+          printf("Compressing volume (forgetting %d bits)...\n", compression);
+          compressed = VipComputeCompressedVolume(deriche, compression);
+          if (compressed==PB) return(VIP_CL_ERROR);
           VipFreeVolume(deriche);
-          deriche=compressed;
-          compressed=NULL;
+          deriche = compressed;
+          compressed = NULL;
       }
-      VipResizeBorder( deriche, 3 );
-      if (writeedges==VTRUE) VipWriteVolume( deriche, edgesname);
-
-      VipResizeBorder( vol, 3 );
+      VipResizeBorder(deriche, 3);
+      if (writeedges==VTRUE) VipWriteVolume(deriche, edgesname);
       
-      deriche_norm = VipCopyVolume(vol,"deriche_norm");
+      VipResizeBorder(vol, 3);
+      
+      /*-----Determination of the background mean intensity-----*/
+      printf("Determination of the background mean intensity...\n");
+      deriche_norm = VipCopyVolume(vol, "deriche_norm");
       if (deriche_norm==PB) return(VIP_CL_ERROR);
-      if(VipDeriche3DGradientNorm(deriche_norm, 2., DERICHE_NORM, 0.)==PB) return(VIP_CL_ERROR);
-      
-      VipResizeBorder( vol, 0 );
+      if (VipDeriche3DGradientNorm(deriche_norm, 2., DERICHE_NORM, 0.)==PB) return(VIP_CL_ERROR);
+//       VipWriteVolume(deriche_norm, "deriche_norm");
+      VipResizeBorder(vol, 0);
       
       max_gradient = VipGetVolumeMax(deriche_norm);
-
+      
 //       VipMaskVolume(deriche,boundingbox);
 //       VipFreeVolume(boundingbox);
-
+      
       histo_edges = VipComputeVolumeHisto(deriche_norm);
       if (histo_edges==PB) return(VIP_CL_ERROR);
-      
-      for(i=5;i<=histo_edges->range_max-3;i++) 
-        {
-           if ((histo_edges->val[i]<=histo_edges->val[i-1])
-               && (histo_edges->val[i]<=histo_edges->val[i+1])
-               && (histo_edges->val[i]<=histo_edges->val[i+2])
-               && (histo_edges->val[i]<=histo_edges->val[i+3])) break;
-        }
+      for(i=5; i<=histo_edges->range_max-3; i++) 
+      {
+          if ((histo_edges->val[i]<=histo_edges->val[i-1])
+              && (histo_edges->val[i]<=histo_edges->val[i+1])
+              && (histo_edges->val[i]<=histo_edges->val[i+2])
+              && (histo_edges->val[i]<=histo_edges->val[i+3])
+              /*&& (histo_edges->val[i]<=histo_edges->val[i+4])*/) break;
+      }
       printf("edge magnitude minimum: %d\n", i);
       VipFreeHisto(histo_edges);
-
+      
       if (i>(max_gradient*0.1) || i<(max_gradient*0.01))
-        {
+      {
           threshold_edges = (int)(max_gradient)*0.05;
-        }
+      }
       else threshold_edges = (int)(i*1);
-    
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
-      thresholdedvol = VipCreateSingleThresholdedVolume( deriche_norm, GREATER_THAN, threshold_edges, BINARY_RESULT);
-      VipResizeBorder( thresholdedvol, 1 );
+      /*strong outline mask*/
+      thresholdedvol = VipCreateSingleThresholdedVolume(deriche_norm, GREATER_THAN, threshold_edges, BINARY_RESULT);
+      VipResizeBorder(thresholdedvol, 1);
       VipCustomizedChamferOpening(thresholdedvol , 1.4*little_opening_size, 3, 3, 3, VIP_USUAL_DISTMAP_MULTFACT, FRONT_PROPAGATION);
+      /*background in the corner mask*/
       if (VipExtRayCorner(thresholdedvol, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
       VipResizeBorder( thresholdedvol, 0 );
-      masked = VipCopyVolume(vol,"voxel_nul");
-      VipResizeBorder( masked, 1 );
+      /*compute a mask of the voxel at zero*/
+      masked = VipCopyVolume(vol, "voxel_zero");
+      VipResizeBorder(masked, 1);
       if (VipSingleThreshold(masked, LOWER_OR_EQUAL_TO, min_volume, BINARY_RESULT)==PB) return(VIP_CL_ERROR);
-      VipConnectivityChamferErosion (masked, mVipMax(mVipVolVoxSizeX(vol),mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
-      if( VipConnexVolumeFilter(masked, CONNECTIVITY_6, -1, CONNEX_BINARY) == PB) return(PB);
-      VipConnectivityChamferDilation (masked, mVipMax(mVipVolVoxSizeX(vol),mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
+      VipConnectivityChamferErosion(masked, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
+      if (VipConnexVolumeFilter(masked, CONNECTIVITY_6, -1, CONNEX_BINARY)==PB) return(PB);
+      VipConnectivityChamferDilation(masked, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
       VipSetBorderLevel( masked,255);
       VipResizeBorder( masked, 0 );
-      VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-
-//       VipFreeVolume(masked);
+      /*merge the voxel_zero mask with the corner mask to not take into account
+        the zero voxel in the background mean intensity*/
+      VipComputeRobustStatInMaskVolume(vol, thresholdedvol, &mean, &sigma, VFALSE);
+      printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
+      thbackground = (int)(mean+1*sigma+0.5);
+      if (thbackground>0) VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
       
       VipResizeBorder( vol, 3 );
       VipResizeBorder( thresholdedvol, 3 );
       VipResizeBorder( masked, 3 );
       
       VipComputeRobustStatInMaskVolume(vol,thresholdedvol, &mean, &sigma, VFALSE);
-      //debug
-      /*VipWriteTivoliVolume( thresholdedvol, "outside");*/ 
       
       VipFreeVolume(thresholdedvol);
       VipFreeVolume(deriche_norm);
-
+      
       printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
-      thresholdlowset=VTRUE;
+      thresholdlowset = VTRUE;
       thresholdlow = (int)(mean+1*sigma+0.5);
+      if (thresholdlow==0) thresholdlow = 1;
       printf("threshold for corner background/tissue: %d\n", thresholdlow);
-
-//       masked = VipCopyVolume(vol,"extray");
-//       if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
-//       VipComputeCustomizedFrontPropagationChamferDistanceMap( masked, 255, -1, 
-//               VIP_NO_LIMIT_IN_PROPAGATION, 0, 3, 3, 3, 50 );
-//       if( mean < 0.3 )
-//       {
-//           printf("The volume has been already cutout, redefinition of the threshold...\n");
-//           thresholdedvol = VipCopyVolume(vol,"closing");
-//           if(!thresholdedvol) return(VIP_CL_ERROR);
-//           VipFreeVolume(masked);
-// 
-//           VipSingleThreshold( thresholdedvol, GREATER_OR_EQUAL_TO, thresholdlow, BINARY_RESULT );
-//           masked = VipCopyVolume(thresholdedvol,"opening");
-//           VipConnectivityChamferOpening (masked,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
-// //           VipConnectivityChamferErosion (masked, mVipMax(mVipVolVoxSizeX(vol),
-// //                                          mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
-// 
-//           VipConnectivityChamferClosing (thresholdedvol,2.5,CONNECTIVITY_26,FRONT_PROPAGATION);
-//           VipConnectivityChamferDilation (thresholdedvol,mVipMax(mVipVolVoxSizeX(vol), 
-//                                           mVipVolVoxSizeY(vol))+0.1,CONNECTIVITY_26,FRONT_PROPAGATION);
-// 
-//           VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-//           VipFreeVolume(masked);
-//       }
-//       else
-//       {
-          thresholdedvol = VipCopyVolume(vol,"closing");
-          if(!thresholdedvol) return(VIP_CL_ERROR);
-          VipSingleThreshold( thresholdedvol, LOWER_THAN, thresholdlow, BINARY_RESULT );
-          VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-          VipFreeVolume(masked);
-          VipConnectivityChamferClosing (thresholdedvol,1,CONNECTIVITY_26,FRONT_PROPAGATION);
-//       }
-
+      
+      thresholdedvol = VipCopyVolume(vol,"closing");
+      if(!thresholdedvol) return(VIP_CL_ERROR);
+      VipSingleThreshold(thresholdedvol, LOWER_THAN, thresholdlow, BINARY_RESULT);
+      if (thbackground>0) VipMerge(thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0);
+      VipFreeVolume(masked);
+      VipConnectivityChamferClosing (thresholdedvol, 1, CONNECTIVITY_26, FRONT_PROPAGATION);
+      
       masked = VipCopyVolume(vol,"masked");
       if(!masked) return(VIP_CL_ERROR);
       VipMaskVolume(masked,thresholdedvol);
@@ -765,57 +753,51 @@ int main(int argc, char *argv[])
       printf("Background stats: mean: %f; sigma: %f\n", mean, sigma);
       thresholdlowset=VTRUE;
       thresholdlow = (int)(mean+2*sigma+0.5);
-      printf("global threshold background/tissue: %d\n", thresholdlow);
+      printf("Global threshold background/tissue: %d\n", thresholdlow);
+      mask = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, thresholdlow, GREYLEVEL_RESULT);
+      //Peut etre rajouter un filtre pour enlever des voxels de bruit se baladant ?
     }
-  /*1
-  thresholdlow=0;
-  */
+  
   if (variance_threshold!=-1 || variance_pourcentage!=-1)
-    {           
+    {
       if(vol==NULL)
-        {
+      {
           vol = VipReadVolumeWithBorder(input,1);
           if(mVipVolType(vol)==U8BIT)
-            {
-              converter = VipTypeConversionToS16BIT(vol,RAW_TYPE_CONVERSION);
+          {
+              converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
               if(converter==PB) return(VIP_CL_ERROR);
               flag8bit = VTRUE;
               VipFreeVolume(vol);
               vol = converter;
-            }
-        }
-      /*O*/
-      /**/
+          }
+          mask = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, thresholdlow, GREYLEVEL_RESULT);
+      }
       variance_brute = VipComputeVarianceVolume(vol);
       if (variance_brute==PB) return(VIP_CL_ERROR);
-
-      if (writevariance==VTRUE) VipWriteVolume( variance_brute, variancename);
+      
+      if (writevariance==VTRUE) VipWriteVolume(variance_brute, variancename);
       /*
       VipComputeRobustStatInMaskVolume(variance,variance, &mean, &sigma, VTRUE);
       printf("variance in tissues: mean: %f; sigma: %f\n", mean, sigma);
       variance_threshold = (int)(mean-0*sigma+0.5);
       */
-
-      VipSingleThreshold( vol, GREATER_OR_EQUAL_TO, thresholdlow, GREYLEVEL_RESULT );
-      mask = VipCopyVolume(vol,"mask");
+      VipMaskVolume(variance_brute, mask);
       VipFreeVolume(vol);
-
-      VipMaskVolume(variance_brute,mask);
-    }
-
+  }
+  
   vol = VipReadVolumeWithBorder(input,0);
-
   if(vol==NULL) return(VIP_CL_ERROR);
-
+  
   if(mVipVolType(vol)==U8BIT)
-      {
-	  converter = VipTypeConversionToS16BIT(vol,RAW_TYPE_CONVERSION);
-	  if(converter==PB) return(VIP_CL_ERROR);
-	  flag8bit = VTRUE;
-	  VipFreeVolume(vol);
-	  vol = converter;
-      }
-
+  {
+      converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
+      if(converter==PB) return(VIP_CL_ERROR);
+      flag8bit = VTRUE;
+      VipFreeVolume(vol);
+      vol = converter;
+  }
+  
   if(Last==3000)
   {
       if(GetCommissureCoordinates(vol, point_filename, &tal,
@@ -837,10 +819,8 @@ int main(int argc, char *argv[])
           Last = 0;
       }
   }
-
-  printf("deleting last %d slices\n", Last);
-  for(i=0;i<Last;i++)
-    VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
+  printf("Deleting last %d slices\n", Last);
+  for(i=0; i<Last; i++) VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
   
   if (deriche_edges!=-1)
     {
@@ -873,25 +853,25 @@ int main(int argc, char *argv[])
     }
   
   /*discard background before computing actual compression*/
-  if(compressionset==VFALSE)
-      {
-	histo = VipComputeVolumeHisto(vol);
-	ratio = 0;
-	/* discard potential modes higher than white matter*/
-	comphisto = VipGetPropUndersampledHisto( histo, 95, &ratio, &compression, thresholdlow, 100 );
-	printf("%d\n",ratio);
-	VipFreeHisto(comphisto);
-	VipFreeHisto(histo);	  
-      }
-  if (compression !=0)
-      {
-	  printf("Compressing volume (forgetting %d bits)...",compression);
-	  fflush(stdout);
-      }
+  if (compressionset==VFALSE)
+  {
+      histo = VipComputeVolumeHisto(vol);
+      ratio = 0;
+      /* discard potential modes higher than white matter*/
+      comphisto = VipGetPropUndersampledHisto( histo, 95, &ratio, &compression, thresholdlow, 100 );
+      printf("%d\n", ratio);
+      VipFreeHisto(comphisto);
+      VipFreeHisto(histo);
+  }
+  if (compression!=0)
+  {
+      printf("Compressing volume (forgetting %d bits)...",compression);
+      fflush(stdout);
+  }
   /* compress anyway because of the following threshold*/
   compressed = VipComputeCompressedVolume( vol, compression);
-  if(compressed == PB) return(VIP_CL_ERROR);
-  if (compression !=0)
+  if (compressed==PB) return(VIP_CL_ERROR);
+  if (compression!=0)
     {
       printf("\n");
     }
@@ -906,39 +886,36 @@ int main(int argc, char *argv[])
       thresholdhigh = thresholdhigh >> compression ;
   printf("Low threshold: %d, High threshold: %d (after compression)\n", thresholdlow, thresholdhigh);
   VipDoubleThreshold(compressed,VIP_BETWEEN,thresholdlow,thresholdhigh,GREYLEVEL_RESULT);
-
+  
   if(readridges==VFALSE)
     {
+      smooth = VipDeriche3DGaussian(vol, mcsigma, NEW_FLOAT_VOLUME);
+      mc = Vip3DGeometry(smooth, MEAN_CURVATURE);
+      if (writemeancurvature==VTRUE) VipWriteVolume(mc, meancurvaturename);
 
-      smooth = VipDeriche3DGaussian( vol, 1., NEW_FLOAT_VOLUME);
-      mc = Vip3DGeometry(smooth,MEAN_CURVATURE);
-      if (writemeancurvature==VTRUE) VipWriteVolume( mc, meancurvaturename);
-
-      VipSingleFloatThreshold(mc,LOWER_OR_EQUAL_TO,-0.4,BINARY_RESULT);    
-      white_crest = VipTypeConversionToS16BIT( mc , RAW_TYPE_CONVERSION); 
+      VipSingleFloatThreshold(mc, LOWER_OR_EQUAL_TO, -0.4, BINARY_RESULT);
+      white_crest = VipTypeConversionToS16BIT(mc , RAW_TYPE_CONVERSION);
       VipFreeVolume(mc);
-
+      
       /*define target crest line: may miss some small part, but include no spurious ones
         the goal is to do a kind of hysteresis*/
-
+      
       variance_threshold = VipPourcentageLowerThanThreshold(variance_brute, 1, 80);
       
       printf("strongest high threshold on variance: %d\n", variance_threshold);
       variance = VipCreateDoubleThresholdedVolume(variance_brute,VIP_BETWEEN_OR_EQUAL_TO,
                                                   0,variance_threshold,BINARY_RESULT);
-
-      VipMaskVolume(variance,mask);
+      VipMaskVolume(variance, mask);
       VipConnectivityChamferErosion( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
-
-      target = VipCreateSingleThresholdedVolume( white_crest, GREATER_THAN, 1 , BINARY_RESULT); 
-
-      if(!target) return(VIP_CL_ERROR);
-      VipMaskVolume(target,variance);
       
+      target = VipCreateSingleThresholdedVolume( white_crest, GREATER_THAN, 1 , BINARY_RESULT);
+      
+      if(!target) return(VIP_CL_ERROR);
+      VipMaskVolume(target, variance);
       gradient = VipComputeCrestGrad(target, compressed);
       VipFreeVolume(target);
       extrema = VipComputeCrestGradExtrema(gradient, compressed);
-
+      
       VipComputeRobustStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
       printf("crest gradient: mean: %f; sigma: %f\n", mean, sigma);
       thresholdhigh = (int)(mean+2*sigma+0.5);
@@ -948,40 +925,37 @@ int main(int argc, char *argv[])
       VipMerge(white_cresttemp,extrema,VIP_MERGE_ONE_TO_ONE,255,0);
       if (VipConnexVolumeFilter (white_cresttemp, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
       VipComputeRobustStatInMaskVolume(gradient,white_cresttemp, &mean, &sigma, VFALSE);
-
-
+      
       VipFreeVolume(white_cresttemp);
       printf("ridge gradient: mean: %f; sigma: %f\n", mean, sigma);
       thresholdhigh = (int)(mean+2*sigma+0.5);
       printf("threshold gradient: %d\n", thresholdhigh);
-
+      
       VipDoubleThreshold(gradient,VIP_BETWEEN_OR_EQUAL_TO,1,thresholdhigh,BINARY_RESULT);
       VipMerge(gradient,extrema,VIP_MERGE_ONE_TO_ONE,255,0);
       if (extrema) VipFreeVolume(extrema);
-
+      
       if (VipConnexVolumeFilter (gradient, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
       //       if (VipConnexVolumeFilter (gradient, CONNECTIVITY_26, 10000, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
       target = VipCopyVolume(gradient,"target");
-
+      
       while(controlled==VFALSE)
         {
           VipFreeVolume(variance);
 
           variance_threshold = VipPourcentageLowerThanThreshold(variance_brute, 1, variance_pourcentage);
-  
+          
           printf("high threshold on variance: %d (pourcentage: %d)\n", variance_threshold, variance_pourcentage);
           variance = VipCreateDoubleThresholdedVolume(variance_brute,VIP_BETWEEN_OR_EQUAL_TO,
                                                       0,variance_threshold,BINARY_RESULT);
-
-          VipMaskVolume(variance,mask);   
+          VipMaskVolume(variance, mask);
           
           VipConnectivityChamferErosion( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
 
-          arrow = VipCreateSingleThresholdedVolume( white_crest, GREATER_THAN, 1 , BINARY_RESULT); 
-
+          arrow = VipCreateSingleThresholdedVolume( white_crest, GREATER_THAN, 1 , BINARY_RESULT);
           if(!arrow) return(VIP_CL_ERROR);
-          VipMaskVolume(arrow,variance);
-
+          VipMaskVolume(arrow, variance);
+          
           gradient = VipComputeCrestGrad(arrow, compressed);
           VipFreeVolume(arrow);
           extrema = VipComputeCrestGradExtrema(gradient, compressed);
@@ -1003,34 +977,30 @@ int main(int argc, char *argv[])
           printf("threshold gradient: %d\n", thresholdhigh);
           */
 
-          VipDoubleThreshold(gradient,VIP_BETWEEN_OR_EQUAL_TO,1,thresholdhigh,BINARY_RESULT);
-          VipSingleThreshold( extrema, GREATER_OR_EQUAL_TO, (int)(mean+1.*sigma+0.5), BINARY_RESULT);
-
-          VipMerge(gradient,extrema,VIP_MERGE_ONE_TO_ONE,255,0);
+          VipDoubleThreshold(gradient, VIP_BETWEEN_OR_EQUAL_TO, 1, thresholdhigh, BINARY_RESULT);
+          VipSingleThreshold(extrema, GREATER_OR_EQUAL_TO, (int)(mean+1.*sigma+0.5), BINARY_RESULT);
+          
+          VipMerge(gradient, extrema, VIP_MERGE_ONE_TO_ONE, 255, 0);
           VipFreeVolume(extrema);
-
+          
           if (VipConnexVolumeFilter (gradient, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
+          
           arrow = VipDuplicateVolumeStructure ( gradient, "arrow" );
           arrow->borderWidth = 1;
           VipTransferVolumeData ( gradient, arrow );
           VipMerge( arrow, target, VIP_MERGE_ONE_TO_ONE, 255, 512 );
-          /*VipWriteTivoliVolume(arrow,"arrow");*/
-
-          VipChangeIntLabel(arrow,0,-2222);
-          VipComputeFrontPropagationConnectivityDistanceMap(arrow,255,-2222,VIP_NO_LIMIT_IN_PROPAGATION,0,CONNECTIVITY_26);
-          /*il y a une grosse merde la dedans, faut vraiment y faire un tour un jour
-          VipComputeCustomizedFrontPropagationChamferDistanceMap(arrow,255,-2222,VIP_NO_LIMIT_IN_PROPAGATION,0,
-                                                                 3, 3, 3, mult_factor);
-          */
-          VipChangeIntLabel(arrow,-2222,0);
-
+          
+          VipChangeIntLabel(arrow, 0, -2222);
+          VipComputeFrontPropagationConnectivityDistanceMap(arrow, 255, -2222, VIP_NO_LIMIT_IN_PROPAGATION, 0, CONNECTIVITY_26);
+          VipChangeIntLabel(arrow, -2222, 0);
+          
           lemax = VipGetVolumeMax(arrow);
           printf("Max distance: %f mm\n",lemax);
-          if (lemax<30) 
-            {
+          if (lemax<30)
+          {
               printf("OK\n");
               controlled=VTRUE;
-            }
+          }
           else variance_pourcentage -= 5;
         }
 
@@ -1074,6 +1044,7 @@ int main(int argc, char *argv[])
 //       VipMaskVolume(compressed,edges); //test
       VipFreeVolume(edges);
     }
+  
   if (VipConnexVolumeFilter (compressed, CONNECTIVITY_26, -1, CONNEX_GREYLEVEL)==PB) return(VIP_CL_ERROR);
 
 //   printf("--------------------------------------------------------------\n");
@@ -1091,6 +1062,10 @@ int main(int argc, char *argv[])
   if (writehfiltered==VTRUE)
   {
       masked = VipCreateSingleThresholdedVolume( compressed, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
+//       VipResizeBorder( masked, 1 );
+//       VipDilation( masked, CHAMFER_BALL_3D, 2.*little_opening_size );
+//       VipSetBorderLevel( masked, 0 );
+//       VipResizeBorder( masked, 0 );
       VipWriteVolume(masked,hfilteredname);
   }
   VipFreeVolume(compressed);
@@ -1285,7 +1260,8 @@ int main(int argc, char *argv[])
   return(0);
 
 }
-/*-----------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
 
 static int Usage()
 {
@@ -1303,6 +1279,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-en[ame] {edge image: (default:edges)}]\n");
   (void)fprintf(stderr,"        [-mW[rite] {write mean curvature: y/n (default:n)}]\n");
   (void)fprintf(stderr,"        [-mn[ame] {mean curvature image: (default:mean_curvature)}]\n");
+  (void)fprintf(stderr,"        [-mcs[igma] {float (mm) (default:1mm)}]\n");
   (void)fprintf(stderr,"        [-f[ield] {bias field name (default:\"biasfield\")}]\n");
   (void)fprintf(stderr,"        [-Di[mfield] {type of field (2/3) (default:3)}]\n");
   (void)fprintf(stderr,"        [-F[write] {write field: y/n (default:n)}]\n");
@@ -1334,13 +1311,12 @@ static int Usage()
   (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
   (void)fprintf(stderr,"        [-h[elp]\n");
   return(VIP_CL_ERROR);
-
 }
-/*****************************************************/
+
+/*---------------------------------------------------------------------------*/
 
 static int Help() 
 {
- 
   VipPrintfInfo("Computes a smooth multiplicative field which corrects for non stationarities.\n");
   (void)printf("This field aims at minimizing the volume entropy (= minimizing information...).\n");
   (void)printf("A tradeoff is found between this entropy and the internal energy of a membrane using annealing.\n");
@@ -1363,6 +1339,8 @@ static int Help()
   (void)printf("        [-en[ame] {edge image: (default:edges)}]\n");
   (void)printf("        [-mW[rite] {write mean curvature: y/n (default:n)}]\n");
   (void)printf("        [-mn[ame] {mean curvature image: (default:mean_curvature)}]\n");
+  (void)printf("        [-mcs[igma] {float (mm) (default:1mm)}]\n");
+  (void)printf("the sigma of the Gaussian smoothing before mean curvature computation\n");
   (void)printf("        [-Di[mfield] {type of field (2/3) (default:3)}]\n");
   (void)printf("2: the correction field is constant by slice, 3: constant by cubes\n");
   (void)printf("        [-F[write] {write field: y/n (default:n)}]\n");
@@ -1429,10 +1407,10 @@ static int Help()
   printf("Hilton Head Island, South Carolina, IEEE Press\n");
   printf("162-169, 2000\n");
   return(VIP_CL_ERROR);
-
 }
 
-/******************************************************/
+/*---------------------------------------------------------------------------*/
+
 // int VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust)
 // {
 //   VipOffsetStruct *vos;
@@ -1563,9 +1541,10 @@ static int Help()
 //          *sigma = (float)sqrt((double)(sum2/(n-1)));
 //        }
 //      return(OK);
-//    
 // }
-/******************************************************/
+
+/*---------------------------------------------------------------------------*/
+
 static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol)
 {
   VipConnectivityStruct *vcs;
@@ -1575,14 +1554,14 @@ static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol)
   VipOffsetStruct *vos;
   int ix, iy, iz;
   int icon;
-  Volume *smooth=NULL;
+  Volume *smooth = NULL;
   float lemin, lemax;
-  int sum,n;
+  int sum, n;
 
-  smooth = VipDuplicateVolumeStructure (crest,"smooth");
-  if(!smooth)  return(PB);
+  smooth = VipDuplicateVolumeStructure (crest, "smooth");
+  if(!smooth) return(PB);
   VipAllocateVolumeData(smooth);
-  VipSetVolumeLevel(smooth,0);
+  VipSetVolumeLevel(smooth, 0);
 
   vcs = VipGetConnectivityStruct( vol, CONNECTIVITY_26 );
   if(vcs==PB) return(PB);
@@ -1595,24 +1574,24 @@ static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol)
   smoothptr = VipGetDataPtr_S16BIT( smooth ) + vos->oFirstPoint;
   volptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
 
-  for ( iz = 0; iz < mVipVolSizeZ(vol); iz++ )               
+  for ( iz = 0; iz < mVipVolSizeZ(vol); iz++ )
     {
-      for ( iy = mVipVolSizeY(vol); iy-- ; )          
+      for ( iy = mVipVolSizeY(vol); iy-- ; )
         {
           for ( ix = mVipVolSizeX(vol); ix--; )
             {
               if(*crestptr)
                 {
-                  sum=*volptr;
-                  n=1;
+                  sum = *volptr;
+                  n = 1;
                   lemin = *volptr;
                   lemax = *volptr;
-                  for ( icon=0; icon<vcs->nb_neighbors;icon++)
+                  for ( icon=0; icon<vcs->nb_neighbors; icon++ )
                     {
-                      crestvoisin =  crestptr + vcs->offset[icon];
+                      crestvoisin = crestptr + vcs->offset[icon];
                       if (*crestvoisin)
                         {
-                          volvoisin =  volptr + vcs->offset[icon];
+                          volvoisin = volptr + vcs->offset[icon];
                           if(*volvoisin<lemin) lemin = *volvoisin;
                           if(*volvoisin>lemax) lemax = *volvoisin;
                           sum += *volvoisin;
@@ -1623,31 +1602,26 @@ static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol)
                     {
                       sum -= lemin;
                       sum -= lemax;
-                      n -=2;                      
+                      n -= 2;
                     }
                   *smoothptr = (int)(sum/n);
-                  
                 }
-
               crestptr++;
               smoothptr++;
               volptr++;
-         }
-         crestptr += vos->oPointBetweenLine;  /*skip border points*/
-         volptr += vos->oPointBetweenLine;  /*skip border points*/
-         smoothptr += vos->oPointBetweenLine;  /*skip border points*/
-      }
+            }
+          crestptr += vos->oPointBetweenLine;  /*skip border points*/
+          volptr += vos->oPointBetweenLine;  /*skip border points*/
+          smoothptr += vos->oPointBetweenLine;  /*skip border points*/
+        }
       crestptr += vos->oLineBetweenSlice; /*skip border lines*/
       volptr += vos->oLineBetweenSlice; /*skip border lines*/
       smoothptr += vos->oLineBetweenSlice; /*skip border lines*/
-   }
-
+    }
   return(smooth);
-
-
 }
 
-/*-------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 
 Volume *VipComputeCrestGrad(Volume *crest, Volume *vol)
 {
@@ -1658,7 +1632,7 @@ Volume *VipComputeCrestGrad(Volume *crest, Volume *vol)
   VipOffsetStruct *vos;
   int ix, iy, iz;
   int icon;
-  Volume *grad = NULL, *smooth=NULL;
+  Volume *grad = NULL, *smooth = NULL;
   float lemin, lemax;
 
   vcs = VipGetConnectivityStruct( vol, CONNECTIVITY_26 );
@@ -1670,19 +1644,18 @@ Volume *VipComputeCrestGrad(Volume *crest, Volume *vol)
 
   smooth = VipComputeSmoothCrest(crest, vol);
   
-  grad = VipDuplicateVolumeStructure (crest,"gradient");
-  if(!grad)  return(PB);
+  grad = VipDuplicateVolumeStructure (crest, "gradient");
+  if(!grad) return(PB);
   VipAllocateVolumeData(grad);
-  VipSetVolumeLevel(grad,0);
- 
+  VipSetVolumeLevel(grad, 0);
 
   crestptr = VipGetDataPtr_S16BIT( crest ) + vos->oFirstPoint;
   gradptr = VipGetDataPtr_S16BIT( grad ) + vos->oFirstPoint;
   volptr = VipGetDataPtr_S16BIT( smooth ) + vos->oFirstPoint;
 
-  for ( iz = 0; iz < mVipVolSizeZ(vol); iz++ )               
+  for ( iz = 0; iz < mVipVolSizeZ(vol); iz++ )
     {
-      for ( iy = mVipVolSizeY(vol); iy-- ; )          
+      for ( iy = mVipVolSizeY(vol); iy-- ; )
         {
           for ( ix = mVipVolSizeX(vol); ix--; )
             {
@@ -1690,40 +1663,39 @@ Volume *VipComputeCrestGrad(Volume *crest, Volume *vol)
                 {
                   lemin = *volptr;
                   lemax = *volptr;
-                  for ( icon=0; icon<vcs->nb_neighbors;icon++)
+                  for ( icon=0; icon<vcs->nb_neighbors; icon++ )
                     {
-                      crestvoisin =  crestptr + vcs->offset[icon];
+                      crestvoisin = crestptr + vcs->offset[icon];
                       if (*crestvoisin)
                         {
-                          volvoisin =  volptr + vcs->offset[icon];
+                          volvoisin = volptr + vcs->offset[icon];
                           if(*volvoisin<lemin) lemin = *volvoisin;
                           if(*volvoisin>lemax) lemax = *volvoisin;
                         }
                     }
-                  /*
-                   *gradptr = (int)mVipMax(lemax-*volptr,*volptr - lemin);*/
-                   *gradptr =(int)(100*(lemax-lemin)/mVipMax(1,*volptr)); 
-                   /* *gradptr = lemax-lemin;*/
+                  /*gradptr = (int)mVipMax(lemax-*volptr,*volptr - lemin);*/
+                  /*if(lemax==lemin) *gradptr = 1;
+                  else*/
+                  *gradptr =(int)(100*(lemax-lemin)/mVipMax(1, *volptr));
+                  /* *gradptr = lemax-lemin;*/
                 }
               crestptr++;
               gradptr++;
               volptr++;
-         }
-         crestptr += vos->oPointBetweenLine;  /*skip border points*/
-         volptr += vos->oPointBetweenLine;  /*skip border points*/
-         gradptr += vos->oPointBetweenLine;  /*skip border points*/
-      }
+            }
+          crestptr += vos->oPointBetweenLine;  /*skip border points*/
+          volptr += vos->oPointBetweenLine;  /*skip border points*/
+          gradptr += vos->oPointBetweenLine;  /*skip border points*/
+        }
       crestptr += vos->oLineBetweenSlice; /*skip border lines*/
       volptr += vos->oLineBetweenSlice; /*skip border lines*/
       gradptr += vos->oLineBetweenSlice; /*skip border lines*/
-   }
-
+    }
   VipFreeVolume(smooth);
   return(grad);
-
 }
 
-/*-----------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 
 Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol)
 {
@@ -1734,7 +1706,7 @@ Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol)
   VipOffsetStruct *vos;
   int ix, iy, iz;
   int icon, iconmin, iconmax;
-  Volume *extrema = NULL, *smooth=NULL;
+  Volume *extrema = NULL, *smooth = NULL;
   float lemin, lemax;
   int gradmin, gradmax;
 
@@ -1747,18 +1719,18 @@ Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol)
 
   smooth = VipComputeSmoothCrest(grad, vol);
 
-  extrema = VipDuplicateVolumeStructure (grad,"gradient");
-  if(!extrema)  return(PB);
+  extrema = VipDuplicateVolumeStructure (grad, "gradient");
+  if(!extrema) return(PB);
   VipAllocateVolumeData(extrema);
-  VipSetVolumeLevel(extrema,0);
+  VipSetVolumeLevel(extrema, 0);
 
   crestptr = VipGetDataPtr_S16BIT( grad ) + vos->oFirstPoint;
   extremaptr = VipGetDataPtr_S16BIT( extrema ) + vos->oFirstPoint;
   volptr = VipGetDataPtr_S16BIT( smooth ) + vos->oFirstPoint;
 
-  for ( iz = 0; iz < mVipVolSizeZ(vol); iz++ )               
+  for ( iz = 0; iz < mVipVolSizeZ(vol); iz++ )
     {
-      for ( iy = mVipVolSizeY(vol); iy-- ; )          
+      for ( iy = mVipVolSizeY(vol); iy-- ; )
         {
           for ( ix = mVipVolSizeX(vol); ix--; )
             {
@@ -1766,14 +1738,14 @@ Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol)
                 {
                   lemin = *volptr;
                   lemax = *volptr;
-                  iconmin=0;
-                  iconmax=0;
-                  for ( icon=0; icon<vcs->nb_neighbors;icon++)
+                  iconmin = 0;
+                  iconmax = 0;
+                  for ( icon=0; icon<vcs->nb_neighbors; icon++ )
                     {
-                      crestvoisin =  crestptr + vcs->offset[icon];
+                      crestvoisin = crestptr + vcs->offset[icon];
                       if (*crestvoisin)
                         {
-                          volvoisin =  volptr + vcs->offset[icon];
+                          volvoisin = volptr + vcs->offset[icon];
                           if(*volvoisin<lemin)
                             {
                               lemin = *volvoisin;
@@ -1788,25 +1760,22 @@ Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol)
                     }
                   gradmin = *(crestptr+vcs->offset[iconmin]);
                   gradmax = *(crestptr+vcs->offset[iconmax]);
-                  if (*crestptr<=gradmin || *crestptr<=gradmax) *extremaptr=0;
-                  else *extremaptr=*crestptr;
+                  if (*crestptr<=gradmin || *crestptr<=gradmax) *extremaptr = 0;
+                  else *extremaptr = *crestptr;
                 }
               crestptr++;
               extremaptr++;
               volptr++;
-         }
-         crestptr += vos->oPointBetweenLine;  /*skip border points*/
-         volptr += vos->oPointBetweenLine;  /*skip border points*/
-         extremaptr += vos->oPointBetweenLine;  /*skip border points*/
-      }
+            }
+          crestptr += vos->oPointBetweenLine;  /*skip border points*/
+          volptr += vos->oPointBetweenLine;  /*skip border points*/
+          extremaptr += vos->oPointBetweenLine;  /*skip border points*/
+        }
       crestptr += vos->oLineBetweenSlice; /*skip border lines*/
       volptr += vos->oLineBetweenSlice; /*skip border lines*/
       extremaptr += vos->oLineBetweenSlice; /*skip border lines*/
-   }
-
+    }
   VipFreeVolume(smooth);
-  /*
-  VipWriteTivoliVolume(extrema,"extrema");*/
+  /*VipWriteTivoliVolume(extrema,"extrema");*/
   return(extrema);
-
 }
