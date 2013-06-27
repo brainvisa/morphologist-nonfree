@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
               printf("Reading meancurvature image %s...\n", meancurvname);
               meancurvature = VipReadVolumeWithBorder(meancurvname, 0);
               printf("----------------------------------\n");
-              altitude = ConvertMeanCurvToAltitude(meancurvname,
+              altitude = ConvertMeanCurvToAltitude(meancurvature,
                                                    lzero, lup, erosion,
                                                    bwidth, mcthreshold);
               if(altitude==PB) return(VIP_CL_ERROR);
