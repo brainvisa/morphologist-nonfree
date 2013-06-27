@@ -303,21 +303,23 @@ int main(int argc, char *argv[])
           printf("Reading squeleton...\n");
           squeleton = VipReadVolumeWithBorder(squeletonname,1);
           if(!squeleton) return(VIP_CL_ERROR);
+      
+          printf("-------------------------------\n");
+          printf("Masking %s with the sulcus...\n",vol->name);
+          printf("-------------------------------\n");
+          
+          mask = VipCreateSingleThresholdedVolume( squeleton, GREATER_OR_EQUAL_TO, 19, BINARY_RESULT );
+          extedge = VipCopyVolume( mask, "extedge" );
+          VipExtedge( extedge, EXTEDGE3D_ALL, SAME_VOLUME );
+          VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+          VipFreeVolume(extedge);
+          extedge = VipCreateSingleThresholdedVolume( squeleton, EQUAL_TO, 80, BINARY_RESULT );
+          
+          VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 255 );
+          VipMerge( vol, mask, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+          VipFreeVolume(extedge);
+          VipFreeVolume(mask);
       }
-      
-      printf("-------------------------------\n");
-      printf("Masking %s with the sulcus...\n",vol->name);
-      printf("-------------------------------\n");
-      mask = VipCreateSingleThresholdedVolume( squeleton, GREATER_OR_EQUAL_TO, 19, BINARY_RESULT );
-      extedge = VipCopyVolume( mask, "extedge" );
-      VipExtedge( extedge, EXTEDGE3D_ALL, SAME_VOLUME );
-      VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-      VipFreeVolume(extedge);
-      extedge = VipCreateSingleThresholdedVolume( squeleton, EQUAL_TO, 80, BINARY_RESULT );
-      
-      VipMerge( mask, extedge, VIP_MERGE_ONE_TO_ONE, 255, 255 );
-      VipMerge( vol, mask, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-      VipFreeVolume(extedge);
       
       printf("-------------------------------\n");
       printf("Computing closing of %s...\n",vol->name);
@@ -336,33 +338,33 @@ int main(int argc, char *argv[])
     
       VipHomotopicErosionFromInside( cortex, closing, 100, 255, linside, loutside );
   }
-  
-  printf("-------------------------\n");
-  printf("Writing %s...\n",output);
-  if (writelib == TIVOLI)
-  {
-      if(mode=='C')
-      {
-          if(VipWriteTivoliVolume(pyrlab->image[0]->volume,output)==PB) return(VIP_CL_ERROR);
-      }
-      else
-      {
-          if(VipWriteTivoliVolume(cortex,output)==PB) return(VIP_CL_ERROR);
-      }
-  }
-  else
-  {
-      if(mode=='C')
-      {
-          if(VipWriteTivoliVolume(pyrlab->image[0]->volume,output)==PB) return(VIP_CL_ERROR);
-      }
-      else
-      {
-          if(VipWriteVolume(cortex,output)==PB) return(VIP_CL_ERROR);
-      }
-  }
-  
-  return(0);
+    
+    printf("-------------------------\n");
+    printf("Writing %s...\n",output);
+    if (writelib == TIVOLI)
+    {
+        if(mode=='C')
+        {
+            if(VipWriteTivoliVolume(pyrlab->image[0]->volume,output)==PB) return(VIP_CL_ERROR);
+        }
+        else if(mode=='H')
+        {
+            if(VipWriteTivoliVolume(cortex,output)==PB) return(VIP_CL_ERROR);
+        }
+    }
+    else
+    {
+        if(mode=='C')
+        {
+            if(VipWriteVolume(pyrlab->image[0]->volume,output)==PB) return(VIP_CL_ERROR);
+        }
+        else if(mode=='H')
+        {
+            if(VipWriteVolume(cortex,output)==PB) return(VIP_CL_ERROR);
+        }
+    }
+    
+    return(0);
 }
 /*-----------------------------------------------------------------------------------------*/
 
