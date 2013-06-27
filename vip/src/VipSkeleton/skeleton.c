@@ -50,11 +50,12 @@ int main(int argc, char *argv[])
 
   /*declarations and initializations*/
 
-  VIP_DEC_VOLUME(vol); 
+  VIP_DEC_VOLUME(vol);
+  VIP_DEC_VOLUME(meancurvature);
   VIP_DEC_VOLUME(altitude);
   VIP_DEC_VOLUME(saddle);
   VIP_DEC_VOLUME(volridge);
-  VIP_DEC_VOLUME(voronoi);    
+  VIP_DEC_VOLUME(voronoi);
   char *input = NULL;
   char *geometry = NULL;
   char classif = VTRUE;
@@ -62,6 +63,8 @@ int main(int argc, char *argv[])
   char voutput[VIP_NAME_MAXLEN] = "rootsvoronoi";
   int readlib, writelib;
   int  immortal_flag = NON_SIMPLE_AND_NON_VOLUME_BECOME_IMMORTAL;
+  char *meancurvname = NULL;
+  int readmeancurv = VFALSE;
   float mcsigma = 1.;
   float gcsigma = 2.;
   float mcthreshold = 0.2;
@@ -160,11 +163,17 @@ int main(int argc, char *argv[])
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  loutside = atoi(argv[i]);
 	}
+      else if (!strncmp (argv[i], "-readmc", 7)) 
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          readmeancurv = VTRUE;
+          meancurvname = argv[i];
+        }
       else if (!strncmp (argv[i], "-mcsigma", 4)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  mcsigma = atof(argv[i]);
-	}  
+	}
       else if (!strncmp (argv[i], "-gcsigma", 4)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -277,7 +286,7 @@ int main(int argc, char *argv[])
 	    }
       }
 
-  srand(random_seed);	
+  srand(random_seed);
   
   if(algo=='a') immortal_flag = NON_SIMPLE_AND_NON_VOLUME_BECOME_IMMORTAL;
   else if(algo=='c') immortal_flag = CURVES_BECOME_IMMORTAL;
@@ -301,20 +310,41 @@ int main(int argc, char *argv[])
     }
 
   if(watershed==VTRUE && immortal_flag!=PB)
+  {
+      printf("===============================\n");
+      printf("WATERSHED BASED SKELETONIZATION\n");
+      printf("===============================\n");
+      
+      if(readmeancurv==VTRUE)
       {
-	printf("===============================\n");
-	printf("WATERSHED BASED SKELETONIZATION\n");
-	printf("===============================\n");
-
-	  printf("Reading geometry image %s...\n",geometry);
-	  volridge = VipReadVolumeWithBorder(geometry,0);
-	  printf("----------------------------------\n");
-
-	  altitude = ConvertBrainToAltitude( volridge, 
-					     mcsigma, lzero, lup, erosion,
-					     bwidth,mcthreshold);
-	  if(altitude==PB) return(VIP_CL_ERROR);
-	  VipFreeVolume(volridge);
+          if(VipTestImageFileExist(meancurvname)==PB)
+          {
+              printf("Can not open this image: %s\n", meancurvname);
+              return(VIP_CL_ERROR);
+          }
+          else
+          {
+              printf("Reading meancurvature image %s...\n", meancurvname);
+              meancurvature = VipReadVolumeWithBorder(meancurvname, 0);
+              printf("----------------------------------\n");
+              altitude = ConvertMeanCurvToAltitude(meancurvname,
+                                                   lzero, lup, erosion,
+                                                   bwidth, mcthreshold);
+              if(altitude==PB) return(VIP_CL_ERROR);
+              VipFreeVolume(meancurvature);
+          }
+      }
+      else
+      {
+          printf("Reading geometry image %s...\n", geometry);
+          volridge = VipReadVolumeWithBorder(geometry, 0);
+          printf("----------------------------------\n");
+          altitude = ConvertBrainToAltitude(volridge, mcsigma,
+                                            lzero, lup, erosion,
+                                            bwidth,mcthreshold);
+          if(altitude==PB) return(VIP_CL_ERROR);
+          VipFreeVolume(volridge);
+      }
 
 //             if(hananame==NULL)
 //           {
@@ -336,39 +366,38 @@ int main(int argc, char *argv[])
 //               }
 //           }
 
-	  printf("--------------------\n");
-	  printf("Reading %s...\n",input);
-	  if (readlib == TIVOLI)
-	    vol = VipReadTivoliVolumeWithBorder(input,bwidth);
-	  else
-	    vol = VipReadVolumeWithBorder(input,bwidth);
-	  printf("--------------------\n");
-	  if(vol==NULL) return(VIP_CL_ERROR);
-          
-          /*hana->gray->mean = (int)(hana->gray->mean - hana->gray->sigma);
-          hana->white->mean = (int)(hana->white->mean - hana->white->sigma);
-          greywhite = VipGrayWhiteClassificationRegularisationForVoxelBasedAna( volridge, hana, VFALSE, 10, 20, CONNECTIVITY_26 );
-          
-          VipMerge( greywhite, vol, VIP_MERGE_ONE_TO_ONE, 0, 200 );
-          VipSingleThreshold( greywhite, EQUAL_TO, 200, BINARY_RESULT );
-          VipConnexVolumeFilter( greywhite, CONNECTIVITY_6, -1, CONNEX_BINARY );
-          VipCleaningConnectivity( greywhite, CONNECTIVITY_6, 1 );
-          VipInvertBinaryVolume( greywhite );
-          VipCleaningConnectivity( greywhite, CONNECTIVITY_6, 2 );
-          VipInvertBinaryVolume( greywhite );
-          
-          mask = VipCreateSingleThresholdedVolume( volridge, NOT_EQUAL_TO, 0, BINARY_RESULT  );
-          VipSingleThreshold( altitude, GREATER_OR_EQUAL_TO, -1, BINARY_RESULT  );
-          VipMerge( mask, altitude, VIP_MERGE_ONE_TO_ONE, 255, 0 );
-          VipMerge( altitude, mask, VIP_MERGE_ONE_TO_ONE, 255, -11 );
-          VipMerge( altitude, greywhite, VIP_MERGE_ONE_TO_ONE, 255, -111 );
-          VipWriteVolume( altitude, "altitude" );
-          VipChangeIntLabel( altitude, 255, 15);*/
-          
-	  if(VipWatershedHomotopicSkeleton( vol, altitude, immortal_flag, linside, loutside) == PB) return(VIP_CL_ERROR);
-	  VipFreeVolume(altitude);
-
-      } 
+      printf("--------------------\n");
+      printf("Reading %s...\n",input);
+      if (readlib == TIVOLI)
+          vol = VipReadTivoliVolumeWithBorder(input,bwidth);
+      else
+          vol = VipReadVolumeWithBorder(input,bwidth);
+      printf("--------------------\n");
+      if(vol==NULL) return(VIP_CL_ERROR);
+      
+      /*hana->gray->mean = (int)(hana->gray->mean - hana->gray->sigma);
+      hana->white->mean = (int)(hana->white->mean - hana->white->sigma);
+      greywhite = VipGrayWhiteClassificationRegularisationForVoxelBasedAna( volridge, hana, VFALSE, 10, 20, CONNECTIVITY_26 );
+      
+      VipMerge( greywhite, vol, VIP_MERGE_ONE_TO_ONE, 0, 200 );
+      VipSingleThreshold( greywhite, EQUAL_TO, 200, BINARY_RESULT );
+      VipConnexVolumeFilter( greywhite, CONNECTIVITY_6, -1, CONNEX_BINARY );
+      VipCleaningConnectivity( greywhite, CONNECTIVITY_6, 1 );
+      VipInvertBinaryVolume( greywhite );
+      VipCleaningConnectivity( greywhite, CONNECTIVITY_6, 2 );
+      VipInvertBinaryVolume( greywhite );
+      
+      mask = VipCreateSingleThresholdedVolume( volridge, NOT_EQUAL_TO, 0, BINARY_RESULT  );
+      VipSingleThreshold( altitude, GREATER_OR_EQUAL_TO, -1, BINARY_RESULT  );
+      VipMerge( mask, altitude, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+      VipMerge( altitude, mask, VIP_MERGE_ONE_TO_ONE, 255, -11 );
+      VipMerge( altitude, greywhite, VIP_MERGE_ONE_TO_ONE, 255, -111 );
+      VipWriteVolume( altitude, "altitude" );
+      VipChangeIntLabel( altitude, 255, 15);*/
+      
+      if(VipWatershedHomotopicSkeleton( vol, altitude, immortal_flag, linside, loutside) == PB) return(VIP_CL_ERROR);
+      VipFreeVolume(altitude);
+  }
   else if(skeletonization==VTRUE)
       {
 
