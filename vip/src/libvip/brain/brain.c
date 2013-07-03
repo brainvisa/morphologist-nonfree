@@ -21,17 +21,26 @@
  *****************************************************************************/
 
 
+
+
+/*##############################################################################
+
+        I N C L U S I O N S
+
+##############################################################################*/
 #include <vip/volume.h>
-#include <vip/util.h>				
+#include <vip/util.h>
 #include <vip/connex.h>
-#include <vip/morpho.h>	
-#include <vip/distmap.h>	
-#include <vip/deriche.h>	
-#include <vip/gaussian.h>	
-#include <vip/histo.h>				
+#include <vip/morpho.h>
+#include <vip/distmap.h>
+#include <vip/deriche.h>
+#include <vip/gaussian.h>
+#include <vip/histo.h>
 #include <vip/brain.h>
 #include <vip/talairach.h>
 #include <vip/skeleton.h>
+
+
 /*---------------------------------------------------------------------------*/
 extern Volume *VipComputeRawWhiteMask(
 Volume *vol,
@@ -44,16 +53,18 @@ int T_white_fat_low,
 int T_gray_white);
 /*---------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-int GetSinusBucket(  Volume *vol, Volume *brain,
-			    VipTalairach *tal,  
-			    VipT1HistoAnalysis *ana, Vip3DBucket_S16BIT **buck);
+/*---------------------------------------------------------------------------*/
+int GetSinusBucket(
+Volume *vol,
+Volume *brain,
+VipTalairach *tal,
+VipT1HistoAnalysis *ana,
+Vip3DBucket_S16BIT **buck);
 /*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
 int VipDilateInPartialVolume(Volume *vol, Volume *mask)
 {
-
 	Vip_S16BIT *vol_ptr;
 	Vip_S16BIT *mask_ptr, *voisin;
 	int mask_val, partial_val, next_val;
@@ -411,6 +422,7 @@ int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivit
     printf("sdt=%f\n", std), fflush(stdout);
 
 //     return(histo_border);
+//     return(mean);
     return(mediane);
 }
 /*---------------------------------------------------------------------------*/
@@ -715,9 +727,9 @@ int connectivity
     if(VipMerge( mask, copymask, VIP_MERGE_ONE_TO_ONE, 255, 0 ) == PB) return(PB);
     
     VipChangeIntLabel( mask, 0, -100 );
-
+    
     if(VipComputeFrontPropagationConnectivityDistanceMap(mask,255,-100,VIP_NO_LIMIT_IN_PROPAGATION,(distance + 1),connectivity)==PB) return(PB);
-
+    
     if(VipSingleThreshold( mask, GREATER_OR_EQUAL_TO, 10000, BINARY_RESULT )==PB) return(PB);
     
     return(OK);
@@ -787,20 +799,20 @@ float P[3]
   Volume *skin=NULL, *brainball=NULL;
   Volume *var=NULL, *mask=NULL, *mask2=NULL, *white=NULL;
   Volume *mean_vol;
-  int i, nb_clara;
+  int i, nb_voisin;
   int T_VOID_GRAY_1 = 0, T_VOID_GRAY_2 = 0, T_VOID_GRAY_LOW = 0, T_VOID_GRAY_HIGH = 0;
   int T_GRAY_WHITE_LOW = 0, T_GRAY_WHITE_HIGH = 0, T_GRAY_WHITE_SECUREGRAY;
   int T_WHITE_FAT_LOW_1 = 0, T_WHITE_FAT_LOW_2 = 0, T_WHITE_FAT_HIGH = 0;
   int T_GRAY_CSF = 0, nb_total = 0;
   float little_opening_size;
   int var_seuil;
-  int icon, ix, iy, iz;
+  int icon, icon2, ix, iy, iz;
   int goodseed;
   VipOffsetStruct *vos;
-  VipConnectivityStruct *vcs;
+  VipConnectivityStruct *vcs, *vcs26;
   Vip_S16BIT *skin_ptr, *mask_ptr;
-  Vip_S16BIT *vol_ptr, *edges_ptr, *voisin;
-  Vip_S16BIT *ptr;
+  Vip_S16BIT *vol_ptr, *edges_ptr, *var_ptr;
+  Vip_S16BIT *ptr, *voisin, *voisin26;
   int seuil = 0;
   VipHisto *histo;
   char histoname[1024];
@@ -866,12 +878,15 @@ float P[3]
 //   if(VipOpening( brain, CHAMFER_BALL_3D, little_opening_size )==PB) return(PB);
   if(VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY ) == PB) return(PB);
 
-
 /*------ Creation de la graine du cerveau ------*/
 //----Correction de l'image de variance
-  classif = VipCreateSingleThresholdedVolume(copyvol,GREATER_THAN,mVipMax(mVipMin(ana->gray->mean - 5*ana->gray->sigma,ana->gray->mean/2),20),BINARY_RESULT);
-  if( VipConnexVolumeFilter( classif, CONNECTIVITY_26, -1, CONNEX_BINARY) == PB) return(PB);
-  if(VipMerge(variance, classif, VIP_MERGE_ONE_TO_ONE, 0, VipGetVolumeMax(variance)) == PB) return(PB);
+  classif = VipCopyVolume(brain, "fond");
+  if( VipConnexVolumeFilter(classif, CONNECTIVITY_6, -1, CONNEX_BINARY) == PB) return(PB);
+  if (VipClosing(classif, CHAMFER_BALL_3D, 10)==PB) return(VIP_CL_ERROR);
+  VipInvertBinaryVolume(classif);
+//   classif = VipCreateSingleThresholdedVolume(copyvol, GREATER_THAN, mVipMax(mVipMin(ana->gray->mean - 5*ana->gray->sigma,ana->gray->mean/2),20), BINARY_RESULT);
+  if( VipConnexVolumeFilter(classif, CONNECTIVITY_26, -1, CONNEX_BINARY) == PB) return(PB);
+  if(VipMerge(variance, classif, VIP_MERGE_ONE_TO_ONE, 255, VipGetVolumeMax(variance)) == PB) return(PB);
   
 //----Creation du volume skin
   skin = VipCopyVolume(classif,"skin");
@@ -1408,7 +1423,7 @@ float P[3]
   var = VipCreateSingleThresholdedVolume( variance, LOWER_THAN, 30, BINARY_RESULT );
   if(VipOpening( var, CHAMFER_BALL_3D, little_opening_size )==PB) return(PB);
   if(VipConnexVolumeFilter( var, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(PB);
-
+  
 //   if( VipMerge( var, skin, VIP_MERGE_ONE_TO_ONE, 0, 0 )== PB) return(VIP_CL_ERROR);
 
   mask2 = VipCopyVolume(brain, "brainmask");
@@ -1431,23 +1446,156 @@ float P[3]
       ptr = ptr + vos->oLineBetweenSlice + seuil*vos->oLine; /*skip border lines*/
   }
 
-// // //   for(i=0;i<12;i++)
-// // //   {
-// // //       VipPropagationConnectivity( brain, copyvol, var, GREATER_THAN, T_GRAY_CSF, 255, CONNECTIVITY_6 );
-// // //       VipSingleThreshold( brain, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
-// // //   }
-// // //   VipPropagationConnectivity( brain, copyvol, var, GREATER_THAN, T_GRAY_CSF, 255, CONNECTIVITY_6 );
-// // //   if(VipMerge( brain, mask2, VIP_MERGE_ONE_TO_ONE, 255, 0 ) == PB) return(VIP_CL_ERROR);
-// // //   VipChangeIntLabel(brain,0,-100);
-// // //   if(VipComputeFrontPropagationConnectivityDistanceMap(brain,255,-100,VIP_NO_LIMIT_IN_PROPAGATION,13,CONNECTIVITY_6)==PB) return(PB);
-// // // //   VipWriteVolume(brain,"brainmaskBdist");
-// // //   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO, 10000, BINARY_RESULT );
+// /*/*  for(i=0;i<12;i++)
+//   {
+//       vos = VipGetOffsetStructure( brain );
+//       vcs = VipGetConnectivityStruct( brain, CONNECTIVITY_6 );
+//       ptr = VipGetDataPtr_S16BIT( brain ) + vos->oFirstPoint;
+//       vol_ptr = VipGetDataPtr_S16BIT( copyvol ) + vos->oFirstPoint;
+//       var_ptr = VipGetDataPtr_S16BIT( var ) + vos->oFirstPoint;
+//       edges_ptr = VipGetDataPtr_S16BIT( edges ) + vos->oFirstPoint;
+//       
+//       for ( iz = mVipVolSizeZ(brain) ; iz-- ; )   /* loop on slices */
+//       {
+//           for ( iy = mVipVolSizeY(brain) ; iy-- ; )  /* loop on lines */
+//           {
+//               for ( ix = mVipVolSizeX(brain) ; ix-- ; )   /* loop on points */
+//               {
+//                   if(!(*ptr) && *(var_ptr))
+//                   {
+//                       for (icon=0;icon<vcs->nb_neighbors;icon++)
+//                       {
+//                           voisin = ptr + vcs->offset[icon];
+//                           if(*voisin==255)
+//                           {
+//                               if(*(vol_ptr)>T_GRAY_CSF && !*(edges_ptr))
+//                               {
+//                                   *ptr = 512;
+//                               }
+//                           }
+//                       }
+//                   }
+//                   ptr++;
+//                   vol_ptr++;
+//                   var_ptr++;
+//                   edges_ptr++;
+//               }
+//               ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+//               vol_ptr = vol_ptr + vos->oPointBetweenLine;
+//               var_ptr = var_ptr + vos->oPointBetweenLine;
+//               edges_ptr = edges_ptr + vos->oPointBetweenLine;
+//           }
+//           ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+//           vol_ptr = vol_ptr + vos->oLineBetweenSlice;
+//           var_ptr = var_ptr + vos->oLineBetweenSlice;
+//           edges_ptr = edges_ptr + vos->oLineBetweenSlice;
+//       }
+//       VipWriteVolume(brain,"brain_prop1");
+// //       VipPropagationConnectivity( brain, copyvol, var, GREATER_THAN, T_GRAY_CSF, 255, CONNECTIVITY_6 );
+//       VipSingleThreshold( brain, GREATER_OR_EQUAL_TO, 1, BINARY_RESULT );
+//       VipWriteVolume(brain,"brain_prop1b");
+//   }
+//   vos = VipGetOffsetStructure( brain );
+//   vcs = VipGetConnectivityStruct( brain, CONNECTIVITY_6 );
+//   ptr = VipGetDataPtr_S16BIT( brain ) + vos->oFirstPoint;
+//   vol_ptr = VipGetDataPtr_S16BIT( copyvol ) + vos->oFirstPoint;
+//   var_ptr = VipGetDataPtr_S16BIT( var ) + vos->oFirstPoint;
+//   edges_ptr = VipGetDataPtr_S16BIT( edges ) + vos->oFirstPoint;
+//   for ( iz = mVipVolSizeZ(brain) ; iz-- ; )   /* loop on slices */
+//   {
+//       for ( iy = mVipVolSizeY(brain) ; iy-- ; )  /* loop on lines */
+//       {
+//           for ( ix = mVipVolSizeX(brain) ; ix-- ; )   /* loop on points */
+//           {
+//               if(!(*ptr) && *(var_ptr))
+//               {
+//                   for (icon=0;icon<vcs->nb_neighbors;icon++)
+//                   {
+//                       voisin = ptr + vcs->offset[icon];
+//                       if(*voisin==255)
+//                       {
+//                           if(*(vol_ptr)>T_GRAY_CSF && !*(edges_ptr))
+//                           {
+//                               *ptr = 512;
+//                           }
+//                       }
+//                   }
+//               }
+//               ptr++;
+//               vol_ptr++;
+//               var_ptr++;
+//               edges_ptr++;
+//           }
+//           ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+//           vol_ptr = vol_ptr + vos->oPointBetweenLine;
+//           var_ptr = var_ptr + vos->oPointBetweenLine;
+//           edges_ptr = edges_ptr + vos->oPointBetweenLine;
+//       }
+//       ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+//       vol_ptr = vol_ptr + vos->oLineBetweenSlice;
+//       var_ptr = var_ptr + vos->oLineBetweenSlice;
+//       edges_ptr = edges_ptr + vos->oLineBetweenSlice;
+//   }
+// //   VipPropagationConnectivity( brain, copyvol, var, GREATER_THAN, T_GRAY_CSF, 255, CONNECTIVITY_6 );
+//   VipWriteVolume(brain,"brain_prop2");
+//   
+//   if(VipMerge( brain, mask2, VIP_MERGE_ONE_TO_ONE, 255, 0 ) == PB) return(VIP_CL_ERROR);
+//   VipChangeIntLabel(brain,0,-100);
+//   
+//   if(VipComputeFrontPropagationConnectivityDistanceMap(brain,255,-100,VIP_NO_LIMIT_IN_PROPAGATION,13,CONNECTIVITY_6)==PB) return(PB);
+//   
+//   VipWriteVolume(brain,"distmap_rajout");
+//   
+//   VipSingleThreshold( brain, GREATER_THAN, 13, BINARY_RESULT );*/*/
 
   VipPropagationWithRefluxConnectivity( brain, var, copyvol, 12, VIP_BETWEEN, T_GRAY_CSF, ana->white->mean + ana->white->sigma, CONNECTIVITY_6 );
-
+  
   if( VipMerge( brain, mask2, VIP_MERGE_ONE_TO_ONE, 255, 255 )== PB) return(PB);
   if( VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY ) == PB) return(PB);
-
+//   /*/*if( VipMerge( brain, mask2, VIP_MERGE_ONE_TO_ONE, 255, 512 )== PB) return(PB);
+//   VipWriteVolume( brain, "brain_ap2_frontal");
+//   
+//   /**/
+//   vos = VipGetOffsetStructure( brain );
+//   vcs = VipGetConnectivityStruct( brain, CONNECTIVITY_6 );
+//   vcs26 = VipGetConnectivityStruct( brain, CONNECTIVITY_26 );
+//   ptr = VipGetDataPtr_S16BIT( brain ) + vos->oFirstPoint;
+//   for ( iz = mVipVolSizeZ(brain) ; iz-- ; )   /* loop on slices */
+//   {
+//       for ( iy = mVipVolSizeY(brain) ; iy-- ; )  /* loop on lines */
+//       {
+//           for ( ix = mVipVolSizeX(brain) ; ix-- ; )   /* loop on points */
+//           {
+//               if(!(*ptr))
+//               {
+//                   for (icon=0;icon<vcs->nb_neighbors;icon++)
+//                   {
+//                       voisin = ptr + vcs->offset[icon];
+//                       if(*voisin==255)
+//                       {
+//                           nb_voisin = 0;
+//                           for (icon2=0;icon2<vcs26->nb_neighbors;icon2++)
+//                           {
+//                               voisin26 = ptr + vcs26->offset[icon2];
+//                               if(*voisin26>0) nb_voisin++;
+//                           }
+//                           if(nb_voisin>16)
+//                           {
+//                               *ptr=255;
+//                           }
+//                           break;
+//                       }
+//                   }
+//               }
+//               ptr++;
+//           }
+//           ptr = ptr + vos->oPointBetweenLine;  /*skip border points*/
+//       }
+//       ptr = ptr + vos->oLineBetweenSlice; /*skip border lines*/
+//   }
+//   VipWriteVolume( brain, "brain_ap3_frontal");
+//   /**/*/*/
+  
 //----Ouverture sur le masque final
   if( VipErosion( brain, CHAMFER_BALL_3D, little_opening_size ) == PB) return(PB);
   if( VipDilation( brain, CHAMFER_BALL_3D, little_opening_size ) == PB) return(PB);
@@ -1460,6 +1608,7 @@ float P[3]
 
   if( VipConnectivityChamferOpening( brain, little_opening_size, CONNECTIVITY_6, FRONT_PROPAGATION) == PB) return(PB);
   if( VipConnexVolumeFilter( brain, CONNECTIVITY_6, -1, CONNEX_BINARY ) == PB) return(PB);
+  
   return(OK);
 }
 
