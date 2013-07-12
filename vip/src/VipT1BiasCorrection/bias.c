@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
   int xCA = 0, yCA = 0, zCA = 0; 
   int xCP = 0, yCP = 0, zCP = 0;
   int xP = 0, yP = 0, zP = 0;
-  char point_filename[VIP_NAME_MAXLEN] = "";
+  char *point_filename = NULL;
   int talset = VFALSE;
   VipTalairach tal, *coord = NULL;
   int docorrection = VTRUE;
@@ -445,7 +445,7 @@ int main(int argc, char *argv[])
      else if (!strncmp (argv[i], "-Points", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  strcpy(point_filename,argv[i]);
+	  point_filename = argv[i];
 	}
      else if (!strncmp (argv[i], "-mode", 2)) 
 	{
@@ -595,46 +595,34 @@ int main(int argc, char *argv[])
       if(mVipVolVoxSizeZ(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(vol)+0.1;
       printf("little_opening_size=%f\n", little_opening_size), fflush(stdout);
       
-//       if(Last==3000)
-//       {
-//           if(GetCommissureCoordinates(vol, point_filename, &tal,
-// 			xCA, yCA, zCA,
-// 			xCP, yCP, zCP,
-// 			xP, yP, zP, talset)!=PB)
-//           {
-//               coord = &tal;
-//               xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
-//               xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
-//               xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
-//           
-//               Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
-//               if(Last<0) Last = 0;
-//           }
-//           else
-//           {
-//               printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
-//               Last = 0;
-//           }
-//       }
-//       printf("deleting last %d slices\n",Last);
-//       for(i=0;i<Last;i++)
-//         VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
-  
-//       boundingbox = VipCreateSingleThresholdedVolume( vol, EQUAL_TO, 0 , BINARY_RESULT);
-//       VipSetBorderLevel( boundingbox,255);
-//       VipResizeBorder( boundingbox, mVipVolBorderWidth(boundingbox)-1 );
-//       if( VipConnexVolumeFilter(boundingbox , CONNECTIVITY_26, -1, 
-//         CONNEX_BINARY) == PB) return(PB);
-//       VipConnectivityChamferDilation (boundingbox,1,CONNECTIVITY_26, 
-//         FRONT_PROPAGATION);
-//       VipSetBorderLevel( boundingbox,255);
-//       VipResizeBorder( boundingbox, 0 );
-//       VipInvertBinaryVolume(boundingbox);
-
-//       masked = VipCopyVolume(vol, "box");
-//       if (VipExtRay(masked, EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
-//       VipWriteTivoliVolume( masked, "boundingbox2");
-//       VipFreeVolume(masked);
+      if(Last==3000 && point_filename!=NULL)
+      {
+          if(GetCommissureCoordinates(vol, point_filename, &tal,
+                                      xCA, yCA, zCA, xCP, yCP, zCP,
+                                      xP, yP, zP, talset)!=PB)
+          {
+              coord = &tal;
+              xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+              xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+              xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
+              
+              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+              if(Last<0) Last = 0;
+          }
+          else
+          {
+              printf("Something went wrong during the reading of the commissure coordinates.\n");
+              Last = 0;
+          }
+      }
+      else
+      {
+          printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+          Last = 0;
+      }
+      printf("deleting last %d slices\n",Last);
+      for(i=0; i<Last; i++)
+          VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
       
       VipSetBorderLevel(vol, 0);
       VipResizeBorder(vol, 0);
@@ -798,12 +786,11 @@ int main(int argc, char *argv[])
       vol = converter;
   }
   
-  if(Last==3000)
+  if(Last==3000 && point_filename!=NULL)
   {
       if(GetCommissureCoordinates(vol, point_filename, &tal,
-         xCA, yCA, zCA,
-         xCP, yCP, zCP,
-         xP, yP, zP, talset)!=PB)
+                                  xCA, yCA, zCA, xCP, yCP, zCP,
+                                  xP, yP, zP, talset)!=PB)
       {
           coord = &tal;
           xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
@@ -815,9 +802,14 @@ int main(int argc, char *argv[])
       }
       else
       {
-          printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+          printf("Something went wrong during the reading of the commissure coordinates.\n");
           Last = 0;
       }
+  }
+  else
+  {
+      printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+      Last = 0;
   }
   printf("Deleting last %d slices\n", Last);
   for(i=0; i<Last; i++) VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
@@ -865,11 +857,11 @@ int main(int argc, char *argv[])
   }
   if (compression!=0)
   {
-      printf("Compressing volume (forgetting %d bits)...",compression);
+      printf("Compressing volume (forgetting %d bits)...", compression);
       fflush(stdout);
   }
   /* compress anyway because of the following threshold*/
-  compressed = VipComputeCompressedVolume( vol, compression);
+  compressed = VipComputeCompressedVolume(vol, compression);
   if (compressed==PB) return(VIP_CL_ERROR);
   if (compression!=0)
     {
@@ -949,9 +941,8 @@ int main(int argc, char *argv[])
           variance = VipCreateDoubleThresholdedVolume(variance_brute,VIP_BETWEEN_OR_EQUAL_TO,
                                                       0,variance_threshold,BINARY_RESULT);
           VipMaskVolume(variance, mask);
-          
           VipConnectivityChamferErosion( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
-
+          
           arrow = VipCreateSingleThresholdedVolume( white_crest, GREATER_THAN, 1 , BINARY_RESULT);
           if(!arrow) return(VIP_CL_ERROR);
           VipMaskVolume(arrow, variance);
@@ -959,6 +950,7 @@ int main(int argc, char *argv[])
           gradient = VipComputeCrestGrad(arrow, compressed);
           VipFreeVolume(arrow);
           extrema = VipComputeCrestGradExtrema(gradient, compressed);
+          
           /*
           VipComputeRobustStatInMaskVolume(gradient,gradient, &mean, &sigma, VTRUE);
           printf("crest gradient: mean: %f; sigma: %f\n", mean, sigma);
@@ -1017,14 +1009,13 @@ int main(int argc, char *argv[])
     {
       gradient = VipReadVolumeWithBorder(wridgesname,0);
       if (!gradient)  return(VIP_CL_ERROR);
-
+      
       variance_threshold = VipPourcentageLowerThanThreshold(variance_brute, 1, variance_pourcentage);
       
       printf("high threshold on variance: %d\n", variance_threshold);
-      variance = VipCreateDoubleThresholdedVolume(variance_brute,VIP_BETWEEN_OR_EQUAL_TO,
-                                                  0,variance_threshold,BINARY_RESULT);
-
-      VipMaskVolume(variance,mask);      
+      variance = VipCreateDoubleThresholdedVolume(variance_brute, VIP_BETWEEN_OR_EQUAL_TO,
+                                                  0, variance_threshold, BINARY_RESULT);
+      VipMaskVolume(variance,mask);
       VipConnectivityChamferErosion( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
     }
   
@@ -1035,7 +1026,7 @@ int main(int argc, char *argv[])
       VipConnectivityChamferDilation( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
 //       if (VipConnexVolumeFilter (variance, CONNECTIVITY_26, -1, CONNEX_GREYLEVEL)==PB) return(VIP_CL_ERROR);
 //       VipConnectivityChamferDilation( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
-      VipMaskVolume(compressed,variance);
+      VipMaskVolume(compressed, variance);
       VipFreeVolume(variance);
     }
      
@@ -1052,11 +1043,12 @@ int main(int argc, char *argv[])
 //   printf("--------------------------------------------------------------\n");
   
   printf("Computing Bias with Kentropy = %f, Kregularization = %f, Kcrest = %f Koffset = %f\n",
-	 Kentropy,Kregul,Kcrest,Koffset);
+         Kentropy,Kregul,Kcrest,Koffset);
 
-  result = VipComputeT1BiasFieldMultiGrid(mode, dumb,compressed,gradient,
-                                          sampling,Kentropy,Kregul,Kcrest,Koffset,
-                                          amplitude,temperature,geom,fieldtype,nInc,Inc,ngrid,RegulZTuning);
+  result = VipComputeT1BiasFieldMultiGrid(mode, dumb, compressed, gradient,
+                                          sampling, Kentropy, Kregul, Kcrest,
+                                          Koffset, amplitude, temperature, geom,
+                                          fieldtype, nInc, Inc, ngrid, RegulZTuning);
   if(result==PB) return(VIP_CL_ERROR);
   
   if (writehfiltered==VTRUE)
