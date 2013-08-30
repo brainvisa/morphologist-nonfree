@@ -786,30 +786,33 @@ int main(int argc, char *argv[])
       vol = converter;
   }
   
-  if(Last==3000 && point_filename!=NULL)
+  if(tauto==VFALSE)
   {
-      if(GetCommissureCoordinates(vol, point_filename, &tal,
-                                  xCA, yCA, zCA, xCP, yCP, zCP,
-                                  xP, yP, zP, talset)!=PB)
+      if(Last==3000 && point_filename!=NULL)
       {
-          coord = &tal;
-          xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
-          xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
-          xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
+          if(GetCommissureCoordinates(vol, point_filename, &tal,
+                                      xCA, yCA, zCA, xCP, yCP, zCP,
+                                      xP, yP, zP, talset)!=PB)
+          {
+              coord = &tal;
+              xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
+              xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
+              xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
 
-          Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
-          if(Last<0) Last = 0;
+              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+              if(Last<0) Last = 0;
+          }
+          else
+          {
+              printf("Something went wrong during the reading of the commissure coordinates.\n");
+              Last = 0;
+          }
       }
       else
       {
-          printf("Something went wrong during the reading of the commissure coordinates.\n");
+          printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
           Last = 0;
       }
-  }
-  else
-  {
-      printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
-      Last = 0;
   }
   printf("Deleting last %d slices\n", Last);
   for(i=0; i<Last; i++) VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
