@@ -47,8 +47,6 @@ static int VipCheckBrainMask( Volume* vol );
 int main(int argc, char *argv[])
 {
   char *ridgename = NULL;
-  char new_ridgename[1024];
-  new_ridgename[0] = '\0';
   char *variancename = NULL;
   char *edgesname = NULL;
   Volume *ridge=NULL;
@@ -141,11 +139,6 @@ int main(int argc, char *argv[])
        {
          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
          ridgename = argv[i];
-       }
-     else if (!strcmp (argv[i], "-output-Ridge")) 
-       {
-         if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-         strcpy(new_ridgename, argv[i]);
        }
      else if (!strncmp (argv[i], "-Variance", 2)) 
        {
