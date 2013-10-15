@@ -114,36 +114,20 @@ int VipVolumeCartoResizeBorder( ::Volume* volume, int borderWidth )
     switch( volume->type )
     {
     case U8BIT:
-      getCartoHeader<uint8_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case S8BIT:
-      getCartoHeader<int8_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case U16BIT:
-      getCartoHeader<uint16_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case S16BIT:
-      getCartoHeader<int16_t>( volume )->setProperty( "_borderWidth",  
-        borderWidth );
       return OK;
     case U32BIT:
-      getCartoHeader<uint32_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case S32BIT:
-      getCartoHeader<int32_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case VFLOAT:
-      getCartoHeader<float>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case VDOUBLE:
-      getCartoHeader<double>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     default:
       cerr << "VipVolumeCartoResizeHeader: unknown type " 
@@ -259,7 +243,6 @@ namespace
     volume->carto->vol = Object::value( vol );
     if( volume->borderWidth != 0 )
     {
-      vol->header().setProperty( "_borderWidth", volume->borderWidth );
       /* with a border, the data pointer is relative to the bigger borderd 
          volume. */
       volume->data = (char *) &*vol->refVolume()->begin();
@@ -842,8 +825,6 @@ namespace
           ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
 
         ovol->header().setProperty( "voxel_size", vs );
-        if( volume->borderWidth != 0 )
-          ovol->header().setProperty( "_borderWidth", volume->borderWidth );
         return writeCartoVolume( *ovol, fname, format );
       }
 
@@ -865,7 +846,6 @@ namespace
                                        volume->borderWidth, 0 ),
         typename carto::Volume<T>::Position4Di( volume->size.x, volume->size.y,
                                        volume->size.z, volume->size.t ) ) );
-      vol->header().setProperty( "_borderWidth", volume->borderWidth );
     }
     vol->header().setProperty( "voxel_size", vs );
     return writeCartoVolume( *vol, fname, format );
@@ -1008,12 +988,6 @@ namespace vip
                                      volume->size.z + volume->borderWidth * 2, 
                                      volume->size.t, 
                                      (T *) volume->data ) );
-        if( volume->borderWidth != 0 )
-          {
-            // cout << "vol with border: " << volume->borderWidth << endl;
-            vol->header().setProperty( "_borderWidth",
-                                               volume->borderWidth );
-          }
         vector<float>	vs(4);
         vs[0] = volume->voxelSize.x;
         vs[1] = volume->voxelSize.y;
