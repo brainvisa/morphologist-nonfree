@@ -220,8 +220,6 @@ int main(int argc, char *argv[])
 
     }
 
-
-
   if( VipConnexVolumeFilter( vol, CONNECTIVITY_6, -1, CONNEX_BINARY) == PB) return(VIP_CL_ERROR);
 
   for(i = 0; i < nguillotine; i++)
@@ -229,6 +227,7 @@ int main(int argc, char *argv[])
       VipPutOneSliceToVal(vol,mVipVolSizeZ(vol)-1-i,255);
     }
   if (VipClosing(vol,CHAMFER_BALL_3D,closingsize)==PB) return(VIP_CL_ERROR);
+
 
   dual = VipCopyVolume(vol,"dual");
   VipInvertBinaryVolume(dual);

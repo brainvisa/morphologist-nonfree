@@ -103,41 +103,31 @@ namespace
 
 int VipVolumeCartoResizeBorder( ::Volume* volume, int borderWidth )
 {
+#ifdef VIP_CARTOVOL_DEBUG
+  cout << "VipVolumeCartoResizeBorder " << volume->name << endl;
+#endif
+
   if( volume->carto && volume->carto->vol.get() )
   {
+    /* FIXME: should actually resize the volume */
+
     switch( volume->type )
     {
     case U8BIT:
-      getCartoHeader<uint8_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case S8BIT:
-      getCartoHeader<int8_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case U16BIT:
-      getCartoHeader<uint16_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case S16BIT:
-      getCartoHeader<int16_t>( volume )->setProperty( "_borderWidth",  
-        borderWidth );
       return OK;
     case U32BIT:
-      getCartoHeader<uint32_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case S32BIT:
-      getCartoHeader<int32_t>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case VFLOAT:
-      getCartoHeader<float>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     case VDOUBLE:
-      getCartoHeader<double>( volume )->setProperty( "_borderWidth", 
-        borderWidth );
       return OK;
     default:
       cerr << "VipVolumeCartoResizeHeader: unknown type " 
@@ -229,6 +219,17 @@ namespace
                                  volume->size.y + volume->borderWidth * 2, 
                                  volume->size.z + volume->borderWidth * 2, 
                                  volume->size.t ) );
+    if( volume->borderWidth != 0 )
+    {
+      vol.reset( new carto::Volume<T>(
+        vol,
+        typename carto::Volume<T>::Position4Di( volume->borderWidth,
+                                       volume->borderWidth,
+                                       volume->borderWidth, 0 ),
+        typename carto::Volume<T>::Position4Di( volume->size.x, volume->size.y,
+                                       volume->size.z, volume->size.t ) ) );
+    }
+
     // keep previous header
     if( volume->carto->vol.get() )
       try
@@ -241,8 +242,13 @@ namespace
 
     volume->carto->vol = Object::value( vol );
     if( volume->borderWidth != 0 )
-      vol->header().setProperty( "_borderWidth", volume->borderWidth );
-    volume->data = (char *) &*vol->begin();
+    {
+      /* with a border, the data pointer is relative to the bigger borderd 
+         volume. */
+      volume->data = (char *) &*vol->refVolume()->begin();
+    }
+    else
+      volume->data = (char *) &*vol->begin();
     volume->tab = NULL;
     VipSetState( volume, STATE_ALLOCATED );
     return OK;
@@ -408,38 +414,59 @@ namespace
 
   template<typename T> int 
   copyVolumeData( ::Volume *volumeR, ::Volume *volumeW )
-   {
-     if( volumeR->size.x == volumeW->size.x 
-         && volumeR->size.y == volumeW->size.y 
-         && volumeR->size.z == volumeW->size.z 
-         && volumeR->size.t == volumeW->size.t 
-         && volumeR->borderWidth == volumeW->borderWidth )
-       {
-         /*
-         cout << "carto copy direct: vs: " << volumeW->voxelSize.x << ", " 
-              << volumeW->voxelSize.y << ", " << volumeW->voxelSize.z << endl;
-         cout << "orig: " << volumeR->voxelSize.x << ", " 
-              << volumeR->voxelSize.y << ", " << volumeR->voxelSize.z << endl;
-         */
-         try
-           {
-             rc_ptr<carto::Volume<T> >	volR 
-               = volumeR->carto->vol
-               ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
-             rc_ptr<carto::Volume<T> >	volW( new carto::Volume<T> );
-             volumeW->carto->vol = Object::value( volW );
-             *volW = *volR;
-             volumeW->data = (char *) &*volW->begin();
-           }
-         catch( exception & e )
-           {
-             cerr << e.what() << endl;
-             return PB;
-           }
-         volumeW->state = STATE_FILLED;
-         volumeW->tab = NULL;
-         return OK;
-       }
+  {
+    if( volumeR->size.x == volumeW->size.x 
+        && volumeR->size.y == volumeW->size.y 
+        && volumeR->size.z == volumeW->size.z 
+        && volumeR->size.t == volumeW->size.t 
+        && volumeR->borderWidth == volumeW->borderWidth )
+      {
+        /*
+        cout << "carto copy direct: vs: " << volumeW->voxelSize.x << ", " 
+            << volumeW->voxelSize.y << ", " << volumeW->voxelSize.z << endl;
+        cout << "orig: " << volumeR->voxelSize.x << ", " 
+            << volumeR->voxelSize.y << ", " << volumeR->voxelSize.z << endl;
+        */
+        try
+        {
+          rc_ptr<carto::Volume<T> >	volR 
+            = volumeR->carto->vol
+            ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
+          rc_ptr<carto::Volume<T> >	volW;
+          if( !volR->refVolume().isNull() )
+          {
+            // volume with border: copy the larger one
+            volW.reset( new carto::Volume<T>( *volR->refVolume() ) );
+            volumeW->carto->vol = Object::value( volW );
+            // with border, point to the larger volume
+            volumeW->data = (char *) &*volW->begin();
+            volW.reset( new carto::Volume<T>( volW, volR->posInRefVolume(), 
+              typename carto::Volume<T>::Position4Di( volR->getSizeX(),
+                volR->getSizeY(), volR->getSizeZ(), volR->getSizeT() ) ) );
+            volumeW->carto->vol = Object::value( volW );
+            if( volR->allocatorContext().allocatorType() 
+                != AllocatorStrategy::Unallocated )
+            {
+              cout << "WARNING: copied volume in duplicated as border + volume !\n";
+              *volW = *volR; // this should NOT happen...
+            }
+          }
+          else
+          {
+            volW.reset( new carto::Volume<T>( *volR ) );
+            volumeW->carto->vol = Object::value( volW );
+            volumeW->data = (char *) &*volW->begin();
+          }
+        }
+        catch( exception & e )
+        {
+          cerr << e.what() << endl;
+          return PB;
+        }
+        volumeW->state = STATE_FILLED;
+        volumeW->tab = NULL;
+        return OK;
+      }
 
      // differing sizes. Copy manually
 
@@ -649,19 +676,23 @@ namespace
     */
 
     ::Volume *v 
-        = VipDeclare4DVolumeStructure( vol->getSizeX() - border * 2, 
-                                       vol->getSizeY() - border * 2, 
-                                       vol->getSizeZ() - border * 2, 
-                                       vol->getSizeT(), 
-                                       vs[0], vs[1], vs[2], vs[3], 
-                                       mytype<T>(), 
-                                       const_cast<char *>( fname.c_str() ), 
+        = VipDeclare4DVolumeStructure( vol->getSizeX(),
+                                       vol->getSizeY(),
+                                       vol->getSizeZ(),
+                                       vol->getSizeT(),
+                                       vs[0], vs[1], vs[2], vs[3],
+                                       mytype<T>(),
+                                       const_cast<char *>( fname.c_str() ),
                                        border );
     if( !v )
       return 0;
     VipVolumeCartoAllocStruct( v );
     v->carto->vol = Object::value( vol );
-    v->data = (char *) &*vol->begin();
+    if( !vol->refVolume().isNull() )
+      // with border, point to the bigger volume
+      v->data = (char *) &*vol->refVolume()->begin();
+    else
+      v->data = (char *) &*vol->begin();
     v->tab = NULL;
     VipSetState( v, STATE_ALLOCATED );
 
@@ -714,18 +745,9 @@ namespace
     Reader<carto::Volume<T> >	r( fname );
     rc_ptr<carto::Volume<T> >	vol;
 
-    vol = rc_ptr<carto::Volume<T> >( r.read( vr.border, &format, vr.frame ) );
+    vol.reset( r.read( vr.border, &format, vr.frame ) );
     if( !vol.get() )
       return false;
-    /* */
-
-    /* 
-    AimsData<T>			d;
-    Reader<AimsData<T> >	r( fname );
-    if( !r.read( d ) )
-      return false;
-    rc_ptr<carto::Volume<T> >	vol = d.volume();
-    */
 
     vr.volume 
       = VipVolumeCartoCreate( vol, fname, vr.border );
@@ -803,27 +825,30 @@ namespace
           ->GenericObject::value<rc_ptr<carto::Volume<T> > >();
 
         ovol->header().setProperty( "voxel_size", vs );
-        if( volume->borderWidth != 0 )
-          ovol->header().setProperty( "_borderWidth",
-                                              volume->borderWidth );
         return writeCartoVolume( *ovol, fname, format );
       }
 
     // old Vip allocation way (should not exist anymore)
 
-    carto::Volume<T>	vol( volume->size.x + volume->borderWidth * 2, 
-                             volume->size.y + volume->borderWidth * 2, 
-                             volume->size.z + volume->borderWidth * 2, 
-                             volume->size.t, 
-                             (T *) volume->data );
+    carto::rc_ptr<carto::Volume<T> > vol(
+      new carto::Volume<T>( volume->size.x + volume->borderWidth * 2,
+                            volume->size.y + volume->borderWidth * 2, 
+                            volume->size.z + volume->borderWidth * 2, 
+                            volume->size.t, 
+                            (T *) volume->data ) );
     if( volume->borderWidth != 0 )
-      {
-        // cout << "vol with border: " << volume->borderWidth << endl;
-        vol.header().setProperty( "_borderWidth",
-                                          volume->borderWidth );
-      }
-    vol.header().setProperty( "voxel_size", vs );
-    return writeCartoVolume( vol, fname, format );
+    {
+      // cout << "vol with border: " << volume->borderWidth << endl;
+      vol.reset( new carto::Volume<T>(
+        vol,
+        typename carto::Volume<T>::Position4Di( volume->borderWidth,
+                                       volume->borderWidth,
+                                       volume->borderWidth, 0 ),
+        typename carto::Volume<T>::Position4Di( volume->size.x, volume->size.y,
+                                       volume->size.z, volume->size.t ) ) );
+    }
+    vol->header().setProperty( "voxel_size", vs );
+    return writeCartoVolume( *vol, fname, format );
   }
 
 }
@@ -963,12 +988,6 @@ namespace vip
                                      volume->size.z + volume->borderWidth * 2, 
                                      volume->size.t, 
                                      (T *) volume->data ) );
-        if( volume->borderWidth != 0 )
-          {
-            // cout << "vol with border: " << volume->borderWidth << endl;
-            vol->header().setProperty( "_borderWidth",
-                                               volume->borderWidth );
-          }
         vector<float>	vs(4);
         vs[0] = volume->voxelSize.x;
         vs[1] = volume->voxelSize.y;
