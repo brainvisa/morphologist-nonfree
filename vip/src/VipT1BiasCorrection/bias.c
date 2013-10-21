@@ -579,8 +579,6 @@ int main(int argc, char *argv[])
         a la SPM, avec la tete coupee. Il n'y a plus de contour sur les bords
         et on chope trop de tissus avec extedge*/
       vol = VipReadVolumeWithBorder(input,3);
-      printf( "vol read.\n" );
-      VipResizeBorder(vol, 2);
 
       if(mVipVolType(vol)==U8BIT)
       {
@@ -629,10 +627,7 @@ int main(int argc, char *argv[])
       VipSetBorderLevel(vol, 0);
       VipResizeBorder(vol, 0);
       
-  VipWriteVolume(vol,"/tmp/before_copy.nii");
-  printf( "copying for deriche\n" );
       deriche = VipCopyVolume(vol, "deriche");
-  VipWriteVolume(deriche,"/tmp/deriche.nii");
       if (deriche==PB) return(VIP_CL_ERROR);
       if (VipDeriche3DGradientNorm(deriche, 2., DERICHE_EXTREMA, 0.)==PB) return(VIP_CL_ERROR);
       /*compress to prevent spurious minima related to too many bins*/
