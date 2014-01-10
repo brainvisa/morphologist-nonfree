@@ -91,55 +91,14 @@ int VipVolumeCartoFreeData( ::Volume *volume )
 
 namespace
 {
-  
+
   template <typename T>
   PropertySet* getCartoHeader( ::Volume *volume )
   {
     return &volume->carto->vol->
       GenericObject::value<rc_ptr<carto::Volume<T> > >()->header();
   }
-  
-}
 
-int VipVolumeCartoResizeBorder( ::Volume* volume, int borderWidth )
-{
-#ifdef VIP_CARTOVOL_DEBUG
-  cout << "VipVolumeCartoResizeBorder " << volume->name << endl;
-#endif
-
-  if( volume->carto && volume->carto->vol.get() )
-  {
-    /* FIXME: should actually resize the volume */
-
-    switch( volume->type )
-    {
-    case U8BIT:
-      return OK;
-    case S8BIT:
-      return OK;
-    case U16BIT:
-      return OK;
-    case S16BIT:
-      return OK;
-    case U32BIT:
-      return OK;
-    case S32BIT:
-      return OK;
-    case VFLOAT:
-      return OK;
-    case VDOUBLE:
-      return OK;
-    default:
-      cerr << "VipVolumeCartoResizeHeader: unknown type " 
-           << volume->type << endl;
-    }
-  }
-  return PB;
-}
-
-
-namespace
-{
 
   void copyHeader2( const PropertySet & psr, PropertySet & psw )
   {
@@ -293,6 +252,83 @@ namespace
     }
   }
 
+
+  template <typename T>
+  void cartoResizeBorder( ::Volume *volume, int borderWidth )
+  {
+    // resize border while keeping the global (large) volume identical:
+    // no reallocation
+    rc_ptr<carto::Volume<T> >   vol1 
+      = volume->carto->vol->GenericObject::value<rc_ptr<carto::Volume<T> > >();
+
+    // take large volume
+    rc_ptr<carto::Volume<T> >   vollarge = vol1;
+    if( vol1->refVolume() )
+      vollarge = vol1->refVolume();
+    rc_ptr<carto::Volume<T> > vol2;
+    if( borderWidth == 0 )
+      // no border: the new vol is the older large one
+      vol2 = vollarge;
+    else
+    {
+      vol2.reset( new carto::Volume<T>( vollarge,
+        typename carto::Volume<T>::Position4Di(
+          borderWidth, borderWidth, borderWidth, 0 ),
+        typename carto::Volume<T>::Position4Di(
+          vollarge->getSizeX() - borderWidth * 2,
+          vollarge->getSizeY() - borderWidth * 2,
+          vollarge->getSizeZ() - borderWidth * 2,
+          vollarge->getSizeT() ) ) );
+      copyHeader2( vollarge->header(), vol2->header() );
+    }
+    // no need to copy data
+
+    volume->carto->vol = Object::value( vol2 );
+  }
+
+}
+
+
+int VipVolumeCartoResizeBorder( ::Volume* volume, int borderWidth )
+{
+#ifdef VIP_CARTOVOL_DEBUG
+  cout << "VipVolumeCartoResizeBorder " << volume->name << endl;
+#endif
+
+  if( volume->carto && volume->carto->vol.get() )
+  {
+    switch( volume->type )
+    {
+    case U8BIT:
+      cartoResizeBorder<uint8_t>( volume, borderWidth );
+      return OK;
+    case S8BIT:
+      cartoResizeBorder<int8_t>( volume, borderWidth );
+      return OK;
+    case U16BIT:
+      cartoResizeBorder<uint16_t>( volume, borderWidth );
+      return OK;
+    case S16BIT:
+      cartoResizeBorder<int16_t>( volume, borderWidth );
+      return OK;
+    case U32BIT:
+      cartoResizeBorder<uint32_t>( volume, borderWidth );
+      return OK;
+    case S32BIT:
+      cartoResizeBorder<int32_t>( volume, borderWidth );
+      return OK;
+    case VFLOAT:
+      cartoResizeBorder<float>( volume, borderWidth );
+      return OK;
+    case VDOUBLE:
+      cartoResizeBorder<double>( volume, borderWidth );
+      return OK;
+    default:
+      cerr << "VipVolumeCartoResizeHeader: unknown type " 
+           << volume->type << endl;
+    }
+  }
+  return PB;
 }
 
 
