@@ -1914,7 +1914,7 @@ int			VipResizeBorder
     volume->size.x = mVipVolSizeX(volume)-2*diff;
     volume->size.y = mVipVolSizeY(volume)-2*diff;
     volume->size.z = mVipVolSizeZ(volume)-2*diff;
-    volume->borderWidth = mVipVolBorderWidth(volume)+diff;
+    volume->borderWidth = borderWidth;
 #ifdef VIP_CARTO_VOLUME_WRAPPING
     VipVolumeCartoResizeBorder( volume, borderWidth );
 #endif
