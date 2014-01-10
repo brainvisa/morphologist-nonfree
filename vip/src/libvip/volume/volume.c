@@ -2567,13 +2567,11 @@ void      *VipCopyVolumeHeader
 	perror(volume->swapfile);
 	exit(EXIT_FAILURE);
       }
-#ifndef _WIN32
       if (fchmod(file, S_IRUSR | S_IWUSR | S_IWGRP | S_IWOTH))
 	{
 	  perror(volume->swapfile);
 	  exit(EXIT_FAILURE);
 	}
-#endif
   
       /* add it at the start of the list */
       p = VipMalloc(sizeof(swapfileNode),"VipAllocateVolumeData(p)");
@@ -2589,7 +2587,6 @@ void      *VipCopyVolumeHeader
 
       p->next = NULL;
       p->swapfile = volume->swapfile;
-#ifndef _WIN32
       /* signal handling is different on windows */
       if (!swapfileFlag) {
 	if (
@@ -2617,7 +2614,6 @@ void      *VipCopyVolumeHeader
 	    perror(NULL);
 	    exit(EXIT_FAILURE);
 	  }
-#endif	/* _WIN32 */
 	if (atexit(&swapfileAtExit)) {
 	  fputs("'atexit()' problem\n", stderr);
 	  exit(EXIT_FAILURE);
