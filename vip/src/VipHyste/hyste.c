@@ -329,7 +329,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-q[uotient] {int (quotient=[1..100] def:not used)}]\n");
   (void)fprintf(stderr,"        [-s[ize] {int (default:0)}]\n");
   (void)fprintf(stderr,"        [-b[iggest] {int (default:1)}]\n");
-  (void)fprintf(stderr,"        [-m[ode] {b, g or l (default:b)}]\n");
+  (void)fprintf(stderr,"        [-m[ode] {b, g or l (default:g)}]\n");
   (void)fprintf(stderr,"        [-g[radient] (2/3 (default:not used)]\n");
   (void)fprintf(stderr,"        [-c[onnectivity] {string:6/18/26/4/8/4s/8s/4c/8c (default:26)}]\n");
   (void)fprintf(stderr,"        [-o[utput] {image name (default:\"hysteresis\")}]\n");
@@ -361,7 +361,7 @@ static int Help()
   (void)printf("        [-g[radient] (2/3 (default:not used)]\n");
   (void)printf("read, dwindle ans save .gXD file, where X=2/3\n");
   (void)printf("        [-b[iggest] {int (default:1)} : you can choose first, second...]\n");
-  (void)printf("        [-m[ode] {b, g or l (default:b)} : binary result or labelling (1,2,3...)]\n");
+  (void)printf("        [-m[ode] {b, g or l (default:g)} : binary result or labelling (1,2,3...)]\n");
   (void)printf("        [-c[onnectivity] {string:6/18/26/4/8/4s/8s/4c/8c (default:26)}]\n");
   (void)printf("Suffixes \"s\" and \"c\" means sagittal and coronal orientations\n");
   (void)printf("        [-r[eadformat] {char: v, s or t (default:v)}]\n");
