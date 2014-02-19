@@ -51,6 +51,14 @@
 #define STANDARD_DEVIATION 432
 #define GEOMETRY 543
 
+#define VIP_BIAS_HUMAN_KEEP 75.0
+#define VIP_BIAS_MACACA_KEEP 35.0
+#define VIP_BIAS_T1_DERICHEPCT 0.05
+#define VIP_BIAS_T1_MCTH -0.4
+#define VIP_BIAS_T1_MCMETH LOWER_OR_EQUAL_TO
+#define VIP_BIAS_T2_DERICHEPCT 0.005
+#define VIP_BIAS_T2_MCTH 0.4
+#define VIP_BIAS_T2_MCMETH GREATER_OR_EQUAL_TO
 
 /*---------------------------------------------------------------------------*/
 static int Usage();
@@ -171,7 +179,7 @@ int main(int argc, char *argv[])
   int ngrid = 2;
   float RegulZTuning = 1.;
   int variance_threshold = -1;
-  int variance_pourcentage = -1;
+  int variance_pourcentage = 75;
   int deriche_edges = -1;
   float lemax, tlow, thigh;
   int connectivity = CONNECTIVITY_26;
@@ -205,6 +213,16 @@ int main(int argc, char *argv[])
   float contrast = 0, ratio_GW = 0;
   float little_opening_size;
   int random_seed = time(NULL);
+// extend cases T1/T2, human/macaca >
+  float keep = VIP_BIAS_HUMAN_KEEP;
+  int keepset = VFALSE;
+  float derichepct = VIP_BIAS_T1_DERICHEPCT;
+  int derichepctset = VFALSE;
+  float mcthreshold = VIP_BIAS_T1_MCTH;
+  int mcthresholdset = VFALSE;
+  int mcmethod = VIP_BIAS_T1_MCMETH;
+  int mcmesthodset = VFALSE;
+// < extend cases
   
   readlib = ANY_FORMAT;
   writelib = TIVOLI;
@@ -537,7 +555,81 @@ int main(int argc, char *argv[])
 	      VipPrintfExit("(commandline)VipT1BiasCorrection");
 	      return(VIP_CL_ERROR);
 	    }
-	}    
+	}
+// extend cases T1/T2 - human/macaque >
+      else if( !strncmp(argv[i],"-Dkeep",3) )
+      {
+        if( ++i >= argc || !strncmp(argv[i],"-",1) ) return(Usage());
+        keep = atof(argv[i]);
+        keepset = VTRUE;
+        Last = 3000;
+      }
+      else if( !strncmp(argv[i],"-pvariance",3) )
+      {
+        if( ++i >= argc || !strncmp(argv[i],"-",1) ) return(Usage());
+        derichepct = atof(argv[i]);
+        derichepctset = VTRUE;
+      }
+      else if( !strncmp(argv[i],"-Cthreshold",3) )
+      {
+        if( ++i >= argc || !strncmp(argv[i],"-",1) ) return(Usage());
+        mcthreshold = atof(argv[i]);
+        mcthresholdset = VTRUE;
+      }
+      else if( !strncmp(argv[i],"-Cmethod",3) )
+      {
+        if( ++i >= argc || !strncmp(argv[i],"-",1) ) return(Usage());
+        if( !strncmp(argv[i],"LOWER_OR_EQUAL_TO",17) )
+          mcmethod = LOWER_OR_EQUAL_TO;
+        else if( !strncmp(argv[i],"LE",2) )
+          mcmethod = LOWER_OR_EQUAL_TO;
+        else if( !strncmp(argv[i],"GREATER_OR_EQUAL_TO",19) )
+          mcmethod = GREATER_OR_EQUAL_TO;
+        else if( !strncmp(argv[i],"GE",2) )
+          mcmethod = GREATER_OR_EQUAL_TO;
+        else
+          printf( "-Cmethod: Unsupported thresholding method" );
+          return(Usage());
+        mcmethod = VTRUE;
+      }
+      else if( !strncmp(argv[i],"-Specie",2) )
+      {
+        if( ++i >= argc || !strncmp(argv[i],"-",1) ) return(Usage());
+        if( !strncmp(argv[i],"Human",1) )
+        {
+          if( keepset == VFALSE )
+            keep = VIP_BIAS_HUMAN_KEEP;
+        }
+        else if( !strncmp(argv[i],"Macaca",1) )
+        {
+          if( keepset == VFALSE )
+            keep = VIP_BIAS_MACACA_KEEP;
+        }
+        Last = 3000;
+      }
+      else if( !strncmp(argv[i],"-Cweight",3) )
+      {
+        if( ++i >= argc || !strncmp(argv[i],"-",1) ) return(Usage());
+        if( !strncmp(argv[i],"T1",2) )
+        {
+          if( derichepctset == VFALSE )
+            derichepct = VIP_BIAS_T1_DERICHEPCT;
+          if( mcthresholdset == VFALSE )
+            mcthreshold = VIP_BIAS_T1_MCTH;
+          if( mcmesthodset == VFALSE )
+            mcmethod = VIP_BIAS_T1_MCMETH;
+        }
+        else if( !strncmp(argv[i],"T2",2) )
+        {
+          if( derichepctset == VFALSE )
+            derichepct = VIP_BIAS_T2_DERICHEPCT;
+          if( mcthresholdset == VFALSE )
+            mcthreshold = VIP_BIAS_T2_MCTH;
+          if( mcmesthodset == VFALSE )
+            mcmethod = VIP_BIAS_T2_MCMETH;
+        }
+      }
+// < extend cases
       else if (!strncmp(argv[i], "-help",2)) return(Help());
       else
 	{
@@ -545,7 +637,7 @@ int main(int argc, char *argv[])
 	  return(Usage());
 	}
     }
-  
+
   /*check that all required arguments have been given*/
   if (input==NULL)
   {
@@ -606,7 +698,7 @@ int main(int argc, char *argv[])
               xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
               xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
               
-              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
+              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (keep/mVipVolVoxSizeZ(vol))));
               if(Last<0) Last = 0;
           }
           else
@@ -682,7 +774,7 @@ int main(int argc, char *argv[])
       
       if (i>(max_gradient*0.1) || i<(max_gradient*0.01))
       {
-          threshold_edges = (int)(max_gradient)*0.05;
+          threshold_edges = (int)(max_gradient)*derichepct;
       }
       else threshold_edges = (int)(i*1);
       printf("Tissue/background gradient threshold: %d\n", threshold_edges);
@@ -888,7 +980,7 @@ int main(int argc, char *argv[])
       mc = Vip3DGeometry(smooth, MEAN_CURVATURE);
       if (writemeancurvature==VTRUE) VipWriteVolume(mc, meancurvaturename);
 
-      VipSingleFloatThreshold(mc, LOWER_OR_EQUAL_TO, -0.4, BINARY_RESULT);
+      VipSingleFloatThreshold(mc, mcmethod, mcthreshold, BINARY_RESULT);
       white_crest = VipTypeConversionToS16BIT(mc , RAW_TYPE_CONVERSION);
       VipFreeVolume(mc);
       
@@ -904,7 +996,7 @@ int main(int argc, char *argv[])
       VipConnectivityChamferErosion( variance, 1, CONNECTIVITY_26, FRONT_PROPAGATION );
       
       target = VipCreateSingleThresholdedVolume( white_crest, GREATER_THAN, 1 , BINARY_RESULT);
-      
+
       if(!target) return(VIP_CL_ERROR);
       VipMaskVolume(target, variance);
       gradient = VipComputeCrestGrad(target, compressed);
@@ -933,7 +1025,6 @@ int main(int argc, char *argv[])
       if (VipConnexVolumeFilter (gradient, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
       //       if (VipConnexVolumeFilter (gradient, CONNECTIVITY_26, 10000, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
       target = VipCopyVolume(gradient,"target");
-      
       while(controlled==VFALSE)
         {
           VipFreeVolume(variance);
@@ -1289,7 +1380,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-th[igh] {int (default:not used)}]\n");
   (void)fprintf(stderr,"        [-e[dges] {char (default:not used, n/2/3)}]\n");
   (void)fprintf(stderr,"        [-vt[ariance] {int (default:not used, else int threshold)}]\n");
-  (void)fprintf(stderr,"        [-vp[ourcentage] {int (default:not used, else int threshold)}]\n");
+  (void)fprintf(stderr,"        [-vp[ourcentage] {int (default:75, else int threshold)}]\n");
   (void)fprintf(stderr,"        [-T[emperature] {float (default:10.)}]\n");
   (void)fprintf(stderr,"        [-g[eometric] {float (default:0.97)}]\n");
   (void)fprintf(stderr,"        [-n[Increment] {int (default:2)}]\n");
@@ -1300,7 +1391,13 @@ static int Usage()
   (void)fprintf(stderr,"        [-a[mplitude] {float ]1,10]  (default:1.1)}]\n");
   (void)fprintf(stderr,"        [-L[ast] {int (default:0)}]\n");
   (void)fprintf(stderr,"        [-P[oints] {AC,PC,IH coord filename (*.tal) (default:not used)}]\n");
+  (void)fprintf(stderr,"        [-Dk[eep] {float (default:75.0)}]\n");
   (void)fprintf(stderr,"        [-Dc[orrect] {Do the biais correction: y/n (default:y)}]\n");
+  (void)fprintf(stderr,"        [-pv[ariance] {float (default:0.05)}]\n");
+  (void)fprintf(stderr,"        [-Ct[hreshold] {float (default:-0.4)}]\n");
+  (void)fprintf(stderr,"        [-Cm[ethod] {string: HE, LE (default:LE)}]\n");
+  (void)fprintf(stderr,"        [-S[pecie] {string: H[uman], M[acaca] (default:H)}]\n");
+  (void)fprintf(stderr,"        [-Cw[eight] {string: T1, T2 (default:T1)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: a, v, s or t (default:t)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v, s or t (default:t)}]\n");
   (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
@@ -1360,7 +1457,7 @@ static int Help()
   (void)printf("high threshold on standard deviation in 26-neighborhood for inclusion in histogram\n"); 
   (void)printf("Values beyond this threshold are not taken into account.\n");
   (void)printf("In return, the field correction is applied to all values to get the final result\n");
-  (void)printf("        [-vp[ourcentage] {int (default:not used, else int threshold)}]\n");
+  (void)printf("        [-vp[ourcentage] {int (default:75, else int threshold)}]\n");
   (void)printf("Pourcentage of non null points kept with a ranking stemming from local variance\n");
   (void)printf("        [-T[emperature] {float (default:10.)}]\n");
   (void)printf("Initial temperature for annealing\n");
@@ -1388,11 +1485,22 @@ static int Help()
   (void)printf("        [-P[oints] {AC,PC,IH coord filename (*.tal) (default:not used)}]\n");
   (void)printf("Correct format for the commissure coordinate file toto.APC:\n");
   (void)printf("AC: 91 88 113\nPC: 91 115 109\nIH: 90 109 53\n");
+  (void)printf("        [-Dk[eep] {float (default:75.0)}]\n");
+  (void)printf("Mask slices more than Dkeep mm below commissure points\n");
   (void)printf("        [-Dc[orrect] {Do the biais correction: y/n (default:y)}]\n");
   (void)printf("Write the images as hfiltered or whiteridge whithout doing the bias correction if it has been done by another software\n");
+  (void)printf("        [-pv[ariance] {float (default:0.05)}]\n");
+  (void)printf("Preliminary brain mask computation: this percentage of maximal variance might be used as threshold.\n");
+  (void)printf("Value may need being changed depending on image contrast.\n");
+  (void)printf("        [-Ct[hreshold] {float (default:-0.4)}]\n");
+  (void)printf("Threshold on mean curvature. Used to compute white ridges.\n");
+  (void)printf("        [-Cm[ethod] {string: HE, LE (default:LE)}]\n");
+  (void)printf("Method for thresholding mean curvature (higher or equal, lower or equal)\n");
+  (void)printf("        [-S[pecie] {string: H[uman], M[acaca] (default:H)}]\n");
+  (void)printf("        [-Cw[eight] {string: T1, T2 (default:T1)}]\n");
   (void)printf("        [-r[eadformat] {char: a, v, s or t (default:any)}]\n");
   (void)printf("        [-w[riteformat] {char: v, s or t (default:t)}]\n");
-  (void)printf("       [-srand {int (default: time}]\n");
+  (void)printf("        [-srand {int (default: time}]\n");
   (void)printf("Initialization of the random seed, useful to get reproducible results\n");
   (void)printf("        [-h[elp]\n");
   printf("More information in:\n");
