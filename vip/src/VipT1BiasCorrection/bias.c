@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
       }
       else if( !strncmp(argv[i],"-Cthreshold",3) )
       {
-        if( ++i >= argc || !strncmp(argv[i],"-",1) ) return(Usage());
+        if( ++i >= argc ) return(Usage());
         mcthreshold = atof(argv[i]);
         mcthresholdset = VTRUE;
       }
