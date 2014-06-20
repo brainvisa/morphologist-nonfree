@@ -1668,10 +1668,9 @@ Volume *VipComputeCrestGrad(Volume *crest, Volume *vol)
                           if(*volvoisin>lemax) lemax = *volvoisin;
                         }
                     }
-                  /*gradptr = (int)mVipMax(lemax-*volptr,*volptr - lemin);*/
-                  /*if(lemax==lemin) *gradptr = 1;
-                  else*/
-                  *gradptr =(int)(100*(lemax-lemin)/mVipMax(1, *volptr));
+                  /* *gradptr = (int)mVipMax(lemax-*volptr,*volptr - lemin);*/
+                  if(lemax==lemin) *gradptr = 1;
+                  else *gradptr = (int)(100*(lemax-lemin)/mVipMax(1, *volptr));
                   /* *gradptr = lemax-lemin;*/
                 }
               crestptr++;
