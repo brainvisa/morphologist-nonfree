@@ -999,7 +999,7 @@ float P[3]
           skin = NULL;
           VipFreeVolume(mask2);
           mask2 = NULL;
-          printf("Applied variance seuil:%d\n",var_seuil);
+          printf("Applied variance threshold:%d\n",var_seuil);
           fflush(stdout);
       }
       else if(var_seuil<5)
@@ -1009,7 +1009,7 @@ float P[3]
           skin = NULL;
           VipFreeVolume(mask2);
           mask2 = NULL;
-          printf("Coudn't applied a variance seuil\n");
+          printf("Coudn't apply a variance threshold\n");
           fflush(stdout);
       }
       else
