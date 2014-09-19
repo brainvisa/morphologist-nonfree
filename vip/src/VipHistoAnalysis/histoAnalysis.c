@@ -147,912 +147,913 @@ int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
 
 int main(int argc, char *argv[])
 {
-    char *input = NULL;
-    char *ridgename = NULL;
-    char *maskname = NULL;
-    Volume *ridge=NULL;
-    Volume *mask = NULL;
-    char stripped_input[1024];
-    char *output = NULL;
-    char *his_output = NULL;
-    char *tmphisto = NULL;
-    char *systemcommand = NULL;
-    int readlib, writelib;
-    int offset=0;
-    int scalemax = 1000;
-    int nbiter;
-    float dscale = 0.5;
-    Vip1DScaleSpaceStruct *volstruct;
-    int i;
-    VipHisto *shorthisto, *histo_surface;
-    Volume *vol=NULL;
-    SSSingularity *slist=NULL;
-    SSCascade *clist=NULL, *chigh;
-    char mode = 'v';
-    int track = 5;
-    int n;
-    char surface_name[1024];
-    int ncascade = 10;
-    VipT1HistoAnalysis *ana = 0;
-    char gnuplot = 'n';
-    int gnuplotpsfile = VFALSE;
-    int nderivative = 2;
-    int D0WRITE = VFALSE;
-    int D1WRITE = VTRUE;
-    int D2WRITE = VTRUE;
-    int D3WRITE = VFALSE;
-    int D4WRITE = VFALSE;
-    int gnuplot_title = VTRUE;
-    float mean = 0;
-    float sigma = 0;
-    char SAVE = 'n';
-    int xmax=-1;
-    int hmax=50000;
-    float entropy;
-    char *extension;
-    char *root1, *root2;
-    int sequence = VFALSE;
-    int undersampling_factor = 0;
-    /**/
-    int u=0;
-    int factor;
-    VipHisto *historesamp = NULL;
-    int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
-    int j=0, k=0, l=0;
-    float contrast = 0, ratio_GW = 0;
-    float ratio_SigG1=0, ratio_SigG2=0;
-    float moyenne_gray_mean = 0;
-    float moyenne_white_mean = 0;
-    float std_gray_mean = 0;
-    float std_white_mean = 0;
-    float ratio_min = 0;
-    FILE* fichier = NULL;
-    char histoname[1024];
-    /**/
-    int variance_threshold = -1;
-    int variance_pourcentage = -1;
-    int deriche_edges = -1;
-    float lemax, tlow, thigh;
-    int connectivity=CONNECTIVITY_26;
-    Volume *edges=NULL;
-    Volume *discard=NULL;
-    int hasgnuplotfile = 0;
-    enum RenderMode { GnuPlot, MatPlotlib };
-    int renderMode = GnuPlot;
-    int renderRes;
-    int random_seed = time(NULL);
-    /*    char mask_name[256], temp_string[256];*/
+  char *input = NULL;
+  char *ridgename = NULL;
+  char *maskname = NULL;
+  Volume *ridge=NULL;
+  Volume *mask = NULL;
+  char stripped_input[1024];
+  char *output = NULL;
+  char *his_output = NULL;
+  char *tmphisto = NULL;
+  char *systemcommand = NULL;
+  int readlib, writelib;
+  int offset=0;
+  int scalemax = 1000;
+  int nbiter;
+  float dscale = 0.5;
+  Vip1DScaleSpaceStruct *volstruct;
+  int i;
+  VipHisto *shorthisto, *histo_surface;
+  Volume *vol=NULL;
+  SSSingularity *slist=NULL;
+  SSCascade *clist=NULL, *chigh;
+  char mode = 'v';
+  int track = 5;
+  int n;
+  char surface_name[1024];
+  int ncascade = 10;
+  VipT1HistoAnalysis *ana = 0;
+  char gnuplot = 'n';
+  int gnuplotpsfile = VFALSE;
+  int nderivative = 2;
+  int D0WRITE = VFALSE;
+  int D1WRITE = VTRUE;
+  int D2WRITE = VTRUE;
+  int D3WRITE = VFALSE;
+  int D4WRITE = VFALSE;
+  int gnuplot_title = VTRUE;
+  float mean = 0;
+  float sigma = 0;
+  char SAVE = 'n';
+  int xmax=-1;
+  int hmax=50000;
+  float entropy;
+  char *extension;
+  char *root1, *root2;
+  int sequence = VFALSE;
+  int undersampling_factor = 0;
+  /**/
+  int u=0;
+  int factor;
+  VipHisto *historesamp = NULL;
+  int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
+  int j=0, k=0, l=0;
+  float contrast = 0, ratio_GW = 0;
+  float ratio_SigG1=0, ratio_SigG2=0;
+  float moyenne_gray_mean = 0;
+  float moyenne_white_mean = 0;
+  float std_gray_mean = 0;
+  float std_white_mean = 0;
+  float ratio_min = 0;
+  FILE* fichier = NULL;
+  char histoname[1024];
+  /**/
+  int variance_threshold = -1;
+  int variance_pourcentage = -1;
+  int deriche_edges = -1;
+  float lemax, tlow, thigh;
+  int connectivity=CONNECTIVITY_26;
+  Volume *edges=NULL;
+  Volume *discard=NULL;
+  int hasgnuplotfile = 0;
+  enum RenderMode { GnuPlot, MatPlotlib };
+  int renderMode = GnuPlot;
+  int renderRes;
+  int random_seed = time(NULL);
+  /*    char mask_name[256], temp_string[256];*/
 
-    readlib = ANY_FORMAT;
-    writelib = VIDA;
+  readlib = ANY_FORMAT;
+  writelib = VIDA;
 
-    /*loop on command line arguments*/
+  /*loop on command line arguments*/
 
-    for(i=1;i<argc;i++)
-        {
-            if (!strncmp (argv[i], "-input", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    input = argv[i];
-                }
-            else if (!strncmp (argv[i], "-Ridge", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    ridgename = argv[i];
-                }
-            else if (!strncmp (argv[i], "-Mask", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    maskname = argv[i];
-                }
-            else if (!strcmp (argv[i], "-output-his"))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    his_output = malloc( strlen( argv[i] ) + 1 );
-                    strcpy(his_output, argv[i]);
-                }
-            else if (!strncmp (argv[i], "-output", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    output = malloc( strlen( argv[i] ) + 1 );
-                    strcpy(output, argv[i]);
-                }
-            else if (!strncmp (argv[i], "-mode", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='f') mode = 'f';
-                    else if(argv[i][0]=='a') mode = 'a';
-                    else if(argv[i][0]=='e') mode = 'e';
-                    else if(argv[i][0]=='v') mode = 'v';
-                    else if(argv[i][0]=='h') mode = 'h';
-                    else if(argv[i][0]=='c') mode = 'c';
-                    else if(argv[i][0]=='C') mode = 'C';
-                    else if(argv[i][0]=='s') mode = 's';
-                    else if(argv[i][0]=='i') mode = 'i';
-                    else
-                        {
-                            VipPrintfError("This mode option is unknown");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-0extrema", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='y') D0WRITE = VTRUE;
-                    else if(argv[i][0]=='n') D0WRITE = VFALSE;
-                    else
-                        {
-                            VipPrintfError("y/n choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-Contrast", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='h') sequence = MRI_T1_IR;
-                    else if(argv[i][0]=='l') sequence = MRI_T1_SPGR;
-                    else if(argv[i][0]=='s') sequence = MRI_T1_SEGMENTED_BRAIN;
-                    else if(argv[i][0]=='2') sequence = MODES_2;
-                    else if(argv[i][0]=='3') sequence = MODES_3;
-                    else if(argv[i][0]=='4') sequence = MODES_4;
-                    else if(argv[i][0]=='H') sequence = MODE_HISTO;
-                    else
-                        {
-                            VipPrintfError("h/l/s/2/3/4/H choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp(argv[i], "-srand", 6)){
-                      if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                      random_seed = atoi(argv[i]);
-            }
-            else if (!strncmp (argv[i], "-SAVE", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='y') SAVE = 'y';
-                    else if(argv[i][0]=='n') SAVE = 'n';
-                    else
-                        {
-                            VipPrintfError("y/n choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-1extrema", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='y') D1WRITE = VTRUE;
-                    else if(argv[i][0]=='n') D1WRITE = VFALSE;
-                    else
-                        {
-                            VipPrintfError("y/n choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-2extrema", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='y') D2WRITE = VTRUE;
-                    else if(argv[i][0]=='n') D2WRITE = VFALSE;
-                    else
-                        {
-                            VipPrintfError("y/n choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-3extrema", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='y') D3WRITE = VTRUE;
-                    else if(argv[i][0]=='n') D3WRITE = VFALSE;
-                    else
-                        {
-                            VipPrintfError("y/n choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-4extrema", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='y') D4WRITE = VTRUE;
-                    else if(argv[i][0]=='n') D4WRITE = VFALSE;
-                    else
-                        {
-                            VipPrintfError("y/n choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-Title", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='y') gnuplot_title = VTRUE;
-                    else if(argv[i][0]=='n') gnuplot_title = VFALSE;
-                    else
-                        {
-                            VipPrintfError("y/n choice!");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-Offset", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    offset = atoi(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-xmax", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    xmax = atoi(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-vtariance", 3))
-              {
-                if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                variance_threshold = atoi(argv[i]);
-              }
-            else if (!strncmp (argv[i], "-vpourcentage", 3))
-              {
-                if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                variance_pourcentage = atoi(argv[i]);
-              }
-            else if (!strncmp (argv[i], "-edges", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='2') deriche_edges = 2;
-                    else if(argv[i][0]=='3') deriche_edges = 3;
-                    else
-                        {
-                          printf("(you gave:%c)",argv[i][0]);
-                          VipPrintfError("2/3 choice!");
-                          VipPrintfExit("2D/3D edges: (commandline)VipHistoAnalysis");
-                          return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-undersampling_factor", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    undersampling_factor = atoi(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-Hmax", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    hmax = atoi(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-scalemax", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    scalemax = atoi(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-track", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    track = atoi(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-cascade", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    ncascade = atoi(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-dscale", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    dscale = atof(argv[i]);
-                }
-            else if (!strncmp (argv[i], "-gnuplot", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='n') gnuplot = 'n';
-                    else if(argv[i][0]=='s') gnuplot = 's';
-                    else if(argv[i][0]=='f') gnuplot = 'f';
-                    else if(argv[i][0]=='p') gnuplot = 'p';
-                    else
-                        {
-                            VipPrintfError("This gnuplot option is unknown");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strcmp (argv[i], "--matplotlib"))
-                {
-                    renderMode = MatPlotlib;
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='n') gnuplot = 'n';
-                    else if(argv[i][0]=='s') gnuplot = 's';
-                    else if(argv[i][0]=='f') gnuplot = 'f';
-                    else if(argv[i][0]=='p') gnuplot = 'p';
-                    else
-                        {
-                            VipPrintfError("This gnuplot option is unknown");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp (argv[i], "-readformat", 2))
-                {
-                    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-                    if(argv[i][0]=='t') readlib = TIVOLI;
-                    else if(argv[i][0]=='a') readlib = ANY_FORMAT;
-                    else if(argv[i][0]=='v') readlib = VIDA;
-                    else if(argv[i][0]=='s') readlib = SPM;
-                    else
-                        {
-                            VipPrintfError("This format is not implemented for reading");
-                            VipPrintfExit("(commandline)VipHistoAnalysis");
-                            return(VIP_CL_ERROR);
-                        }
-                }
-            else if (!strncmp(argv[i], "-help",2)) return(Help());
-            else return(Usage());
-        }
-
-    /*check that all required arguments have been given*/
-    /*
-    if( sequence == MRI_T1_SEGMENTED_BRAIN)
-      {
-        VipPrintfError("The segmented mode is under development, sorry");
-        return(Usage());
-      }
-    */
-    if (input==NULL)
-        {
-            VipPrintfError("input arg is required by VipHistoAnalysis");
-            return(Usage());
-        }
-
-    srand(random_seed);
-
-    root2 = input;
-    root1 = input;
-    while(root2!=NULL)
-      {
-        root2 = strstr(root1,"/");
-        if(root2!=NULL) root1 = root2+1;
-      }
-    strcpy(stripped_input,root1);
-
-    if( output == NULL )
+  for(i=1; i<argc; i++)
+  {
+    if (!strncmp (argv[i], "-input", 2))
     {
-      output = malloc( strlen(input) + 1 );
-      strcpy( output, input );
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      input = argv[i];
     }
-    if(dscale>0.5)
-        {
-            VipPrintfError("The maximum dscale allowed for stability is 0.5");
-            return(Usage());
-        }
-
-    if(!strcmp(input,"gaussian"))
-        {
-            shorthisto = VipCreateThreeGaussianSumHisto(20.,5.,0.,150.,15.,5000.,250.,9.,4000.);
-        }
-    else
-        {
-            extension=strstr(input,".his");
-
-            if(extension)
-                {
-                    *extension='\0';
-                    if (VipTestHistoExists(input)!=PB)
-                        {
-                            printf("Warning! Reading precomputed histogram...\n");
-                            shorthisto = VipReadHisto(input);
-                            if(shorthisto==NULL) return(VIP_CL_ERROR);
-                        }
-                    else
-                        {
-                            VipPrintfError("The input histogram does not exist");
-                            return(VIP_CL_ERROR);
-                        }
-                    extension=strstr(stripped_input,".his");
-                    if(extension)
-                      {
-                        *extension='\0';
-                      }
-                }
-            else  if (VipTestImageFileExist(input)==PB)
-                {
-                    (void)fprintf(stderr,"Can not open this image: %s\n",input);
-                    return(VIP_CL_ERROR);
-                }
-            else
-                {
-                    printf("Reading volume...\n");
-                    if(variance_threshold==-1 && variance_pourcentage==-1)
-                      {
-                        vol = VipReadVolumeWithBorder(input,0);
-                      }
-                    else
-                      vol = VipReadVolumeWithBorder(input,1);
-
-                    if(vol==PB) return(VIP_CL_ERROR);
-
-                    if(maskname)
-                      {
-                        printf("Masking initial volume with %s...\n",maskname);
-                        mask = VipReadVolume(maskname);
-                        if(mask==PB) return(VIP_CL_ERROR);
-                        VipMaskVolume(vol,mask);
-                        VipFreeVolume(mask);
-                      }
-                    if(ridgename)
-                      {
-                        printf("Reading ridge volume %s...\n",ridgename);
-                        ridge = VipReadVolume(ridgename);
-                        VipComputeStatInRidgeVolume(vol,ridge, &mean, &sigma, VTRUE);
-                        printf("ridge stats: mean: %f; sigma: %f\n", mean, sigma);
-                        VipFreeVolume(ridge);
-                      }
-                    printf("Computing histogram...\n");
-
-                    if(variance_threshold==-1 && variance_pourcentage==-1 && deriche_edges==-1)
-                      {
-                        shorthisto = VipComputeVolumeHisto(vol);
-                      }
-                    else
-                      {
-                        if (deriche_edges!=-1)
-                          {
-                            if (deriche_edges==2)
-                              {
-                                edges = VipDeriche2DGradientNorm(vol, 1., NEW_VOLUME, DERICHE_EXTREMA, 0.);
-                                connectivity = CONNECTIVITY_8;
-                              }
-                            else
-                              {
-                                edges = VipCopyVolume(vol,"edges");
-                                if (!edges) return(VIP_CL_ERROR);
-                                if(VipDeriche3DGradientNorm(edges, 2, DERICHE_EXTREMA, 0.)==PB) return(VIP_CL_ERROR);
-                              }
-                            lemax = VipGetVolumeMax(edges); /*NB choix un peu arbitraire mais pas tres important*/
-                            tlow = 0.04*lemax;
-                            thigh = 0.08*lemax;
-                            if(VipHysteresisThresholding(edges,connectivity,SAME_VOLUME,CONNEX_BINARY,tlow,thigh,HYSTE_NUMBER,1)==PB) return(VIP_CL_ERROR);
-                            /*VipWriteTivoliVolume(edges,"Thresh_edges");*/
-                          }
-                        if (variance_threshold!=-1 || variance_pourcentage!=-1)
-                          {
-                            discard = VipComputeVarianceVolume(vol);
-                            /*VipWriteTivoliVolume(discard,"variance");*/
-                            if (discard==PB) return(VIP_CL_ERROR);
-                            if (variance_pourcentage!=-1)
-                              {
-                                variance_threshold = VipPourcentageLowerThanThreshold(discard, 10, variance_pourcentage);
-                              }
-                            printf("Threshold on local deviations: %d\n", variance_threshold);
-                            VipSingleThreshold( discard, GREATER_OR_EQUAL_TO, variance_threshold, BINARY_RESULT );
-                            /*VipWriteTivoliVolume(discard,"Thresh_variance");*/
-
-                            if (edges!=NULL)
-                              {
-                                VipMerge(discard,edges,VIP_MERGE_ALL_TO_ONE,0,255);
-                                VipFreeVolume(edges);
-                              }
-                          }
-                        else discard = edges;
-                        shorthisto = VipComputeCleanedUpVolumeHisto(vol,discard);
-                        VipInvertBinaryVolume(discard);
-                        VipMaskVolume(vol,discard);
-                        VipFreeVolume(discard);
-                        /*
-                        strcpy(mask_name,input);
-                        sprintf(temp_string,"_%d_%d_",deriche_edges,variance_pourcentage);
-                        strcat(mask_name,temp_string);
-                        strcat(mask_name,"masked");
-                        VipWriteTivoliVolume(vol,mask_name);
-                        */
-                      }
-                    VipFreeVolume(vol);
-                    if(mode!='e')
-                        {
-                            printf("Writing histogram...\n");
-                            if( his_output ==  NULL )
-                            {
-                              his_output = malloc( strlen(output) + 1 );
-                              strcpy(his_output, output);
-                            }
-                            if(VipWriteHisto(shorthisto,his_output,WRITE_HISTO_ASCII)==PB)
-                                VipPrintfWarning("I can not write the histogram but I am going further");
-                        }
-                }
-        }
-    if(mode=='e')
-        {
-            /*
-            VipSetHistoVal(shorthisto,mVipHistoRangeMax(shorthisto)-1,1); bug brucker 3T
-            VipCutRightFlatPartOfHisto(shorthisto,10);
-
-              if((mVipHistoRangeMax(shorthisto)-mVipHistoRangeMin(shorthisto))>600)
-              {
-              resampflag = VTRUE;
-              historesamp = VipGetUndersampledHisto(shorthisto,&(undersamp_ratio));
-              printf("Undersampling histogram... (factor %d)\n",undersamp_ratio);
-              if(historesamp==PB) return(VIP_CL_ERROR);
-              shorthisto = historesamp;
-              }
-            */
-          if(VipGetHistoEntropy(shorthisto,&entropy)==PB) return(VIP_CL_ERROR);
-
-          printf("entropy: %f\n",entropy);
-            return(0);
-        }
-    if(mode=='v')
+    else if (!strncmp (argv[i], "-Ridge", 2))
     {
-      tmphisto = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input)
-        + 6 );
-      strcpy(tmphisto, VipTmpDirectory());
-      strcat(tmphisto, "/");
-      strcat(tmphisto, stripped_input);
-      if(VipWriteHisto(shorthisto,tmphisto,WRITE_HISTO_ASCII)==PB)
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      ridgename = argv[i];
+    }
+    else if (!strncmp (argv[i], "-Mask", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      maskname = argv[i];
+    }
+    else if (!strcmp (argv[i], "-output-his"))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      his_output = malloc( strlen( argv[i] ) + 1 );
+      strcpy(his_output, argv[i]);
+    }
+    else if (!strncmp (argv[i], "-output", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      output = malloc( strlen( argv[i] ) + 1 );
+      strcpy(output, argv[i]);
+    }
+    else if (!strncmp (argv[i], "-mode", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='f') mode = 'f';
+      else if(argv[i][0]=='a') mode = 'a';
+      else if(argv[i][0]=='e') mode = 'e';
+      else if(argv[i][0]=='v') mode = 'v';
+      else if(argv[i][0]=='h') mode = 'h';
+      else if(argv[i][0]=='c') mode = 'c';
+      else if(argv[i][0]=='C') mode = 'C';
+      else if(argv[i][0]=='s') mode = 's';
+      else if(argv[i][0]=='i') mode = 'i';
+      else
       {
-        VipPrintfWarning("I can not write the histogram in /tmp...ciao");
+        VipPrintfError("This mode option is unknown");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
         return(VIP_CL_ERROR);
       }
-      if( renderMode == GnuPlot )
-        renderRes = plotGnuplot( tmphisto, xmax, hmax, gnuplot_title );
+    }
+    else if (!strncmp (argv[i], "-0extrema", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='y') D0WRITE = VTRUE;
+      else if(argv[i][0]=='n') D0WRITE = VFALSE;
       else
-        renderRes = plotMatplotlib( tmphisto, xmax, hmax, gnuplot_title );
-      if( renderRes != OK )
       {
-        VipPrintfError("Can not use gnuplot/matplotlib here (or use \"return\" to quit gnuplot), sorry...\n");
+        VipPrintfError("y/n choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
       }
+    }
+    else if (!strncmp (argv[i], "-Contrast", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='h') sequence = MRI_T1_IR;
+      else if(argv[i][0]=='l') sequence = MRI_T1_SPGR;
+      else if(argv[i][0]=='s') sequence = MRI_T1_SEGMENTED_BRAIN;
+      else if(argv[i][0]=='2') sequence = MODES_2;
+      else if(argv[i][0]=='3') sequence = MODES_3;
+      else if(argv[i][0]=='4') sequence = MODES_4;
+      else if(argv[i][0]=='H') sequence = MODE_HISTO;
+      else
+      {
+        VipPrintfError("h/l/s/2/3/4/H choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp(argv[i], "-srand", 6))
+    {
+      if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      random_seed = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-SAVE", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='y') SAVE = 'y';
+      else if(argv[i][0]=='n') SAVE = 'n';
+      else
+      {
+        VipPrintfError("y/n choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-1extrema", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='y') D1WRITE = VTRUE;
+      else if(argv[i][0]=='n') D1WRITE = VFALSE;
+      else
+      {
+        VipPrintfError("y/n choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-2extrema", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='y') D2WRITE = VTRUE;
+      else if(argv[i][0]=='n') D2WRITE = VFALSE;
+      else
+      {
+        VipPrintfError("y/n choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-3extrema", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='y') D3WRITE = VTRUE;
+      else if(argv[i][0]=='n') D3WRITE = VFALSE;
+      else
+      {
+        VipPrintfError("y/n choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-4extrema", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='y') D4WRITE = VTRUE;
+      else if(argv[i][0]=='n') D4WRITE = VFALSE;
+      else
+      {
+        VipPrintfError("y/n choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-Title", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='y') gnuplot_title = VTRUE;
+      else if(argv[i][0]=='n') gnuplot_title = VFALSE;
+      else
+      {
+        VipPrintfError("y/n choice!");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-Offset", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      offset = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-xmax", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      xmax = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-vtariance", 3))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      variance_threshold = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-vpourcentage", 3))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      variance_pourcentage = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-edges", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='2') deriche_edges = 2;
+      else if(argv[i][0]=='3') deriche_edges = 3;
+      else
+      {
+        printf("(you gave:%c)",argv[i][0]);
+        VipPrintfError("2/3 choice!");
+        VipPrintfExit("2D/3D edges: (commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-undersampling_factor", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      undersampling_factor = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-Hmax", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      hmax = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-scalemax", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      scalemax = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-track", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      track = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-cascade", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      ncascade = atoi(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-dscale", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      dscale = atof(argv[i]);
+    }
+    else if (!strncmp (argv[i], "-gnuplot", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='n') gnuplot = 'n';
+      else if(argv[i][0]=='s') gnuplot = 's';
+      else if(argv[i][0]=='f') gnuplot = 'f';
+      else if(argv[i][0]=='p') gnuplot = 'p';
+      else
+      {
+        VipPrintfError("This gnuplot option is unknown");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strcmp (argv[i], "--matplotlib"))
+    {
+      renderMode = MatPlotlib;
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='n') gnuplot = 'n';
+      else if(argv[i][0]=='s') gnuplot = 's';
+      else if(argv[i][0]=='f') gnuplot = 'f';
+      else if(argv[i][0]=='p') gnuplot = 'p';
+      else
+      {
+        VipPrintfError("This gnuplot option is unknown");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp (argv[i], "-readformat", 2))
+    {
+      if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+      if(argv[i][0]=='t') readlib = TIVOLI;
+      else if(argv[i][0]=='a') readlib = ANY_FORMAT;
+      else if(argv[i][0]=='v') readlib = VIDA;
+      else if(argv[i][0]=='s') readlib = SPM;
+      else
+      {
+        VipPrintfError("This format is not implemented for reading");
+        VipPrintfExit("(commandline)VipHistoAnalysis");
+        return(VIP_CL_ERROR);
+      }
+    }
+    else if (!strncmp(argv[i], "-help",2)) return(Help());
+    else return(Usage());
+  }
 
-      strcat( tmphisto, ".his" );
-      unlink( tmphisto );
-      free( tmphisto );
-      tmphisto = NULL;
+  /*check that all required arguments have been given*/
+  /*
+  if( sequence == MRI_T1_SEGMENTED_BRAIN)
+    {
+      VipPrintfError("The segmented mode is under development, sorry");
+      return(Usage());
+    }
+  */
+  if (input==NULL)
+  {
+    VipPrintfError("input arg is required by VipHistoAnalysis");
+    return(Usage());
+  }
+
+  srand(random_seed);
+
+  root2 = input;
+  root1 = input;
+  while(root2!=NULL)
+  {
+    root2 = strstr(root1,"/");
+    if(root2!=NULL) root1 = root2+1;
+  }
+  strcpy(stripped_input,root1);
+
+  if( output == NULL )
+  {
+    output = malloc( strlen(input) + 1 );
+    strcpy( output, input );
+  }
+  if(dscale>0.5)
+  {
+    VipPrintfError("The maximum dscale allowed for stability is 0.5");
+    return(Usage());
+  }
+
+  if(!strcmp(input,"gaussian"))
+  {
+    shorthisto = VipCreateThreeGaussianSumHisto(20.,5.,0.,150.,15.,5000.,250.,9.,4000.);
+  }
+  else
+  {
+    extension=strstr(input,".his");
+
+    if(extension)
+    {
+      *extension='\0';
+      if (VipTestHistoExists(input)!=PB)
+      {
+        printf("Warning! Reading precomputed histogram...\n");
+        shorthisto = VipReadHisto(input);
+        if(shorthisto==NULL) return(VIP_CL_ERROR);
+      }
+      else
+      {
+        VipPrintfError("The input histogram does not exist");
+        return(VIP_CL_ERROR);
+      }
+      extension=strstr(stripped_input,".his");
+      if(extension)
+      {
+        *extension='\0';
+      }
+    }
+    else  if (VipTestImageFileExist(input)==PB)
+    {
+      (void)fprintf(stderr,"Can not open this image: %s\n",input);
       return(VIP_CL_ERROR);
-    }
-    if(mode=='s')
-      {
-        vol = VipReadVolumeWithBorder(input,1);
-        histo_surface = VipGetHistoSurface(shorthisto, vol);
-        strcpy(surface_name,input);
-        strcat(surface_name,"_surf");
-        if(VipWriteHisto(histo_surface,surface_name,WRITE_HISTO_ASCII)==PB)
-          return(VIP_CL_ERROR);
-        VipFreeVolume(vol);
-        return(0);
-      }
-
-    if(mode!='h' && mode!='v')
-    {
-        printf("Computing scale space singularities up to order three...\n");
-        fflush(stdout);
-
-        /*VipSetHistoVal(shorthisto,mVipHistoRangeMax(shorthisto)-1,1);*/ /*bug brucker 3T*/
-        VipSetHistoVal(shorthisto,0,0); /*outside field of view for square images*/
-    }
-
-    if((mode=='a' && sequence==MODE_HISTO) || (mode=='i' && sequence==MODE_HISTO))
-      {
-        if( (mVipHistoRangeMax(shorthisto) - mVipHistoRangeMin(shorthisto) ) == 256 ) /*coupes histo avec un artefact a la fin de l'histo*/
-          {
-            VipPrintfWarning("256 values, I put to zero the 5 last values of the range (SHFJ scanner artefact for histology)");
-            VipSetHistoVal(shorthisto,251,0);
-            VipSetHistoVal(shorthisto,252,0);
-            VipSetHistoVal(shorthisto,253,0);
-            VipSetHistoVal(shorthisto,254,0);
-            VipSetHistoVal(shorthisto,255,0);
-          }
-      }
-
-
-    nbiter = (int)(scalemax/dscale+0.5);
-    track = (int)(track/dscale+0.5);
-
-    if(gnuplot=='p') gnuplotpsfile = VTRUE;
-
-    if(mode=='i')
-    {
-        historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);
-        if(factor==0 && undersampling_factor==1) u = 1;
-        else if (factor==1 && undersampling_factor==2) u = undersampling_factor/2;
-        else
-        {
-            undersampling_factor /= 2;
-            u = undersampling_factor/2;
-        }
-        while(u<=undersampling_factor*2)
-        {
-            D0WRITE = VFALSE;
-            D1WRITE = VTRUE;
-            D2WRITE = VTRUE;
-            D3WRITE = VFALSE;
-            D4WRITE = VFALSE;
-            volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,dscale,offset,2,u);
-            if(volstruct==PB) printf("Error in VipCompute1DScaleSpaceStructUntilLastCascade\n");
-
-            slist = VipComputeSSSingularityList(volstruct,track,D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE);
-            if(slist==PB) printf("Error in VipComputeSSSingularityList\n");
-
-            printf("Detecting D1/D2 singularity matings and cascades...\n"), fflush(stdout);
-
-            if(VipFindSSSingularityMates(slist)==PB) printf("Error in VipFindSSSingularityMates\n");
-            else
-            {
-                chigh = NULL;
-                VipCountSingularitiesStillAlive(slist,&n,volstruct->itermax);
-
-                if((n<=5))
-                chigh = VipCreateHighestCascade(slist,volstruct->itermax,n);
-
-                if (sequence==MODE_HISTO) clist = VipComputeScaleOrderedCascadeList( slist, nbiter, volstruct->hcumul);
-                else clist = VipComputeOrderedCascadeList( slist, nbiter, volstruct->hcumul);
-
-                if(chigh!=NULL)
-                {
-                    chigh->next = clist;
-                    clist = chigh;
-
-                    if(ridgename)
-                    {
-                        printf("Analysing histogram knowing white ridge statistics...\n");
-                        ana = VipAnalyseCascadesRidge( clist, volstruct, mean);
-                        if(ana==PB) printf("Erreur in VipAnalyseCascadesRidge\n");
-                    }
-                    else
-                    {
-                        printf("Analysing histogram D1 and D2 singularities...\n"), fflush(stdout);
-                        ana = VipAnalyseCascades( clist, volstruct, sequence);
-                        if(ana==PB) printf("Erreur in VipAnalyseCascades\n");
-                    }
-                    if(ana && ana->white && ana->gray)
-                    {
-                        if (ana->sequence==MODE_HISTO) VipMarkAnalysedObjectsHisto( ana, volstruct );
-                        else VipMarkAnalysedObjects( ana, volstruct );
-
-                        contrast = ((float)ana->white->mean - (float)ana->gray->mean)/((float)ana->white->mean);
-                        ratio_GW = (float)(shorthisto->val[ana->gray->mean])/(float)(shorthisto->val[ana->white->mean]);
-
-                        printf("\ncontrast = %.3f\n", contrast), fflush(stdout);
-                        printf("ratio_GW = %.3f, val_histo_gray = %d, val_histo_white = %d\n", ratio_GW, shorthisto->val[ana->gray->mean], shorthisto->val[ana->white->mean]), fflush(stdout);
-
-                        if((0.09<contrast && contrast<0.55) && (0.25<ratio_GW && ratio_GW<2.5))
-                        {
-                            undersampling_factor_possible[j][0] = u;
-                            undersampling_factor_possible[j][1] = ana->gray->mean;
-                            undersampling_factor_possible[j][2] = ana->gray->sigma;
-                            undersampling_factor_possible[j][3] = ana->white->mean;
-                            undersampling_factor_possible[j][4] = ana->white->sigma;
-                            j++;
-                        }
-                        else l++;
-                    }
-                }
-                else
-                {
-                    VipPrintfError("Sorry, this analysis can not proceed further");
-                }
-            }
-            if(u<undersampling_factor && u!=1) u+=undersampling_factor/4;
-            else u+=(undersampling_factor+1)/2;
-        }
-        u = VipIterateToGetPropUndersampledRatio(shorthisto, &undersampling_factor, undersampling_factor_possible, j);
-        if(u==PB) return(VIP_CL_ERROR);
-        printf("\nu=%d, ", u), fflush(stdout);
-
-        undersampling_factor *= 2;
-    }
-
-    if(mode=='f')
-    {
-            if(D4WRITE==VTRUE) nderivative = 4;
-            else if(D3WRITE==VTRUE) nderivative = 3;
-            else if(D2WRITE==VTRUE) nderivative = 2;
-            else nderivative=1;
-
-            volstruct = VipCompute1DScaleSpaceStructFromHisto(shorthisto,nbiter,dscale,offset,nderivative,undersampling_factor );
-            if( volstruct == PB )
-              return VIP_CL_ERROR;
-    }
-    else if(mode!='h' && mode!='v')
-        {
-            D0WRITE = VFALSE;
-            D1WRITE = VTRUE;
-            D2WRITE = VTRUE;
-            D3WRITE = VFALSE;
-            D4WRITE = VFALSE;
-            if(mode=='i')
-                volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,dscale,offset,2,u);
-            else
-                volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,dscale,offset,2,undersampling_factor);
-        }
-
-    if(mode!='h' && mode!='v')
-    {
-        if(volstruct==PB) return(VIP_CL_ERROR);
-
-        slist = VipComputeSSSingularityList(volstruct,track,D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE);
-        if(slist==PB) return(VIP_CL_ERROR);
-    }
-
-    if(mode!='f' && mode!='v' && mode!='h')
-        {
-            printf("Detecting D1/D2 singularity matings and cascades...\n");
-
-            if(VipFindSSSingularityMates(slist)==PB) return(VIP_CL_ERROR);
-
-            chigh = NULL;
-            VipCountSingularitiesStillAlive(slist,&n,volstruct->itermax);
-
-            if((n<=5))
-                chigh = VipCreateHighestCascade(slist,volstruct->itermax,n);
-
-            if (mode=='C' || (mode=='a' && sequence==MODE_HISTO) || (mode=='i' && sequence==MODE_HISTO))
-              clist = VipComputeScaleOrderedCascadeList( slist, nbiter, volstruct->hcumul);
-            else
-              clist = VipComputeOrderedCascadeList( slist, nbiter, volstruct->hcumul);
-            if(chigh!=NULL)
-                {
-                    chigh->next = clist;
-                    clist = chigh;
-                }
-            else
-                {
-                    VipPrintfError("Sorry, the analysis can not proceed further");
-                    return(VIP_CL_ERROR);
-                }
-        }
-
-    if(mode=='a' || mode=='i')
-        {
-          if(ridgename)
-            {
-              printf("Analysing histogram knowing white ridge statistics...\n");
-              ana = VipAnalyseCascadesRidge( clist, volstruct, mean);
-              if(ana==PB) return(VIP_CL_ERROR);
-            }
-          else
-            {
-              printf("Analysing histogram D1 and D2 singularities...\n");
-              ana = VipAnalyseCascades( clist, volstruct, sequence);
-              if(ana==PB) return(VIP_CL_ERROR);
-
-              if(ana->sequence == MRI_T1_SPGR)
-                printf("This T1-MR image seems to come from a classic SPGR sequence (low gray/white contrast)\n");
-              else if(ana->sequence == MRI_T1_IR)
-                printf("This T1-MR image seems to come from an Inversion/Recovery sequence (high gray/white contrast)\n");
-              else if(ana->sequence == MRI_T1_SEGMENTED_BRAIN)
-                printf("Analyse has assumed a segmented brain...\n");
-              else if(ana->sequence == MODES_2)
-                printf("Analyse will provide 2 main modes...\n");
-              else if(ana->sequence == MODES_3)
-                printf("Analyse will provide 3 main modes...\n");
-              else if(ana->sequence == MODES_4)
-                printf("Analyse will provide 4 main modes...\n");
-              else if(ana->sequence == MODE_HISTO)
-                printf("Analyse of histological slice ...\n");
-              else
-                {
-                  VipPrintfError("Unknown sequence");
-                  return(VIP_CL_ERROR);
-                }
-            }
-            if (ana->sequence==MODE_HISTO)
-              VipMarkAnalysedObjectsHisto( ana, volstruct);
-            else VipMarkAnalysedObjects( ana, volstruct);
-            if(SAVE=='y')
-                {
-                  /*if(ana->sequence == MRI_T1_SEGMENTED_BRAIN)  ana->sequence = MRI_T1_SPGR;*/
-                  if(VipWriteT1HistoAnalysis( ana, output)==PB) return(VIP_CL_ERROR);
-                }
-
-        }
-    else if (mode=='c')
-        {
-            VipMarkNBiggestCascades( clist, ncascade, volstruct);
-        }
-
-    else if (mode=='C')
-        {
-            VipMarkNHighestCascades( clist, ncascade, volstruct);
-
-        }
-
-    if(mode!='f')
-    {
-      if(gnuplot!='n')
-      {
-        if( VipCreatePlotFileFromExtrema( renderMode, volstruct, stripped_input,
-            SS_CASCADE_EXTREMUM, gnuplotpsfile, gnuplot_title, D0WRITE, D1WRITE,
-            D2WRITE, D3WRITE, D4WRITE ) == PB )
-          return(VIP_CL_ERROR);
-        hasgnuplotfile = 1;
-      }
     }
     else
     {
-      if(gnuplot!='n')
+      printf("Reading volume...\n");
+      if(variance_threshold==-1 && variance_pourcentage==-1)
       {
-        if( VipCreatePlotFileFromExtrema( renderMode, volstruct,
-            stripped_input, SS_TRACKED_EXTREMUM, gnuplotpsfile, gnuplot_title,
-            D0WRITE, D1WRITE, D2WRITE, D3WRITE, D4WRITE ) == PB )
-          return(VIP_CL_ERROR);
-        hasgnuplotfile = 1;
+        vol = VipReadVolumeWithBorder(input,0);
       }
-    }
+      else
+        vol = VipReadVolumeWithBorder(input,1);
 
-    if(mode!='h' && mode!='v')
-    {
-        VipFree1DScaleSpaceStruct(volstruct);
+      if(vol==PB) return(VIP_CL_ERROR);
 
-        /*   if(slist!=NULL) VipFreeSSSingularityList(slist);
-        Probleme with histo plantage.his???*/
-        if(clist!=NULL) VipFreeCascadeList(clist);
-        fflush(stdout);
-    }
-
-    if(gnuplot=='s')
-    {
-      switch( renderMode )
+      if(maskname)
       {
-      case GnuPlot:
-        systemcommand = malloc( strlen(VipTmpDirectory())
-          + strlen(stripped_input) + 15 );
-        sprintf( systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(),
-                 VipFileSeparator(), stripped_input );
-        break;
-      case MatPlotlib:
-        systemcommand = malloc( strlen(VipTmpDirectory())
-          + strlen(stripped_input) + 15 );
-        sprintf( systemcommand, "python %s%c%s.py", VipTmpDirectory(),
-                 VipFileSeparator(), stripped_input );
-        break;
+        printf("Masking initial volume with %s...\n",maskname);
+        mask = VipReadVolume(maskname);
+        if(mask==PB) return(VIP_CL_ERROR);
+        VipMaskVolume(vol,mask);
+        VipFreeVolume(mask);
       }
-      if( systemcommand == NULL )
-        return VIP_CL_ERROR;
-      printf( "%s\n", systemcommand );
-      if( system(systemcommand) )
-        VipPrintfError("Can not use gnuplot/matplotlib here (or use \"return\" to quit gnuplot), sorry...\n");
-      free( systemcommand );
-      systemcommand = NULL;
-    }
-    if( hasgnuplotfile )
-    {
-      switch( renderMode )
+      if(ridgename)
       {
-      case GnuPlot:
-        systemcommand = malloc( strlen(VipTmpDirectory())
-          + strlen(stripped_input) + 5 );
-        sprintf( systemcommand, "%s%c%s.gp", VipTmpDirectory(),
-                 VipFileSeparator(), stripped_input );
-        break;
-      case MatPlotlib:
-        systemcommand = malloc( strlen(VipTmpDirectory())
-          + strlen(stripped_input) + 5 );
-        sprintf( systemcommand, "%s%c%s.py", VipTmpDirectory(),
-                 VipFileSeparator(), stripped_input );
-      }
-      if( systemcommand == NULL )
-        return VIP_CL_ERROR;
-      unlink( systemcommand );
-      sprintf( systemcommand, "%s%cgpdir_%s", VipTmpDirectory(),
-               VipFileSeparator(), stripped_input );
-      printf( "rm -r %s\n", systemcommand );
-      VipRm( systemcommand, VipRecursive );
-      free( systemcommand );
-      systemcommand = NULL;
-    }
-/*
-    if(ridgename && ana)
-      {
-        vol = VipReadVolume(input);
+        printf("Reading ridge volume %s...\n",ridgename);
         ridge = VipReadVolume(ridgename);
-        vol = VipComputeCrestAverageIntensity(ridge, vol);
-        printf("Refining ridges [%d,%d]\n",mVipMin(ana->gray->mean +1*ana->gray->sigma,ana->white->mean -1*ana->white->sigma), ana->white->mean +3*ana->white->sigma);
-        VipDoubleThreshold(vol,VIP_BETWEEN_OR_EQUAL_TO,mVipMin(ana->gray->mean +1*ana->gray->sigma,ana->white->mean -1*ana->white->sigma) ,ana->white->mean +2*ana->white->sigma,GREYLEVEL_RESULT);
-        if (VipConnexVolumeFilter (vol, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
-        VipWriteVolume(vol,ridgename);
+        VipComputeStatInRidgeVolume(vol,ridge, &mean, &sigma, VTRUE);
+        printf("ridge stats: mean: %f; sigma: %f\n", mean, sigma);
+        VipFreeVolume(ridge);
       }
-*/
+      printf("Computing histogram...\n");
 
+      if(variance_threshold==-1 && variance_pourcentage==-1 && deriche_edges==-1)
+      {
+        shorthisto = VipComputeVolumeHisto(vol);
+      }
+      else
+      {
+        if (deriche_edges!=-1)
+        {
+          if (deriche_edges==2)
+          {
+            edges = VipDeriche2DGradientNorm(vol, 1., NEW_VOLUME, DERICHE_EXTREMA, 0.);
+            connectivity = CONNECTIVITY_8;
+          }
+          else
+          {
+            edges = VipCopyVolume(vol,"edges");
+            if (!edges) return(VIP_CL_ERROR);
+            if(VipDeriche3DGradientNorm(edges, 2, DERICHE_EXTREMA, 0.)==PB) return(VIP_CL_ERROR);
+          }
+          lemax = VipGetVolumeMax(edges); /*NB choix un peu arbitraire mais pas tres important*/
+          tlow = 0.04*lemax;
+          thigh = 0.08*lemax;
+          if(VipHysteresisThresholding(edges,connectivity,SAME_VOLUME,CONNEX_BINARY,tlow,thigh,HYSTE_NUMBER,1)==PB) return(VIP_CL_ERROR);
+          /*VipWriteTivoliVolume(edges,"Thresh_edges");*/
+        }
+        if (variance_threshold!=-1 || variance_pourcentage!=-1)
+        {
+          discard = VipComputeVarianceVolume(vol);
+          /*VipWriteTivoliVolume(discard,"variance");*/
+          if (discard==PB) return(VIP_CL_ERROR);
+          if (variance_pourcentage!=-1)
+          {
+            variance_threshold = VipPourcentageLowerThanThreshold(discard, 10, variance_pourcentage);
+          }
+          printf("Threshold on local deviations: %d\n", variance_threshold);
+          VipSingleThreshold( discard, GREATER_OR_EQUAL_TO, variance_threshold, BINARY_RESULT );
+          /*VipWriteTivoliVolume(discard,"Thresh_variance");*/
+
+          if (edges!=NULL)
+          {
+            VipMerge(discard,edges,VIP_MERGE_ALL_TO_ONE,0,255);
+            VipFreeVolume(edges);
+          }
+        }
+        else discard = edges;
+        shorthisto = VipComputeCleanedUpVolumeHisto(vol,discard);
+        VipInvertBinaryVolume(discard);
+        VipMaskVolume(vol,discard);
+        VipFreeVolume(discard);
+        /*
+        strcpy(mask_name,input);
+        sprintf(temp_string,"_%d_%d_",deriche_edges,variance_pourcentage);
+        strcat(mask_name,temp_string);
+        strcat(mask_name,"masked");
+        VipWriteTivoliVolume(vol,mask_name);
+        */
+      }
+      VipFreeVolume(vol);
+      if(mode!='e')
+      {
+        printf("Writing histogram...\n");
+        if( his_output ==  NULL )
+        {
+          his_output = malloc( strlen(output) + 1 );
+          strcpy(his_output, output);
+        }
+        if(VipWriteHisto(shorthisto,his_output,WRITE_HISTO_ASCII)==PB)
+          VipPrintfWarning("I can not write the histogram but I am going further");
+      }
+    }
+  }
+  if(mode=='e')
+  {
+    /*
+    VipSetHistoVal(shorthisto,mVipHistoRangeMax(shorthisto)-1,1); bug brucker 3T
+    VipCutRightFlatPartOfHisto(shorthisto,10);
+
+      if((mVipHistoRangeMax(shorthisto)-mVipHistoRangeMin(shorthisto))>600)
+      {
+      resampflag = VTRUE;
+      historesamp = VipGetUndersampledHisto(shorthisto,&(undersamp_ratio));
+      printf("Undersampling histogram... (factor %d)\n",undersamp_ratio);
+      if(historesamp==PB) return(VIP_CL_ERROR);
+      shorthisto = historesamp;
+      }
+    */
+    if(VipGetHistoEntropy(shorthisto,&entropy)==PB) return(VIP_CL_ERROR);
+
+    printf("entropy: %f\n",entropy);
     return(0);
+  }
+  if(mode=='v')
+  {
+    tmphisto = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input)
+                       + 6 );
+    strcpy(tmphisto, VipTmpDirectory());
+    strcat(tmphisto, "/");
+    strcat(tmphisto, stripped_input);
+    if(VipWriteHisto(shorthisto,tmphisto,WRITE_HISTO_ASCII)==PB)
+    {
+      VipPrintfWarning("I can not write the histogram in /tmp...ciao");
+      return(VIP_CL_ERROR);
+    }
+    if( renderMode == GnuPlot )
+      renderRes = plotGnuplot( tmphisto, xmax, hmax, gnuplot_title );
+    else
+      renderRes = plotMatplotlib( tmphisto, xmax, hmax, gnuplot_title );
+    if( renderRes != OK )
+    {
+      VipPrintfError("Can not use gnuplot/matplotlib here (or use \"return\" to quit gnuplot), sorry...\n");
+    }
+
+    strcat( tmphisto, ".his" );
+    unlink( tmphisto );
+    free( tmphisto );
+    tmphisto = NULL;
+    return(VIP_CL_ERROR);
+  }
+  if(mode=='s')
+  {
+    vol = VipReadVolumeWithBorder(input,1);
+    histo_surface = VipGetHistoSurface(shorthisto, vol);
+    strcpy(surface_name,input);
+    strcat(surface_name,"_surf");
+    if(VipWriteHisto(histo_surface,surface_name,WRITE_HISTO_ASCII)==PB)
+      return(VIP_CL_ERROR);
+    VipFreeVolume(vol);
+    return(0);
+  }
+
+  if(mode!='h' && mode!='v')
+  {
+    printf("Computing scale space singularities up to order three...\n");
+    fflush(stdout);
+
+    /*VipSetHistoVal(shorthisto,mVipHistoRangeMax(shorthisto)-1,1);*/ /*bug brucker 3T*/
+    VipSetHistoVal(shorthisto,0,0); /*outside field of view for square images*/
+  }
+
+  if((mode=='a' && sequence==MODE_HISTO) || (mode=='i' && sequence==MODE_HISTO))
+  {
+    if( (mVipHistoRangeMax(shorthisto) - mVipHistoRangeMin(shorthisto) ) == 256 ) /*coupes histo avec un artefact a la fin de l'histo*/
+    {
+      VipPrintfWarning("256 values, I put to zero the 5 last values of the range (SHFJ scanner artefact for histology)");
+      VipSetHistoVal(shorthisto,251,0);
+      VipSetHistoVal(shorthisto,252,0);
+      VipSetHistoVal(shorthisto,253,0);
+      VipSetHistoVal(shorthisto,254,0);
+      VipSetHistoVal(shorthisto,255,0);
+    }
+  }
+
+
+  nbiter = (int)(scalemax/dscale+0.5);
+  track = (int)(track/dscale+0.5);
+
+  if(gnuplot=='p') gnuplotpsfile = VTRUE;
+
+  if(mode=='i')
+  {
+    historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);
+    if(factor==0 && undersampling_factor==1) u = 1;
+    else if (factor==1 && undersampling_factor==2) u = undersampling_factor/2;
+    else
+    {
+      undersampling_factor /= 2;
+      u = undersampling_factor/2;
+    }
+    while(u<=undersampling_factor*2)
+    {
+      D0WRITE = VFALSE;
+      D1WRITE = VTRUE;
+      D2WRITE = VTRUE;
+      D3WRITE = VFALSE;
+      D4WRITE = VFALSE;
+      volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,dscale,offset,2,u);
+      if(volstruct==PB) printf("Error in VipCompute1DScaleSpaceStructUntilLastCascade\n");
+
+      slist = VipComputeSSSingularityList(volstruct,track,D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE);
+      if(slist==PB) printf("Error in VipComputeSSSingularityList\n");
+
+      printf("Detecting D1/D2 singularity matings and cascades...\n"), fflush(stdout);
+
+      if(VipFindSSSingularityMates(slist)==PB) printf("Error in VipFindSSSingularityMates\n");
+      else
+      {
+        chigh = NULL;
+        VipCountSingularitiesStillAlive(slist,&n,volstruct->itermax);
+
+        if((n<=5))
+          chigh = VipCreateHighestCascade(slist,volstruct->itermax,n);
+
+        if (sequence==MODE_HISTO) clist = VipComputeScaleOrderedCascadeList( slist, nbiter, volstruct->hcumul);
+        else clist = VipComputeOrderedCascadeList( slist, nbiter, volstruct->hcumul);
+
+        if(chigh!=NULL)
+        {
+          chigh->next = clist;
+          clist = chigh;
+
+          if(ridgename)
+          {
+            printf("Analysing histogram knowing white ridge statistics...\n");
+            ana = VipAnalyseCascadesRidge( clist, volstruct, mean);
+            if(ana==PB) printf("Erreur in VipAnalyseCascadesRidge\n");
+          }
+          else
+          {
+            printf("Analysing histogram D1 and D2 singularities...\n"), fflush(stdout);
+            ana = VipAnalyseCascades( clist, volstruct, sequence);
+            if(ana==PB) printf("Erreur in VipAnalyseCascades\n");
+          }
+          if(ana && ana->white && ana->gray)
+          {
+            if (ana->sequence==MODE_HISTO) VipMarkAnalysedObjectsHisto( ana, volstruct );
+            else VipMarkAnalysedObjects( ana, volstruct );
+
+            contrast = ((float)ana->white->mean - (float)ana->gray->mean)/((float)ana->white->mean);
+            ratio_GW = (float)(shorthisto->val[ana->gray->mean])/(float)(shorthisto->val[ana->white->mean]);
+
+            printf("\ncontrast = %.3f\n", contrast), fflush(stdout);
+            printf("ratio_GW = %.3f, val_histo_gray = %d, val_histo_white = %d\n", ratio_GW, shorthisto->val[ana->gray->mean], shorthisto->val[ana->white->mean]), fflush(stdout);
+
+            if((0.09<contrast && contrast<0.55) && (0.25<ratio_GW && ratio_GW<2.5))
+            {
+              undersampling_factor_possible[j][0] = u;
+              undersampling_factor_possible[j][1] = ana->gray->mean;
+              undersampling_factor_possible[j][2] = ana->gray->sigma;
+              undersampling_factor_possible[j][3] = ana->white->mean;
+              undersampling_factor_possible[j][4] = ana->white->sigma;
+              j++;
+            }
+            else l++;
+          }
+        }
+        else
+        {
+          VipPrintfError("Sorry, this analysis can not proceed further");
+        }
+      }
+      if(u<undersampling_factor && u!=1) u+=undersampling_factor/4;
+      else u+=(undersampling_factor+1)/2;
+    }
+    u = VipIterateToGetPropUndersampledRatio(shorthisto, &undersampling_factor, undersampling_factor_possible, j);
+    if(u==PB) return(VIP_CL_ERROR);
+    printf("\nu=%d, ", u), fflush(stdout);
+
+    undersampling_factor *= 2;
+  }
+
+  if(mode=='f')
+  {
+    if(D4WRITE==VTRUE) nderivative = 4;
+    else if(D3WRITE==VTRUE) nderivative = 3;
+    else if(D2WRITE==VTRUE) nderivative = 2;
+    else nderivative=1;
+
+    volstruct = VipCompute1DScaleSpaceStructFromHisto(shorthisto,nbiter,dscale,offset,nderivative,undersampling_factor );
+    if( volstruct == PB )
+      return VIP_CL_ERROR;
+  }
+  else if(mode!='h' && mode!='v')
+  {
+    D0WRITE = VFALSE;
+    D1WRITE = VTRUE;
+    D2WRITE = VTRUE;
+    D3WRITE = VFALSE;
+    D4WRITE = VFALSE;
+    if(mode=='i')
+      volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,dscale,offset,2,u);
+    else
+      volstruct = VipCompute1DScaleSpaceStructUntilLastCascade(shorthisto,dscale,offset,2,undersampling_factor);
+  }
+
+  if(mode!='h' && mode!='v')
+  {
+    if(volstruct==PB) return(VIP_CL_ERROR);
+
+    slist = VipComputeSSSingularityList(volstruct,track,D0WRITE,D1WRITE,D2WRITE,D3WRITE,D4WRITE);
+    if(slist==PB) return(VIP_CL_ERROR);
+  }
+
+  if(mode!='f' && mode!='v' && mode!='h')
+  {
+    printf("Detecting D1/D2 singularity matings and cascades...\n");
+
+    if(VipFindSSSingularityMates(slist)==PB) return(VIP_CL_ERROR);
+
+    chigh = NULL;
+    VipCountSingularitiesStillAlive(slist,&n,volstruct->itermax);
+
+    if((n<=5))
+      chigh = VipCreateHighestCascade(slist,volstruct->itermax,n);
+
+    if (mode=='C' || (mode=='a' && sequence==MODE_HISTO) || (mode=='i' && sequence==MODE_HISTO))
+      clist = VipComputeScaleOrderedCascadeList( slist, nbiter, volstruct->hcumul);
+    else
+      clist = VipComputeOrderedCascadeList( slist, nbiter, volstruct->hcumul);
+    if(chigh!=NULL)
+    {
+      chigh->next = clist;
+      clist = chigh;
+    }
+    else
+    {
+      VipPrintfError("Sorry, the analysis can not proceed further");
+      return(VIP_CL_ERROR);
+    }
+  }
+
+  if(mode=='a' || mode=='i')
+  {
+    if(ridgename)
+    {
+      printf("Analysing histogram knowing white ridge statistics...\n");
+      ana = VipAnalyseCascadesRidge( clist, volstruct, mean);
+      if(ana==PB) return(VIP_CL_ERROR);
+    }
+    else
+    {
+      printf("Analysing histogram D1 and D2 singularities...\n");
+      ana = VipAnalyseCascades( clist, volstruct, sequence);
+      if(ana==PB) return(VIP_CL_ERROR);
+
+      if(ana->sequence == MRI_T1_SPGR)
+        printf("This T1-MR image seems to come from a classic SPGR sequence (low gray/white contrast)\n");
+      else if(ana->sequence == MRI_T1_IR)
+        printf("This T1-MR image seems to come from an Inversion/Recovery sequence (high gray/white contrast)\n");
+      else if(ana->sequence == MRI_T1_SEGMENTED_BRAIN)
+        printf("Analyse has assumed a segmented brain...\n");
+      else if(ana->sequence == MODES_2)
+        printf("Analyse will provide 2 main modes...\n");
+      else if(ana->sequence == MODES_3)
+        printf("Analyse will provide 3 main modes...\n");
+      else if(ana->sequence == MODES_4)
+        printf("Analyse will provide 4 main modes...\n");
+      else if(ana->sequence == MODE_HISTO)
+        printf("Analyse of histological slice ...\n");
+      else
+      {
+        VipPrintfError("Unknown sequence");
+        return(VIP_CL_ERROR);
+      }
+    }
+    if (ana->sequence==MODE_HISTO)
+      VipMarkAnalysedObjectsHisto( ana, volstruct);
+    else VipMarkAnalysedObjects( ana, volstruct);
+    if(SAVE=='y')
+    {
+      /*if(ana->sequence == MRI_T1_SEGMENTED_BRAIN)  ana->sequence = MRI_T1_SPGR;*/
+      if(VipWriteT1HistoAnalysis( ana, output)==PB) return(VIP_CL_ERROR);
+    }
+
+  }
+  else if (mode=='c')
+  {
+    VipMarkNBiggestCascades( clist, ncascade, volstruct);
+  }
+
+  else if (mode=='C')
+  {
+    VipMarkNHighestCascades( clist, ncascade, volstruct);
+
+  }
+
+  if(mode!='f')
+  {
+    if(gnuplot!='n')
+    {
+      if( VipCreatePlotFileFromExtrema( renderMode, volstruct, stripped_input,
+                                        SS_CASCADE_EXTREMUM, gnuplotpsfile, gnuplot_title, D0WRITE, D1WRITE,
+                                        D2WRITE, D3WRITE, D4WRITE ) == PB )
+        return(VIP_CL_ERROR);
+      hasgnuplotfile = 1;
+    }
+  }
+  else
+  {
+    if(gnuplot!='n')
+    {
+      if( VipCreatePlotFileFromExtrema( renderMode, volstruct,
+                                        stripped_input, SS_TRACKED_EXTREMUM, gnuplotpsfile, gnuplot_title,
+                                        D0WRITE, D1WRITE, D2WRITE, D3WRITE, D4WRITE ) == PB )
+        return(VIP_CL_ERROR);
+      hasgnuplotfile = 1;
+    }
+  }
+
+  if(mode!='h' && mode!='v')
+  {
+    VipFree1DScaleSpaceStruct(volstruct);
+
+    /*   if(slist!=NULL) VipFreeSSSingularityList(slist);
+    Probleme with histo plantage.his???*/
+    if(clist!=NULL) VipFreeCascadeList(clist);
+    fflush(stdout);
+  }
+
+  if(gnuplot=='s')
+  {
+    switch( renderMode )
+    {
+    case GnuPlot:
+      systemcommand = malloc( strlen(VipTmpDirectory())
+                              + strlen(stripped_input) + 15 );
+      sprintf( systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(),
+               VipFileSeparator(), stripped_input );
+      break;
+    case MatPlotlib:
+      systemcommand = malloc( strlen(VipTmpDirectory())
+                              + strlen(stripped_input) + 15 );
+      sprintf( systemcommand, "python %s%c%s.py", VipTmpDirectory(),
+               VipFileSeparator(), stripped_input );
+      break;
+    }
+    if( systemcommand == NULL )
+      return VIP_CL_ERROR;
+    printf( "%s\n", systemcommand );
+    if( system(systemcommand) )
+      VipPrintfError("Can not use gnuplot/matplotlib here (or use \"return\" to quit gnuplot), sorry...\n");
+    free( systemcommand );
+    systemcommand = NULL;
+  }
+  if( hasgnuplotfile )
+  {
+    switch( renderMode )
+    {
+    case GnuPlot:
+      systemcommand = malloc( strlen(VipTmpDirectory())
+                              + strlen(stripped_input) + 5 );
+      sprintf( systemcommand, "%s%c%s.gp", VipTmpDirectory(),
+               VipFileSeparator(), stripped_input );
+      break;
+    case MatPlotlib:
+      systemcommand = malloc( strlen(VipTmpDirectory())
+                              + strlen(stripped_input) + 5 );
+      sprintf( systemcommand, "%s%c%s.py", VipTmpDirectory(),
+               VipFileSeparator(), stripped_input );
+    }
+    if( systemcommand == NULL )
+      return VIP_CL_ERROR;
+    unlink( systemcommand );
+    sprintf( systemcommand, "%s%cgpdir_%s", VipTmpDirectory(),
+             VipFileSeparator(), stripped_input );
+    printf( "rm -r %s\n", systemcommand );
+    VipRm( systemcommand, VipRecursive );
+    free( systemcommand );
+    systemcommand = NULL;
+  }
+  /*
+      if(ridgename && ana)
+        {
+          vol = VipReadVolume(input);
+          ridge = VipReadVolume(ridgename);
+          vol = VipComputeCrestAverageIntensity(ridge, vol);
+          printf("Refining ridges [%d,%d]\n",mVipMin(ana->gray->mean +1*ana->gray->sigma,ana->white->mean -1*ana->white->sigma), ana->white->mean +3*ana->white->sigma);
+          VipDoubleThreshold(vol,VIP_BETWEEN_OR_EQUAL_TO,mVipMin(ana->gray->mean +1*ana->gray->sigma,ana->white->mean -1*ana->white->sigma) ,ana->white->mean +2*ana->white->sigma,GREYLEVEL_RESULT);
+          if (VipConnexVolumeFilter (vol, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(VIP_CL_ERROR);
+          VipWriteVolume(vol,ridgename);
+        }
+  */
+
+  return(0);
 
 
 }
@@ -1341,51 +1342,51 @@ Volume *VipComputeCrestAverageIntensity(Volume *crest, Volume *vol)
   volptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
 
   for ( iz = 0; iz < mVipVolSizeZ(vol); iz++ )
+  {
+    for ( iy = mVipVolSizeY(vol); iy-- ; )
     {
-      for ( iy = mVipVolSizeY(vol); iy-- ; )
+      for ( ix = mVipVolSizeX(vol); ix--; )
+      {
+        if(*crestptr)
         {
-          for ( ix = mVipVolSizeX(vol); ix--; )
+          sum=*volptr;
+          n=1;
+          lemin = *volptr;
+          lemax = *volptr;
+          for ( icon=0; icon<vcs->nb_neighbors; icon++)
+          {
+            crestvoisin =  crestptr + vcs->offset[icon];
+            if (*crestvoisin)
             {
-              if(*crestptr)
-                {
-                  sum=*volptr;
-                  n=1;
-                  lemin = *volptr;
-                  lemax = *volptr;
-                  for ( icon=0; icon<vcs->nb_neighbors;icon++)
-                    {
-                      crestvoisin =  crestptr + vcs->offset[icon];
-                      if (*crestvoisin)
-                        {
-                          volvoisin =  volptr + vcs->offset[icon];
-                          if(*volvoisin<lemin) lemin = *volvoisin;
-                          if(*volvoisin>lemax) lemax = *volvoisin;
-                          sum += *volvoisin;
-                          n++;
-                        }
-                    }
-                  if(n>2)
-                    {
-                      sum -= lemin;
-                      sum -= lemax;
-                      n -=2;
-                    }
-                  *smoothptr = (int)(sum/n);
+              volvoisin =  volptr + vcs->offset[icon];
+              if(*volvoisin<lemin) lemin = *volvoisin;
+              if(*volvoisin>lemax) lemax = *volvoisin;
+              sum += *volvoisin;
+              n++;
+            }
+          }
+          if(n>2)
+          {
+            sum -= lemin;
+            sum -= lemax;
+            n -=2;
+          }
+          *smoothptr = (int)(sum/n);
 
-                }
+        }
 
-              crestptr++;
-              smoothptr++;
-              volptr++;
-         }
-         crestptr += vos->oPointBetweenLine;  /*skip border points*/
-         volptr += vos->oPointBetweenLine;  /*skip border points*/
-         smoothptr += vos->oPointBetweenLine;  /*skip border points*/
+        crestptr++;
+        smoothptr++;
+        volptr++;
       }
-      crestptr += vos->oLineBetweenSlice; /*skip border lines*/
-      volptr += vos->oLineBetweenSlice; /*skip border lines*/
-      smoothptr += vos->oLineBetweenSlice; /*skip border lines*/
-   }
+      crestptr += vos->oPointBetweenLine;  /*skip border points*/
+      volptr += vos->oPointBetweenLine;  /*skip border points*/
+      smoothptr += vos->oPointBetweenLine;  /*skip border points*/
+    }
+    crestptr += vos->oLineBetweenSlice; /*skip border lines*/
+    volptr += vos->oLineBetweenSlice; /*skip border lines*/
+    smoothptr += vos->oLineBetweenSlice; /*skip border lines*/
+  }
 
 
   return(smooth);
