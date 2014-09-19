@@ -153,10 +153,10 @@ int main(int argc, char *argv[])
     Volume *ridge=NULL;
     Volume *mask = NULL;
     char stripped_input[1024];
-    char output[256]="";
-    char his_output[256]="";
-    char tmphisto[512];
-    char systemcommand[256];
+    char *output = NULL;
+    char *his_output = NULL;
+    char *tmphisto = NULL;
+    char *systemcommand = NULL;
     int readlib, writelib;
     int offset=0;
     int scalemax = 1000;
@@ -248,12 +248,14 @@ int main(int argc, char *argv[])
 	    else if (!strcmp (argv[i], "-output-his")) 
 		{
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-		    strcpy(his_output,argv[i]);
+                    his_output = malloc( strlen( argv[i] ) + 1 );
+		    strcpy(his_output, argv[i]);
 		}
 	    else if (!strncmp (argv[i], "-output", 2))
 		{
 		    if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-		    strcpy(output,argv[i]);
+                    output = malloc( strlen( argv[i] ) + 1 );
+		    strcpy(output, argv[i]);
 		}
 	    else if (!strncmp (argv[i], "-mode", 2)) 
 		{
@@ -505,8 +507,6 @@ int main(int argc, char *argv[])
 
     srand(random_seed);
 
-    strcpy(tmphisto,VipTmpDirectory());
-    strcat(tmphisto,"/");
     root2 = input;
     root1 = input;
     while(root2!=NULL)
@@ -516,7 +516,11 @@ int main(int argc, char *argv[])
       }
     strcpy(stripped_input,root1);
 
-    if(!strcmp(output,"")) strcpy(output,input);
+    if( output == NULL )
+    {
+      output = malloc( strlen(input) + 1 );
+      strcpy( output, input );
+    }
     if(dscale>0.5)
 	{
 	    VipPrintfError("The maximum dscale allowed for stability is 0.5");
@@ -533,7 +537,6 @@ int main(int argc, char *argv[])
 
 	    if(extension)
 		{
-
 		    *extension='\0';
 		    if (VipTestHistoExists(input)!=PB)
 			{
@@ -648,7 +651,11 @@ int main(int argc, char *argv[])
 		    if(mode!='e')
 			{
 			    printf("Writing histogram...\n");
-                            if(!strcmp(his_output,""))strcpy(his_output,output);
+                            if( his_output ==  NULL )
+                            {
+                              his_output = malloc( strlen(output) + 1 );
+                              strcpy(his_output, output);
+                            }
 			    if(VipWriteHisto(shorthisto,his_output,WRITE_HISTO_ASCII)==PB)
 				VipPrintfWarning("I can not write the histogram but I am going further");
 			}
@@ -676,9 +683,11 @@ int main(int argc, char *argv[])
 	}
     if(mode=='v')
     {
-      strcpy(tmphisto,VipTmpDirectory());
-      strcat(tmphisto,"/");
-      strcat(tmphisto,stripped_input);
+      tmphisto = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input)
+        + 6 );
+      strcpy(tmphisto, VipTmpDirectory());
+      strcat(tmphisto, "/");
+      strcat(tmphisto, stripped_input);
       if(VipWriteHisto(shorthisto,tmphisto,WRITE_HISTO_ASCII)==PB)
       {
         VipPrintfWarning("I can not write the histogram in /tmp...ciao");
@@ -695,6 +704,8 @@ int main(int argc, char *argv[])
 
       strcat( tmphisto, ".his" );
       unlink( tmphisto );
+      free( tmphisto );
+      tmphisto = NULL;
       return(VIP_CL_ERROR);
     }
     if(mode=='s')
@@ -982,35 +993,51 @@ int main(int argc, char *argv[])
       switch( renderMode )
       {
       case GnuPlot:
+        systemcommand = malloc( strlen(VipTmpDirectory())
+          + strlen(stripped_input) + 15 );
         sprintf( systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(), 
                  VipFileSeparator(), stripped_input );
         break;
       case MatPlotlib:
+        systemcommand = malloc( strlen(VipTmpDirectory())
+          + strlen(stripped_input) + 15 );
         sprintf( systemcommand, "python %s%c%s.py", VipTmpDirectory(),
                  VipFileSeparator(), stripped_input );
         break;
       }
+      if( systemcommand == NULL )
+        return VIP_CL_ERROR;
       printf( "%s\n", systemcommand );
       if( system(systemcommand) )
         VipPrintfError("Can not use gnuplot/matplotlib here (or use \"return\" to quit gnuplot), sorry...\n");
+      free( systemcommand );
+      systemcommand = NULL;
     }
     if( hasgnuplotfile )
     {
       switch( renderMode )
       {
       case GnuPlot:
+        systemcommand = malloc( strlen(VipTmpDirectory())
+          + strlen(stripped_input) + 5 );
         sprintf( systemcommand, "%s%c%s.gp", VipTmpDirectory(),
                  VipFileSeparator(), stripped_input );
         break;
       case MatPlotlib:
+        systemcommand = malloc( strlen(VipTmpDirectory())
+          + strlen(stripped_input) + 5 );
         sprintf( systemcommand, "%s%c%s.py", VipTmpDirectory(),
                  VipFileSeparator(), stripped_input );
       }
+      if( systemcommand == NULL )
+        return VIP_CL_ERROR;
       unlink( systemcommand );
       sprintf( systemcommand, "%s%cgpdir_%s", VipTmpDirectory(),
                VipFileSeparator(), stripped_input );
       printf( "rm -r %s\n", systemcommand );
       VipRm( systemcommand, VipRecursive );
+      free( systemcommand );
+      systemcommand = NULL;
     }
 /*
     if(ridgename && ana)
