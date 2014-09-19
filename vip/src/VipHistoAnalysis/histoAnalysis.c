@@ -56,9 +56,16 @@ int plotGnuplot( char *histofile, int xmax, int hmax, int gnuplot_title )
     if(root2!=NULL) root1 = root2+1;
   }
   stripped_input = malloc( strlen(root1) + 1 );
+  if( stripped_input == NULL )
+    return PB;
   strcpy(stripped_input,root1);
 
   gpfilename = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input) + 5 );
+  if( gpfilename == NULL )
+  {
+    free( stripped_input );
+    return PB;
+  }
   strcpy(gpfilename,VipTmpDirectory());
   strcat(gpfilename,"/");
   strcat(gpfilename,stripped_input);
@@ -86,6 +93,13 @@ int plotGnuplot( char *histofile, int xmax, int hmax, int gnuplot_title )
   fprintf(gpfile,"pause mouse any\n");
   fclose(gpfile);
   systemcommand = malloc( strlen(gpfilename) + 9 );
+  if( systemcommand == NULL )
+  {
+    free( stripped_input );
+    free( gpfilename );
+    return PB;
+  }
+
   strcpy(systemcommand, "gnuplot ");
   strcat(systemcommand,gpfilename);
   printf( "%s\n", systemcommand );
@@ -119,9 +133,16 @@ int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
     if(root2!=NULL) root1 = root2+1;
   }
   stripped_input = malloc( strlen(root1) + 1 );
+  if( stripped_input == NULL )
+    return PB;
   strcpy(stripped_input,root1);
 
   gpfilename = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input) + 5 );
+  if( gpfilename == NULL )
+  {
+    free( stripped_input );
+    return PB;
+  }
   strcpy(gpfilename,VipTmpDirectory());
   strcat(gpfilename,"/");
   strcat(gpfilename,stripped_input);
@@ -146,6 +167,12 @@ int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
   fprintf( gpfile, "pylab.show()\n" );
   fclose(gpfile);
   systemcommand = malloc( strlen(gpfilename) + 8 );
+  if( systemcommand == NULL )
+  {
+    free( stripped_input );
+    free( gpfilename );
+    return PB;
+  }
   strcpy(systemcommand, "python ");
   strcat(systemcommand,gpfilename);
   printf( "%s\n", systemcommand );
@@ -266,12 +293,20 @@ int main(int argc, char *argv[])
     {
       if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
       his_output = malloc( strlen( argv[i] ) + 1 );
+      if( his_output == NULL )
+        return PB;
       strcpy(his_output, argv[i]);
     }
     else if (!strncmp (argv[i], "-output", 2))
     {
       if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
       output = malloc( strlen( argv[i] ) + 1 );
+      if( output == NULL )
+      {
+        if(his_output != NULL )
+          free( his_output );
+        return PB;
+      }
       strcpy(output, argv[i]);
     }
     else if (!strncmp (argv[i], "-mode", 2))
@@ -533,11 +568,26 @@ int main(int argc, char *argv[])
     if(root2!=NULL) root1 = root2+1;
   }
   stripped_input = malloc( strlen(root1) + 1 );
+  if( stripped_input == NULL )
+  {
+    if(his_output != NULL )
+      free( his_output );
+    if(output != NULL )
+      free( output );
+    return PB;
+  }
   strcpy(stripped_input,root1);
 
   if( output == NULL )
   {
     output = malloc( strlen(input) + 1 );
+    if( output == NULL )
+    {
+      free( stripped_input );
+      if(his_output != NULL )
+        free( his_output );
+      return PB;
+    }
     strcpy( output, input );
   }
   if(dscale>0.5)
@@ -673,6 +723,13 @@ int main(int argc, char *argv[])
         if( his_output ==  NULL )
         {
           his_output = malloc( strlen(output) + 1 );
+          if( his_output == NULL )
+          {
+            free( stripped_input );
+            if( output != NULL )
+              free( output );
+            return PB;
+          }
           strcpy(his_output, output);
         }
         if(VipWriteHisto(shorthisto,his_output,WRITE_HISTO_ASCII)==PB)
@@ -705,6 +762,15 @@ int main(int argc, char *argv[])
     tmphisto = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input)
                        + 6 );
     strcpy(tmphisto, VipTmpDirectory());
+    if( tmphisto == NULL )
+    {
+      free( stripped_input );
+      if( his_output != NULL )
+        free( his_output );
+      if( output != NULL )
+        free( output );
+      return PB;
+    }
     strcat(tmphisto, "/");
     strcat(tmphisto, stripped_input);
     if(VipWriteHisto(shorthisto,tmphisto,WRITE_HISTO_ASCII)==PB)
@@ -732,6 +798,15 @@ int main(int argc, char *argv[])
     vol = VipReadVolumeWithBorder(input,1);
     histo_surface = VipGetHistoSurface(shorthisto, vol);
     surface_name = malloc( strlen(input) + 6 );
+    if( output == NULL )
+    {
+      free( stripped_input );
+      if( his_output != NULL )
+        free( his_output );
+      if( output != NULL )
+        free( output );
+      return PB;
+    }
     strcpy(surface_name,input);
     strcat(surface_name,"_surf");
     if(VipWriteHisto(histo_surface,surface_name,WRITE_HISTO_ASCII)==PB)
@@ -1020,12 +1095,30 @@ int main(int argc, char *argv[])
     case GnuPlot:
       systemcommand = malloc( strlen(VipTmpDirectory())
                               + strlen(stripped_input) + 15 );
+      if( systemcommand == NULL )
+      {
+        free( stripped_input );
+        if( his_output != NULL )
+          free( his_output );
+        if( output != NULL )
+          free( output );
+        return PB;
+      }
       sprintf( systemcommand, "gnuplot %s%c%s.gp", VipTmpDirectory(),
                VipFileSeparator(), stripped_input );
       break;
     case MatPlotlib:
       systemcommand = malloc( strlen(VipTmpDirectory())
                               + strlen(stripped_input) + 15 );
+      if( systemcommand == NULL )
+      {
+        free( stripped_input );
+        if( his_output != NULL )
+          free( his_output );
+        if( output != NULL )
+          free( output );
+        return PB;
+      }
       sprintf( systemcommand, "python %s%c%s.py", VipTmpDirectory(),
                VipFileSeparator(), stripped_input );
       break;
@@ -1045,12 +1138,30 @@ int main(int argc, char *argv[])
     case GnuPlot:
       systemcommand = malloc( strlen(VipTmpDirectory())
                               + strlen(stripped_input) + 5 );
+      if( systemcommand == NULL )
+      {
+        free( stripped_input );
+        if( his_output != NULL )
+          free( his_output );
+        if( output != NULL )
+          free( output );
+        return PB;
+      }
       sprintf( systemcommand, "%s%c%s.gp", VipTmpDirectory(),
                VipFileSeparator(), stripped_input );
       break;
     case MatPlotlib:
       systemcommand = malloc( strlen(VipTmpDirectory())
                               + strlen(stripped_input) + 5 );
+      if( systemcommand == NULL )
+      {
+        free( stripped_input );
+        if( his_output != NULL )
+          free( his_output );
+        if( output != NULL )
+          free( output );
+        return PB;
+      }
       sprintf( systemcommand, "%s%c%s.py", VipTmpDirectory(),
                VipFileSeparator(), stripped_input );
     }
