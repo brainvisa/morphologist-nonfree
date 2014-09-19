@@ -42,11 +42,11 @@ static int Help();
 
 int plotGnuplot( char *histofile, int xmax, int hmax, int gnuplot_title )
 {
-  char gpfilename[1024];
-  char stripped_input[1024];
+  char *gpfilename = NULL;
+  char *stripped_input = NULL;
   FILE *gpfile;
   char *root1, *root2;
-  char systemcommand[1024];
+  char *systemcommand = NULL;
 
   root2 = histofile;
   root1 = histofile;
@@ -55,11 +55,15 @@ int plotGnuplot( char *histofile, int xmax, int hmax, int gnuplot_title )
     root2 = strstr(root1,"/");
     if(root2!=NULL) root1 = root2+1;
   }
+  stripped_input = malloc( strlen(root1) + 1 );
   strcpy(stripped_input,root1);
 
+  gpfilename = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input) + 5 );
   strcpy(gpfilename,VipTmpDirectory());
   strcat(gpfilename,"/");
   strcat(gpfilename,stripped_input);
+  free( stripped_input );
+  stripped_input = NULL;
   strcat(gpfilename,".gp");
   gpfile = fopen(gpfilename,"w");
   if(gpfile==NULL)
@@ -81,26 +85,31 @@ int plotGnuplot( char *histofile, int xmax, int hmax, int gnuplot_title )
             xmax,hmax, histofile );
   fprintf(gpfile,"pause mouse any\n");
   fclose(gpfile);
+  systemcommand = malloc( strlen(gpfilename) + 9 );
   strcpy(systemcommand, "gnuplot ");
   strcat(systemcommand,gpfilename);
   printf( "%s\n", systemcommand );
   if(system(systemcommand))
   {
     unlink( gpfilename );
+    free( gpfilename );
+    free( systemcommand );
     return PB;
   }
   unlink( gpfilename );
+  free( gpfilename );
+  free( systemcommand );
   return OK;
 }
 
 
 int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
 {
-  char gpfilename[1024];
-  char stripped_input[1024];
+  char *gpfilename = NULL;
+  char *stripped_input = NULL;
   FILE *gpfile;
   char *root1, *root2;
-  char systemcommand[1024];
+  char *systemcommand = NULL;
 
   root2 = histofile;
   root1 = histofile;
@@ -109,11 +118,15 @@ int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
     root2 = strstr(root1,"/");
     if(root2!=NULL) root1 = root2+1;
   }
+  stripped_input = malloc( strlen(root1) + 1 );
   strcpy(stripped_input,root1);
 
+  gpfilename = malloc( strlen(VipTmpDirectory()) + strlen(stripped_input) + 5 );
   strcpy(gpfilename,VipTmpDirectory());
   strcat(gpfilename,"/");
   strcat(gpfilename,stripped_input);
+  free( stripped_input );
+  stripped_input = NULL;
   strcat(gpfilename,".py");
   gpfile = fopen(gpfilename,"w");
   fprintf( gpfile, "#!/usr/bin/env python\n\n" );
@@ -132,15 +145,20 @@ int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
     fprintf( gpfile, "pylab.title( os.path.basename( histo ) )\n" );
   fprintf( gpfile, "pylab.show()\n" );
   fclose(gpfile);
+  systemcommand = malloc( strlen(gpfilename) + 8 );
   strcpy(systemcommand, "python ");
   strcat(systemcommand,gpfilename);
   printf( "%s\n", systemcommand );
   if(system(systemcommand))
   {
     unlink( gpfilename );
+    free( gpfilename );
+    free( systemcommand );
     return PB;
   }
   unlink( gpfilename );
+  free( gpfilename );
+  free( systemcommand );
   return OK;
 }
 
@@ -152,7 +170,7 @@ int main(int argc, char *argv[])
   char *maskname = NULL;
   Volume *ridge=NULL;
   Volume *mask = NULL;
-  char stripped_input[1024];
+  char *stripped_input = NULL;
   char *output = NULL;
   char *his_output = NULL;
   char *tmphisto = NULL;
@@ -171,7 +189,7 @@ int main(int argc, char *argv[])
   char mode = 'v';
   int track = 5;
   int n;
-  char surface_name[1024];
+  char *surface_name = NULL;
   int ncascade = 10;
   VipT1HistoAnalysis *ana = 0;
   char gnuplot = 'n';
@@ -207,7 +225,6 @@ int main(int argc, char *argv[])
   float std_white_mean = 0;
   float ratio_min = 0;
   FILE* fichier = NULL;
-  char histoname[1024];
   /**/
   int variance_threshold = -1;
   int variance_pourcentage = -1;
@@ -515,6 +532,7 @@ int main(int argc, char *argv[])
     root2 = strstr(root1,"/");
     if(root2!=NULL) root1 = root2+1;
   }
+  stripped_input = malloc( strlen(root1) + 1 );
   strcpy(stripped_input,root1);
 
   if( output == NULL )
@@ -713,10 +731,16 @@ int main(int argc, char *argv[])
   {
     vol = VipReadVolumeWithBorder(input,1);
     histo_surface = VipGetHistoSurface(shorthisto, vol);
+    surface_name = malloc( strlen(input) + 6 );
     strcpy(surface_name,input);
     strcat(surface_name,"_surf");
     if(VipWriteHisto(histo_surface,surface_name,WRITE_HISTO_ASCII)==PB)
+    {
+      free( surface_name );
       return(VIP_CL_ERROR);
+    }
+    free( surface_name );
+    surface_name = NULL;
     VipFreeVolume(vol);
     return(0);
   }
@@ -1052,6 +1076,10 @@ int main(int argc, char *argv[])
           VipWriteVolume(vol,ridgename);
         }
   */
+
+  free( stripped_input );
+  free( output );
+  free( his_output );
 
   return(0);
 
