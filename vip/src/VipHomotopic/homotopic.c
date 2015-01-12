@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
     char *hananame = NULL;
     float mG = -1., mW = -1.;
     int i;
+    char version = '2';
     float fclosingsize = 10.;
     int linside = 0;
     int loutside = 11;
@@ -128,6 +129,18 @@ int main(int argc, char *argv[])
         {
             if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
             squeletonname = argv[i];
+        }
+      else if (!strncmp (argv[i], "-version", 2)) 
+        {
+            if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+            else if(argv[i][0]==1) version = '1';
+            else if(argv[i][0]==2) version = '2';
+            else
+            {
+                VipPrintfError("This version is unknown");
+                VipPrintfExit("(commandline)VipHomotopic");
+                return(VIP_CL_ERROR);
+            }
         }
       else if (!strncmp (argv[i], "-fclosing", 3)) 
         {
@@ -287,6 +300,10 @@ int main(int argc, char *argv[])
       printf("-------------------------------\n");
 
       VipHomotopicInsideDilation(pyrlab->image[0]->volume, pyr->image[0]->volume, 100, 255, linside, loutside, FRONT_RANDOM_ORDER);
+      if(version=='2')
+      {
+          VipHomotopicGeodesicErosionFromOutside(pyrlab->image[0]->volume, 1, 255, linside, loutside);
+      }
       VipCopyVolumeHeader( closing, pyrlab->image[0]->volume );
   }
   
@@ -384,9 +401,10 @@ static int Usage()
     (void)fprintf(stderr,"        [-cl[assif] {grey_white classification image only used by the Cortical mode}]\n");
     (void)fprintf(stderr,"        [-co[rtex] {cortex image name only used by the Hemisphere mode}]\n");
     (void)fprintf(stderr,"        [-s[keleton] {skeleton image name only used by the Hemisphere mode}]\n");
+    (void)fprintf(stderr,"        [-v[ersion] {int: 1 or 2 (default: 2)}]\n");
     (void)fprintf(stderr,"        [-fc[losing] {float (mm) closing size for f mode (default: 10)}]\n");
-    (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
-    (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:t)}]\n");
+    (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default: v)}]\n");
+    (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default: t)}]\n");
     (void)fprintf(stderr,"        [-h[elp]\n");
     return(VIP_CL_ERROR);
 }
@@ -410,9 +428,10 @@ static int Help()
     (void)printf("        [-s[keleton] {skeleton image name only used by the Hemisphere mode}]\n");
     (void)printf(" an image of the sulci obtained with VipSkeleton\n");
     (void)printf("        [-o[utput] {image name (default:\"homotopic\")}]\n");
+    (void)printf("        [-v[ersion] {int, version for the cortical interface, 1 or 2 (default: 2)}]\n");
     (void)printf("        [-fc[losing] {float (mm) closing size for f mode (default: 10)}]\n");
-    (void)printf("        [-r[eadformat] {char: v or t (default:v)}]\n");
-    (void)printf("        [-w[riteformat] {char: v or t (default:t)}]\n");
+    (void)printf("        [-r[eadformat] {char: v or t (default: v)}]\n");
+    (void)printf("        [-w[riteformat] {char: v or t (default: t)}]\n");
     (void)printf("        [-h[elp]\n");
     return(VIP_CL_ERROR);
 }
