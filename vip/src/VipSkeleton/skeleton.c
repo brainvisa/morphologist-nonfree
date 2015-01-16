@@ -81,7 +81,9 @@ int main(int argc, char *argv[])
   int bwidth = 1;
   int skeletonization = VTRUE;
   int wprune = 3;
+  char version = '2';
   int random_seed = time(NULL);
+  float meanVolVoxSize;
 //   VipT1HistoAnalysis *hana = NULL;
 //   char *hananame = NULL;
 
@@ -209,7 +211,7 @@ int main(int argc, char *argv[])
 	      return(Usage());
 	    }
 	}
-      else if (!strncmp (argv[i], "-voronoi", 2)) 
+      else if (!strncmp (argv[i], "-fvoronoi", 3)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  if(argv[i][0]=='y') voronoiflag = VTRUE;
@@ -231,6 +233,18 @@ int main(int argc, char *argv[])
 	      return(Usage());
 	    }
 	}
+      else if (!strncmp (argv[i], "-version", 3)) 
+        {
+            if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+            else if(argv[i][0]=='1') version = '1';
+            else if(argv[i][0]=='2') version = '2';
+            else
+            {
+                VipPrintfError("This version is unknown");
+                VipPrintfExit("(commandline)VipHomotopic");
+                return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-readformat", 2)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -339,6 +353,10 @@ int main(int argc, char *argv[])
           printf("Reading geometry image %s...\n", geometry);
           volridge = VipReadVolumeWithBorder(geometry, 0);
           printf("----------------------------------\n");
+          
+          meanVolVoxSize = (mVipVolVoxSizeX(volridge)+mVipVolVoxSizeY(volridge)+mVipVolVoxSizeZ(volridge))/3.;
+          mcsigma = mcsigma/meanVolVoxSize;
+          
           altitude = ConvertBrainToAltitude(volridge, mcsigma,
                                             lzero, lup, erosion,
                                             bwidth,mcthreshold);
@@ -394,7 +412,11 @@ int main(int argc, char *argv[])
       VipMerge( altitude, greywhite, VIP_MERGE_ONE_TO_ONE, 255, -111 );
       VipWriteVolume( altitude, "altitude" );
       VipChangeIntLabel( altitude, 255, 15);*/
-      
+      if(version=='2')
+      {
+          VipHomotopicGeodesicDilation( vol, 1, 255, 11, 11, 0, FRONT_RANDOM_ORDER );
+      }
+
       if(VipWatershedHomotopicSkeleton( vol, altitude, immortal_flag, linside, loutside) == PB) return(VIP_CL_ERROR);
       VipFreeVolume(altitude);
   }
@@ -455,6 +477,10 @@ int main(int argc, char *argv[])
 
 	printf("Reading geometry image %s...\n",geometry);
 	volridge = VipReadVolumeWithBorder(geometry,0);
+        
+        meanVolVoxSize = (mVipVolVoxSizeX(volridge)+mVipVolVoxSizeY(volridge)+mVipVolVoxSizeZ(volridge))/3.;
+        gcsigma = gcsigma/meanVolVoxSize;
+        
 	saddle = ConvertBrainToSaddlePoint( volridge, 
 					     gcsigma,
 					     bwidth,gcthreshold);
@@ -495,10 +521,10 @@ static int Usage()
   (void)fprintf(stderr,"Usage: VipSkeleton\n");
   (void)fprintf(stderr,"        -i[nput] {image name}\n");
   (void)fprintf(stderr,"        [-so[utput] {image name (default:\"skeleton\")}]\n");
-  (void)fprintf(stderr,"        [-vo[utput] {image name (default:\"rootsvoronoi\")}]\n");
+  (void)fprintf(stderr,"        [-v[output] {image name (default:\"rootsvoronoi\")}]\n");
   (void)fprintf(stderr,"        [-sk[eleton] {w/s/0  (default:w)}]\n");
   (void)fprintf(stderr,"        [-im[mortality] {string:a/s/c/n (default:s)}]\n");
-  (void)fprintf(stderr,"        [-v[oronoi] {y/n  (default:y)}]\n");
+  (void)fprintf(stderr,"        [-fv[oronoi] {y/n  (default:y)}]\n");
   (void)fprintf(stderr,"        [-p[rune] {string:c/o/co/0 (default:co)}]\n");
   (void)fprintf(stderr,"        [-wp[rune] {int:minimum catchment bassin depth (default:3mm)}]\n");
   (void)fprintf(stderr,"        [-li[nside] {int:label<290 (default:0)}]\n");
@@ -513,6 +539,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-gcs[igma] {float (mm)  (default:2mm)}]\n");
   (void)fprintf(stderr,"        [-mct[hreshold] {float (default:0.2)}]\n");
   (void)fprintf(stderr,"        [-gct[hreshold] {float (default:-0.05)}]\n");
+  (void)fprintf(stderr,"        [-ve[rsion] {int: 1 or 2 (default: 2)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
@@ -546,7 +573,7 @@ static int Help()
   (void)printf("s: homotopic with full preservation of points and surfaces\n");
   (void)printf("c: homotopic with full preservation of points and curves\n");
   (void)printf("n: homotopic with no preservation\n");
-  (void)printf("        [-v[oronoi] {y/n  (default:y)}]\n");
+  (void)printf("        [-fv[oronoi] {y/n  (default:y)}]\n");
   (void)printf("Computes a voronoi of the input object corresponding to a sulcal root based parcellisation\n");
   (void)printf("this mode requires an image to compute its Gaussian curvature as a saddle point detector\n");
   (void)printf("This saddle points represent the anatomical plis de passage\n");
@@ -584,6 +611,7 @@ static int Help()
   (void)printf("        [-mct[hreshold] {float (default:0.2)}]\n");
   (void)printf("        [-gct[hreshold] {float (default:-0.05)}]\n");
   (void)printf("cf. geometry help\n");
+  (void)printf("        [-ve[rsion] {int, version depending on the hemi_cortex version, 1 or 2 (default: 2)}]\n");
   (void)printf("        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)printf("        [-w[riteformat] {char: v or t (default:v)}]\n");
   (void)printf("       [-srand {int (default: time}]\n");
