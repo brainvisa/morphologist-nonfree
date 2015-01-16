@@ -133,8 +133,8 @@ int main(int argc, char *argv[])
       else if (!strncmp (argv[i], "-version", 2)) 
         {
             if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-            else if(argv[i][0]==1) version = '1';
-            else if(argv[i][0]==2) version = '2';
+            else if(argv[i][0]=='1') version = '1';
+            else if(argv[i][0]=='2') version = '2';
             else
             {
                 VipPrintfError("This version is unknown");
