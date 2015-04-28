@@ -79,6 +79,14 @@ int main(int argc, char *argv[])
 	  if (++i >= argc || !strncmp(argv[i],"-",1)) return Usage();
 	  input = argv[i];
 	}
+      else if (!strncmp(argv[i], "-help", 3))
+        {
+          /* This has been placed before -hana because otherwise -help is
+             captured by the test for -hana. We cannot use -h for help, because
+             the documentation has long described -h as a shortcut for
+             -hana. */
+          return Help();
+        }
       else if (!strncmp (argv[i], "-hana", 2)) 
 	{
 	  if (++i >= argc || !strncmp(argv[i],"-",1)) return Usage();
@@ -163,7 +171,6 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
 	}    
-      else if (!strncmp(argv[i], "-help",2)) return Help();
       else return(Usage());
     }
 
@@ -171,7 +178,7 @@ int main(int argc, char *argv[])
 
   if (input==NULL) 
     {
-      VipPrintfError("input arg is required by VipOpenFold");
+      VipPrintfError("input arg is required by VipHomotopicSnake");
       return(Usage());
     }
   if (VipTestImageFileExist(input)==PB)
@@ -351,7 +358,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-sw[hite] {float (default:?.ana)}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:t)}]\n");
-  (void)fprintf(stderr,"        [-h[elp]\n");
+  (void)fprintf(stderr,"        [-he[lp]\n");
   return(VIP_CL_ERROR);
 
 }
@@ -382,7 +389,7 @@ static int Help()
   (void)printf("        [-sw[hite] {float (default:?.ana)}]\n");
   (void)printf("        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)printf("        [-w[riteformat] {char: v or t (default:t)}]\n");
-  (void)printf("        [-h[elp]\n");
+  (void)printf("        [-he[lp]\n");
   return(VIP_CL_ERROR);
 
 }

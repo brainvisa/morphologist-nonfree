@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  input = argv[i];
 	}
+      else if (!strncmp(argv[i], "-help", 3)) return(Help());
       else if (!strncmp (argv[i], "-hname", 3)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -133,7 +134,6 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
 	}    
-      else if (!strncmp(argv[i], "-help",2)) return(Help());
       else return(Usage());
     }
 
@@ -312,7 +312,7 @@ static int Usage()
   (void)printf("read when -a r is set, this file has the .han extension (VipHistoAnalysis)\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:v)}]\n");
-  (void)fprintf(stderr,"        [-h[elp]\n");
+  (void)fprintf(stderr,"        [-he[lp]\n");
   return(VIP_CL_ERROR);
  
 }
@@ -333,7 +333,7 @@ static int Help()
   (void)printf("        [-n[guillotine] {int (default : 3)}]\n");
   (void)printf("        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)printf("        [-w[riteformat] {char: v or t (default:v)}]\n");
-  (void)printf("        [-h[elp]\n");
+  (void)printf("        [-he[lp]\n");
   return(VIP_CL_ERROR);
 
 }
