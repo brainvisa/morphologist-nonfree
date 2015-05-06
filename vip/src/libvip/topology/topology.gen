@@ -408,7 +408,7 @@ int VipComputeTopologicalClassificationForLabelComplement_GENSTRING(Topology26Ne
 #TYPED_FUNC_END
 
 /*----------------------------------------------------------------------------*/
-#TYPED_FUNC_BEGIN VipComputeTopologicalClassificationForLabel_GENSTRING
+#TYPED_FUNC_BEGIN VipComputeTopologicalClassificationForTwoLabel_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*----------------------------------------------------------------------------*/
@@ -437,7 +437,7 @@ int VipComputeTopologicalClassificationForTwoLabel_GENSTRING(Topology26Neighborh
 #TYPED_FUNC_END
 
 /*----------------------------------------------------------------------------*/
-#TYPED_FUNC_BEGIN VipComputeTopologicalClassificationForLabelComplement_GENSTRING
+#TYPED_FUNC_BEGIN VipComputeTopologicalClassificationForTwoLabelComplement_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*----------------------------------------------------------------------------*/
@@ -466,7 +466,7 @@ int VipComputeTopologicalClassificationForTwoLabelComplement_GENSTRING(Topology2
 #TYPED_FUNC_END
 
 /*----------------------------------------------------------------------------*/
-#TYPED_FUNC_BEGIN VipIsSimplePointForLabel_GENSTRING
+#TYPED_FUNC_BEGIN VipIsASimplePointForLabel_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*----------------------------------------------------------------------------*/
@@ -497,7 +497,7 @@ int VipIsASimplePointForLabel_GENSTRING(Topology26Neighborhood *top,
 #TYPED_FUNC_END
 
 /*----------------------------------------------------------------------------*/
-#TYPED_FUNC_BEGIN VipIsSimplePointForLabelComplement_GENSTRING
+#TYPED_FUNC_BEGIN VipIsASimplePointForLabelComplement_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*----------------------------------------------------------------------------*/
@@ -529,7 +529,7 @@ int VipIsASimplePointForLabelComplement_GENSTRING(Topology26Neighborhood *top,
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-#TYPED_FUNC_BEGIN VipIsSimplePointForLabel_GENSTRING
+#TYPED_FUNC_BEGIN VipIsASurfacesPointForLabel_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*any surface or surface junction point*/
@@ -557,7 +557,7 @@ int VipIsASurfacesPointForLabel_GENSTRING(Topology26Neighborhood *top,
 #TYPED_FUNC_END
 
 /*----------------------------------------------------------------------------*/
-#TYPED_FUNC_BEGIN VipIsSimplePointForLabel_GENSTRING
+#TYPED_FUNC_BEGIN VipIsASurfacesPointForLabelComplement_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*any surface or surface junction point*/
@@ -584,7 +584,7 @@ int VipIsASurfacesPointForLabelComplement_GENSTRING(Topology26Neighborhood *top,
 #FUNCTION_END
 #TYPED_FUNC_END
 
-#TYPED_FUNC_BEGIN VipIsSimplePointForLabel_GENSTRING
+#TYPED_FUNC_BEGIN VipIsACurvesPointForLabel_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*any surface or surface junction point*/
@@ -613,7 +613,7 @@ int VipIsACurvesPointForLabel_GENSTRING(Topology26Neighborhood *top,
 #FUNCTION_END
 #TYPED_FUNC_END
 
-#TYPED_FUNC_BEGIN VipIsSimplePointForLabel_GENSTRING
+#TYPED_FUNC_BEGIN VipIsACurvesPointForLabelComplement_GENSTRING
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*any surface or surface junction point*/
