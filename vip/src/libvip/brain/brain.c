@@ -75,7 +75,7 @@ int VipDilateInPartialVolume(Volume *vol, Volume *mask)
 
 	if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(mask)==PB)
 	{
-		VipPrintfExit("(VipDilateInPartialVolume");
+		VipPrintfExit("(brain)VipDilateInPartialVolume");
 		return(PB);
 	}
     
@@ -143,13 +143,13 @@ int VipDilateInPartialVolumeFar(Volume *vol, Volume *mask, int layer)
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(mask)==PB)
     {
-      VipPrintfExit("(VipDilateInPartialVolume");
+      VipPrintfExit("(brain)VipDilateInPartialVolumeFar");
       return(PB);
     }
 
    if (layer>2)
    {
-      VipPrintfExit("(VipDilateInPartialVolumeFar, layer not implemented beyond 2 voxels");
+      VipPrintfExit("(brain)VipDilateInPartialVolumeFar, layer not implemented beyond 2 voxels");
       return(PB);
     }
           vos = VipGetOffsetStructure(vol);
@@ -227,7 +227,7 @@ int VipDilateVolumeBorder(Volume *vol, Volume *mask, int T_GRAY_CSF, int T_WHITE
 
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(mask)==PB)
     {
-        VipPrintfExit("(VipDilateVolumeBorder");
+        VipPrintfExit("(brain)VipDilateVolumeBorder");
         return(PB);
     }
     
@@ -287,13 +287,13 @@ int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivit
     
     if (VipVerifyAll(vol)==PB)
     {
-        VipPrintfExit("(histo)ComputeVolumeHisto");
+        VipPrintfExit("(brain)VipCreateHistogram");
         return(PB);
     }
     if (VipTestType(vol,S16BIT)!=OK )
     {
-        VipPrintfError("Sorry, ComputeVolumeHisto is only implemented for S16BIT volume");
-        VipPrintfExit("(histo)ComputeVolumeHisto");
+        VipPrintfError("Sorry, VipCreateHistogram is only implemented for S16BIT volume");
+        VipPrintfExit("(brain)VipCreateHistogram");
         return(PB);
     }
     
@@ -436,7 +436,7 @@ int VipVolumeEdges(Volume *edges, Vip_S16BIT *edges_ptr, int seuil)
 
     if (VipVerifyAll(edges)==PB || VipTestType(edges,S16BIT)==PB)
     {
-        VipPrintfExit("(VipVolumeEdges");
+        VipPrintfExit("(brain)VipVolumeEdges");
         return(PB);
     }
 
@@ -547,7 +547,7 @@ int connectivity
 
     if ((VipVerifyAll(vol1)==PB && VipVerifyAll(vol2)==PB) || VipVerifyAll(mask)==PB)
     {
-        VipPrintfExit("(VipPropagationConnectivity");
+        VipPrintfExit("(brain)VipPropagationConnectivity");
         return(PB);
     }
   
@@ -627,7 +627,7 @@ int connectivity
 
     if ((VipVerifyAll(vol)==PB && VipVerifyAll(variance)==PB) || VipVerifyAll(mask)==PB)
     {
-        VipPrintfExit("(VipPropagationConnectivity");
+        VipPrintfExit("(brain)VipPropagationWithRefluxConnectivity");
         return(PB);
     }
 
@@ -826,13 +826,13 @@ float P[3]
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("VipGetBrain2010");
+      VipPrintfExit("(brain)VipGetBrain2010");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("VipGetBrain2010");
+      VipPrintfExit("(brain)VipGetBrain2010");
       return(PB);
     }
 
@@ -1642,13 +1642,13 @@ Volume *ridge
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGetBrain2005");
+      VipPrintfExit("(brain)VipGetBrain2005");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGetBrainCustomized");
+      VipPrintfExit("(brain)VipGetBrain2005");
       return(PB);
     }
 
@@ -1691,7 +1691,7 @@ Volume *ridge
   mask = VipCopyVolume( white, "mask");
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrain2005");
+      VipPrintfExit("(brain)VipGetBrain2005");
     }
   if(dumb!=VTRUE)
     {
@@ -1748,7 +1748,7 @@ Volume *ridge
   mask = VipCreateSingleThresholdedVolume( white, GREATER_OR_EQUAL_TO,  (int)(threshold_dist*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT);
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrainForRenderingDoubleCustomized");
+      VipPrintfExit("(brain)VipGetBrain2005");
     }
   VipSingleThreshold( white, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
   if( VipMerge( white, mask, VIP_MERGE_ONE_TO_ONE, 255, 512 )== PB) return(PB);
@@ -1804,7 +1804,7 @@ Volume *ridge
   mask = VipCopyVolume(white,"mask");
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrain2005");
+      VipPrintfExit("(brain)VipGetBrain2005");
     }
   VipDilation(mask,CHAMFER_BALL_3D,5.);
   VipMaskVolume(vol,mask);
@@ -1813,7 +1813,7 @@ Volume *ridge
   volcopy = VipCopyVolume(vol,"volcopy");
   if(volcopy==PB)
     {
-      VipPrintfExit("VipGetBrain2005");
+      VipPrintfExit("(brain)VipGetBrain2005");
     }
 
   VipSingleThreshold( volcopy, GREATER_OR_EQUAL_TO, 1 , BINARY_RESULT );
@@ -1911,13 +1911,13 @@ pour en maitriser mieux l'interface ds brainVISA: 20-5-2003, JFM
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGetBrainCustomized");
+      VipPrintfExit("(brain)VipGetBrainStandard");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGetBrainCustomized");
+      VipPrintfExit("(brain)VipGetBrainStandard");
       return(PB);
     }
 
@@ -2142,7 +2142,7 @@ T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, T_WHITE_FAT_LOW, T_WHITE_FAT_HIGH, T_GRAY_WHI
   mask = VipCreateSingleThresholdedVolume( brain, GREATER_OR_EQUAL_TO,  (int)(threshold_dist*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT);
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrainForRendering");
+      VipPrintfExit("(brain)VipGetBrainStandard");
     }
 
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
@@ -2264,13 +2264,13 @@ pour en maitriser mieux l'interface ds brainVISA: 20-5-2003, JFM
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGetBrainCustomized");
+      VipPrintfExit("(brain)VipGetBrainCustomized");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGetBrainCustomized");
+      VipPrintfExit("(brain)VipGetBrainCustomized");
       return(PB);
     }
 
@@ -2588,7 +2588,7 @@ T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, T_WHITE_FAT_LOW, T_WHITE_FAT_HIGH, T_GRAY_WHI
   mask = VipCreateSingleThresholdedVolume( brain, GREATER_OR_EQUAL_TO,  (int)(threshold_dist*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT);
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrainForRendering");
+      VipPrintfExit("(brain)VipGetBrainCustomized");
     }
 
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
@@ -2648,7 +2648,7 @@ int VipPutOneSliceTwoZero(Volume *vol, int z)
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
 	VipPrintfError("S16BIT type");
-	VipPrintfExit("(VipPutOneSliceTwoZero");
+	VipPrintfExit("(brain)VipPutOneSliceTwoZero");
 	return(PB);
     }
   if(z<0 || z>=mVipVolSizeZ(vol))
@@ -2692,18 +2692,18 @@ int VipFillWhiteCavities(Volume *vol, Volume *brainmask, VipT1HistoAnalysis *ana
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipFillWhiteCavities");
+      VipPrintfExit("(brain)VipFillWhiteCavities");
       return(PB);
     }
   if (VipVerifyAll(brainmask)==PB || VipTestType(brainmask,S16BIT)==PB)
     {
-      VipPrintfExit("(VipFillWhiteCavities");
+      VipPrintfExit("(brain)VipFillWhiteCavities");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipFillWhiteCavities");
+      VipPrintfExit("(brain)VipFillWhiteCavities");
       return(PB);
     }
 
@@ -2821,7 +2821,7 @@ int T_gray_white
   mask = VipCopyVolume( white, "white");
   if(mask==PB)
     {
-      VipPrintfExit("VipComputeRawWhiteMask");
+      VipPrintfExit("(brain)VipComputeRawWhiteMask");
     }
     
   if(dumb!=VTRUE)
@@ -2871,7 +2871,7 @@ int T_gray_white
     mask = VipCreateSingleThresholdedVolume( white, GREATER_OR_EQUAL_TO,  (int)(threshold_dist*VIP_USUAL_DISTMAP_MULTFACT), BINARY_RESULT);
     if(mask==PB)
       {
-	VipPrintfExit("VipGetBrainForRenderingDoubleCustomized");
+	VipPrintfExit("(brain)VipComputeRawWhiteMask");
       }
     VipSingleThreshold( white, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
     if( VipMerge( white, mask, VIP_MERGE_ONE_TO_ONE, 255, 512 )== PB) return(PB);
@@ -2946,13 +2946,13 @@ int nb_iterations
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGetBrainForRenderingDoubleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingDoubleCustomized");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGetBrainForRenderingDoubleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingDoubleCustomized");
       return(PB);
     }
 
@@ -2974,13 +2974,13 @@ int nb_iterations
   else if(ana->brain!=NULL)
     {
       VipPrintfError("The histogram scale space analysis did not give gray and white object");
-      VipPrintfExit("VipGetBrainForRenderingDoubleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingDoubleCustomized");
       return(PB);
     }
   else
     {
       VipPrintfError("This Histogram analysis has failed somewhere...");
-      VipPrintfExit("VipGetBrainForRenderingDoubleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingDoubleCustomized");
       return(PB);
     }
 
@@ -3018,7 +3018,7 @@ int nb_iterations
   mask = VipCopyVolume( white, "white");
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrainForRenderingDoubleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingDoubleCustomized");
     }
     
   if(dumb!=VTRUE)
@@ -3068,7 +3068,7 @@ int nb_iterations
     mask = VipCreateSingleThresholdedVolume( white, GREATER_OR_EQUAL_TO,  threshold_dist*VIP_USUAL_DISTMAP_MULTFACT, BINARY_RESULT);
     if(mask==PB)
       {
-	VipPrintfExit("VipGetBrainForRenderingDoubleCustomized");
+	VipPrintfExit("(brain)VipGetBrainForRenderingDoubleCustomized");
       }
     VipSingleThreshold( white, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
     if( VipMerge( white, mask, VIP_MERGE_ONE_TO_ONE, 255, 512 )== PB) return(PB);
@@ -3181,7 +3181,7 @@ int nb_iterations
   mask = VipCreateSingleThresholdedVolume( brain, GREATER_OR_EQUAL_TO,  threshold_dist*VIP_USUAL_DISTMAP_MULTFACT, BINARY_RESULT);
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrainForRendering");
+      VipPrintfExit("(brain)VipGetBrainForRenderingDoubleCustomized");
     }
 
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );
@@ -3249,7 +3249,7 @@ int Thigh
  
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGetBrainForRenderingSimpleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingFastCustomized");
       return(PB);
     }
 
@@ -3329,13 +3329,13 @@ int nb_iterations
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGetBrainForRenderingSimpleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingSimpleCustomized");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGetBrainForRenderingSimpleCustomized");
+      VipPrintfExit("(brain)VipGetBrainForRenderingSimpleCustomized");
       return(PB);
     }
 
@@ -3429,7 +3429,7 @@ int nb_iterations
   mask = VipCreateSingleThresholdedVolume( brain, GREATER_OR_EQUAL_TO,  threshold_dist*VIP_USUAL_DISTMAP_MULTFACT, BINARY_RESULT);
   if(mask==PB)
     {
-      VipPrintfExit("VipGetBrainForRendering");
+      VipPrintfExit("(brain)VipGetBrainForRenderingSimpleCustomized");
     }
 
   VipSingleThreshold( brain, GREATER_OR_EQUAL_TO,  0, BINARY_RESULT );

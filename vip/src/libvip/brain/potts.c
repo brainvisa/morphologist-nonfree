@@ -121,13 +121,13 @@ int dumb)
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisation");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisation");
       return(PB);
     }
 
@@ -157,7 +157,7 @@ int dumb)
   else
     {
       VipPrintfError("The histogram scale space analysis did not give gray and white object");
-      VipPrintfExit("VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisation");
       return(PB);
     }
 
@@ -325,13 +325,13 @@ int dumb)
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForRobust");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForRobust");
       return(PB);
     }
 
@@ -361,7 +361,7 @@ int dumb)
   else
     {
       VipPrintfError("The histogram scale space analysis did not give gray and white object");
-      VipPrintfExit("VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForRobust");
       return(PB);
     }
 
@@ -529,13 +529,13 @@ Volume *VipGrayWhiteClassificationRegularisationForRobust2005(Volume *vol,VipT1H
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForRobust2005");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForRobust2005");
       return(PB);
     }
 
@@ -746,7 +746,7 @@ static double NewPotentiel(int label, int graylevel, VipT1HistoAnalysis *ana)
 	default:
 	  VipPrintfError("You can not use this label to get a potential!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)NewPotentiel");
 	  return(PB);
 	}
     }
@@ -779,7 +779,7 @@ static double NewPotentiel(int label, int graylevel, VipT1HistoAnalysis *ana)
 	default:
 	  VipPrintfError("You can not use this label to get a potential (no gray/white cascades...)!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)NewPotentiel");
 	  return(PB);
 	}
     }
@@ -809,13 +809,13 @@ int dumb, int nb_iterations)
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipCSFBrainFatClassificationRegularisation");
+      VipPrintfExit("(potts)VipCSFBrainFatClassificationRegularisation");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipCSFBrainFatClassificationRegularisation");
+      VipPrintfExit("(potts)VipCSFBrainFatClassificationRegularisation");
       return(PB);
     }
 
@@ -1010,13 +1010,13 @@ int dumb, int nb_iterations)
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipCSFBrainFatClassificationRegularisation");
+      VipPrintfExit("(potts)VipCSFGrayWhiteFatClassificationRegularisation");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipCSFBrainFatClassificationRegularisation");
+      VipPrintfExit("(potts)VipCSFGrayWhiteFatClassificationRegularisation");
       return(PB);
     }
 
@@ -1223,13 +1223,13 @@ int dumb, int nb_iterations,int T_VOID_GRAY_LOW, int T_VOID_GRAY_HIGH, int T_WHI
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipCSFBrainFatClassificationRegularisation");
+      VipPrintfExit("(potts)VipCSFGrayWhiteFatClassificationRegularisationForRobustApproach");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipCSFBrainFatClassificationRegularisation");
+      VipPrintfExit("(potts)VipCSFGrayWhiteFatClassificationRegularisationForRobustApproach");
       return(PB);
     }
     
@@ -1437,7 +1437,7 @@ static double Potentiel(int label, int graylevel, VipT1HistoAnalysis *ana)
 	default:
 	  VipPrintfError("You can not use this label to get a potential!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)Potentiel");
 	  return(PB);
 	}
     }
@@ -1470,7 +1470,7 @@ static double Potentiel(int label, int graylevel, VipT1HistoAnalysis *ana)
 	default:
 	  VipPrintfError("You can not use this label to get a potential (no gray/white cascades...)!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)Potentiel");
 	  return(PB);
 	}
     }
@@ -1523,7 +1523,7 @@ static double PotentielForRobust(int label, int graylevel, VipT1HistoAnalysis *a
 	default:
 	  VipPrintfError("You can not use this label to get a potential!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)PotentielForRobust");
 	  return(PB);
 	}
     }
@@ -1556,7 +1556,7 @@ static double PotentielForRobust(int label, int graylevel, VipT1HistoAnalysis *a
 	default:
 	  VipPrintfError("You can not use this label to get a potential (no gray/white cascades...)!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)PotentielForRobust");
 	  return(PB);
 	}
     }
@@ -1610,7 +1610,7 @@ static double PotentielForRobust2005(int label, int graylevel, VipT1HistoAnalysi
 	default:
 	  VipPrintfError("You can not use this label to get a potential!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)PotentielForRobust2005");
 	  return(PB);
 	}
     }
@@ -1643,7 +1643,7 @@ static double PotentielForRobust2005(int label, int graylevel, VipT1HistoAnalysi
 	default:
 	  VipPrintfError("You can not use this label to get a potential (no gray/white cascades...)!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)PotentielForRobust2005");
 	  return(PB);
 	}
     }
@@ -1673,13 +1673,13 @@ int dumb, int nb_iterations, float KPOTTS, int connectivity)
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisationForVoxelBasedAna");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForVoxelBasedAna");
       return(PB);
     }
   if(!ana)
     {
       VipPrintfError("Null VipT1HistoAnalysis!");
-      VipPrintfExit("(VipGrayWhiteClassificationRegularisationForVoxelBasedAna");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForVoxelBasedAna");
       return(PB);
     }
 
@@ -1693,7 +1693,7 @@ int dumb, int nb_iterations, float KPOTTS, int connectivity)
   else
     {
       VipPrintfError("The histogram scale space analysis did not give gray and white object");
-      VipPrintfExit("VipGrayWhiteClassificationRegularisation");
+      VipPrintfExit("(potts)VipGrayWhiteClassificationRegularisationForVoxelBasedAna");
       return(PB);
     }
   if (T_VOID_GRAY_HIGH<=0) T_VOID_GRAY_HIGH=1;
@@ -1855,7 +1855,7 @@ static double PotentielForVoxelBasedAna(int label, int graylevel, VipT1HistoAnal
 	default:
 	  VipPrintfError("You can not use this label to get a potential!");
 	  fprintf(stderr,"label: %d\n",label);
-	  VipPrintfExit("Potentiel (Vip_Potts)");
+	  VipPrintfExit("(potts)PotentielForVoxelBasedAna");
 	  return(PB);
 	}
     }
@@ -1883,13 +1883,13 @@ Volume *VipGrayWhiteClassificationForVoxelBasedAna(Volume *vol, VipT1HistoAnalys
 
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-        VipPrintfExit("(VipGrayWhiteClassificationForVoxelBasedAna");
+        VipPrintfExit("(potts)VipGrayWhiteClassificationForVoxelBasedAna");
         return(PB);
     }
     if(!ana)
     {
         VipPrintfError("Null VipT1HistoAnalysis!");
-        VipPrintfExit("(VipGrayWhiteClassificationForVoxelBasedAna");
+        VipPrintfExit("(potts)VipGrayWhiteClassificationForVoxelBasedAna");
         return(PB);
     }
 
@@ -1903,7 +1903,7 @@ Volume *VipGrayWhiteClassificationForVoxelBasedAna(Volume *vol, VipT1HistoAnalys
     else
     {
         VipPrintfError("The histogram scale space analysis did not give gray and white object");
-        VipPrintfExit("VipGrayWhiteClassificationForVoxelBasedAna");
+        VipPrintfExit("(potts)VipGrayWhiteClassificationForVoxelBasedAna");
         return(PB);
     }
     if (T_VOID_GRAY_HIGH<=0) T_VOID_GRAY_HIGH=1;
@@ -1979,26 +1979,26 @@ int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, V
     
     if (VipVerifyAll(classif)==PB)
 	{
-	VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+	VipPrintfExit("(potts)VipErosionClassificationNeighbourhood");
 	return(PB);
 	}
     if (VipTestType(classif,S16BIT)!=OK)
 	{
 	VipPrintfError("Sorry,  VipHomotopicErosionFromInside is only implemented for S16BIT volume");
-	VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+	VipPrintfExit("(potts)VipErosionClassificationNeighbourhood");
 	return(PB);
 	}
     if (mVipVolBorderWidth(classif) < 1)
 	{
 	VipPrintfError("Sorry, VipHomotopicErosionFromInside is only implemented with border");
-	VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+	VipPrintfExit("(potts)VipErosionClassificationNeighbourhood");
 	return(PB);
 	}
 
     if(object==inside)
 	{
 	VipPrintfError("object value = inside value!");
-	VipPrintfExit("(skeleton)VipHomotopicErosionFromInside");
+	VipPrintfExit("(potts)VipErosionClassificationNeighbourhood");
 	return(PB);
 	}
     printf("Homotopic erosion from inside...\n");
@@ -2158,7 +2158,7 @@ int dumb, int nb_iterations, int threshold, int connectivity, int label)
 
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(classif)==PB || VipTestType(classif,S16BIT)==PB)
     {
-        VipPrintfExit("(VipGrayWhiteClassificationForVoxelBasedAna");
+        VipPrintfExit("(potts)VipGrayWhiteClassificationForVoxelBasedNeighbourhood");
         return(PB);
     }
     
@@ -2353,7 +2353,7 @@ int dumb, int nb_iterations, int threshold, int connectivity, int label)
                 default:
                     VipPrintfError("You can not use this label");
                     fprintf(stderr,"label: %d\n",label);
-                    VipPrintfExit("Neighbour (Vip_Potts)");
+                    VipPrintfExit("(potts)VipGrayWhiteClassificationForVoxelBasedNeighbourhood");
                     return(PB);
             }
             buckptr++;
@@ -2390,7 +2390,7 @@ int VipCleaningTopo(Volume *vol, Volume *matter, Volume *classif, int dumb, int 
 
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(matter)==PB || VipTestType(matter,S16BIT)==PB)
     {
-        VipPrintfExit("(VipCleaningTopo");
+        VipPrintfExit("(potts)VipCleaningTopo");
         return(PB);
     }
     
@@ -2457,7 +2457,7 @@ int VipCleaningTopo(Volume *vol, Volume *matter, Volume *classif, int dumb, int 
                     default:
                         VipPrintfError("You can not use this label!");
                         fprintf(stderr,"label: %d\n",label);
-                        VipPrintfExit("VipCleaningTopo (Vip_Potts)");
+                        VipPrintfExit("(potts)VipCleaningTopo");
                         return(PB);
                 }
             }
@@ -2493,7 +2493,7 @@ int VipCleaningConnectivity(Volume *vol, int connectivity, int type)
     
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-        VipPrintfExit("(VipCleaningConnectivity");
+        VipPrintfExit("(potts)VipCleaningConnectivity");
         return(PB);
     }
     
@@ -2587,7 +2587,7 @@ Volume *VipGrayWhiteRegularisationForVoxelBasedAna(Volume *vol, Volume *classif,
 
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-        VipPrintfExit("(VipGrayWhiteRegularisationForVoxelBasedAna");
+        VipPrintfExit("(potts)VipGrayWhiteRegularisationForVoxelBasedAna");
         return(PB);
     }
 
@@ -2697,7 +2697,7 @@ static double PotentielForVoxelBasedAna2011(int label, int graylevel, double mW,
           default:
               VipPrintfError("You can not use this label to get a potential!");
               fprintf(stderr,"label: %d\n",label);
-              VipPrintfExit("Potentiel (Vip_Potts)");
+              VipPrintfExit("(potts)PotentielForVoxelBasedAna2011");
               return(PB);
       }
   }
@@ -2890,7 +2890,7 @@ static double PotentielForVoxelBasedNeighbourhood(Volume *vol, Volume *classif, 
         default:
             VipPrintfError("You can not use this label to get a potential!");
             fprintf(stderr,"label: %d\n",label);
-            VipPrintfExit("Potentiel (Vip_Potts)");
+            VipPrintfExit("(potts)PotentielForVoxelBasedNeighbourhood");
             return(PB);
     }
 
@@ -2909,19 +2909,19 @@ static VipIntBucket *VipCreateFrontIntBucketGWClassifObject( Volume *vol, Volume
 
     if (VipVerifyAll(vol)==PB)
     {
-        VipPrintfExit("(skeleton)VipCreateFrontIntBucketGWClassifObject");
+        VipPrintfExit("(potts)VipCreateFrontIntBucketGWClassifObject");
         return(PB);
     }
     if (VipTestType(vol,S16BIT)!=OK)
     {
         VipPrintfError("Sorry,  VipCreateFrontIntBucketGWClassifObject is only implemented for S16BIT volume");
-        VipPrintfExit("(skeleton)VipCreateFrontIntBucketGWClassifObject");
+        VipPrintfExit("(potts)VipCreateFrontIntBucketGWClassifObject");
         return(PB);
     }
     if (mVipVolBorderWidth(vol) < 1)
     {
         VipPrintfError("Sorry,  VipCreateFrontIntBucketGWClassifObject is only implemented with border");
-        VipPrintfExit("(skeleton)VipCreateFrontIntBucketGWClassifObject");
+        VipPrintfExit("(potts)VipCreateFrontIntBucketGWClassifObject");
         return(PB);
     }
 
@@ -2996,19 +2996,19 @@ int outside)
     if(first_vol_point==NULL)
     {
         VipPrintfError("NULL pointer in VipFillNextFrontFromOldFrontGWClassifObject");
-        VipPrintfExit("VipFillNextFrontFromOldFrontGWClassifObject");
+        VipPrintfExit("(potts)VipFillNextFrontFromOldFrontGWClassifObject");
         return(PB);
     }
     if((buck==NULL) || (nextbuck==NULL))
     {
         VipPrintfError("One NULL bucket in VipFillNextFrontFromOldFrontGWClassifObject");
-        VipPrintfExit("VipFillNextFrontFromOldFrontGWClassifObject");
+        VipPrintfExit("(potts)VipFillNextFrontFromOldFrontGWClassifObject");
         return(PB);
     }
     if(vcs==NULL)
     {
         VipPrintfError("NULL VipConnectivityStruct pointer in VipFillNextFrontFromOldFrontGWClassifObject");
-        VipPrintfExit("VipFillNextFrontFromOldFrontGWClassifObject");
+        VipPrintfExit("(potts)VipFillNextFrontFromOldFrontGWClassifObject");
         return(PB);
     }
 
@@ -3071,7 +3071,7 @@ int VipGrayRegularisation(Volume *vol)
     
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
-        VipPrintfExit("(VipGrayRegularisation");
+        VipPrintfExit("(potts)VipGrayRegularisation");
         return(PB);
     }
     
@@ -3160,26 +3160,26 @@ int label
 
   if (VipVerifyAll(vol)==PB)
     {
-      VipPrintfExit("(skeleton)VipHomotopicErosionFromInsideSnake");
+      VipPrintfExit("(potts)VipHomotopicErosionFromInsideSnakeNeighbourhood");
       return(PB);
     }
   if (VipTestType(vol,S16BIT)!=OK)
     {
-      VipPrintfError("Sorry,  VipHomotopicErosionFromInsideSnake is only implemented for S16BIT volume");
-      VipPrintfExit("(skeleton)VipHomotopicErosionFromInsideSnake");
+      VipPrintfError("Sorry,  VipHomotopicErosionFromInsideSnakeNeighbourhood is only implemented for S16BIT volume");
+      VipPrintfExit("(potts)VipHomotopicErosionFromInsideSnakeNeighbourhood");
       return(PB);
     }
   if (mVipVolBorderWidth(vol) < 1)
     {
-      VipPrintfError("Sorry, VipHomotopicErosionFromInsideSnake is only implemented with border");
-      VipPrintfExit("(skeleton)VipHomotopicErosionFromInsideSnake");
+      VipPrintfError("Sorry, VipHomotopicErosionFromInsideSnakeNeighbourhood is only implemented with border");
+      VipPrintfExit("(potts)VipHomotopicErosionFromInsideSnakeNeighbourhood");
       return(PB);
     }
 
   if(object==inside)
     {
       VipPrintfError("object value = inside value!");
-      VipPrintfExit("(skeleton)VipHomotopicErosionFromInsideSnake");
+      VipPrintfExit("(potts)VipHomotopicErosionFromInsideSnakeNeighbourhood");
       return(PB);
     }
   printf("Homotopic snake erosion from inside...\n");
@@ -3452,7 +3452,7 @@ int label
                   default:
                       VipPrintfError("You can not use this label to get a potential!");
                       fprintf(stderr,"label: %d\n",label);
-                      VipPrintfExit("Potentiel (Vip_Potts)");
+                      VipPrintfExit("(potts)VipHomotopicErosionFromInsideSnakeNeighbourhood");
                       return(PB);
               }
 	    }
