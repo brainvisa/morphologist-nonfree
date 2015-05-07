@@ -3122,6 +3122,8 @@ int VipGrayRegularisation(Volume *vol)
 }
 
 /*---------------------------------------------------------------------------*/
+/* WARNING: the erosion is not homotopic!! No topology test is ever done, the
+   code simply does not make use of topo26. */
 int VipHomotopicErosionFromInsideSnakeNeighbourhood(
 Volume *vol,
 Volume *graylevel,
