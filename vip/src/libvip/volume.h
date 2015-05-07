@@ -305,21 +305,21 @@ extern	int			VipTestStateN
 
 /*Macros to access volume fields*/
 
-#define mVipVolName(vol) (vol)->name
-#define mVipVolSizeX(vol) (vol)->size.x
-#define mVipVolSizeY(vol) (vol)->size.y
-#define mVipVolSizeZ(vol) (vol)->size.z
-#define mVipVolSizeT(vol) (vol)->size.t
-#define mVipVolType(vol) (vol)->type
-#define mVipVolVoxSizeX(vol) (vol)->voxelSize.x
-#define mVipVolVoxSizeY(vol) (vol)->voxelSize.y
-#define mVipVolVoxSizeZ(vol) (vol)->voxelSize.z
-#define mVipVolVoxSizeT(vol) (vol)->voxelSize.t
-#define mVipVolBorderWidth(vol) (vol)->borderWidth
-#define mVipVolShfjUnite(vol) (vol)->shfj->unite
-#define mVipVolShfjVmdType(vol) (vol)->shfj->VmdType
-#define mVipVolShfjScale(vol) (vol)->shfj->scale
-#define mVipVolShfjOffset(vol) (vol)->shfj->offset
+#define mVipVolName(vol) ((vol)->name)
+#define mVipVolSizeX(vol) ((vol)->size.x)
+#define mVipVolSizeY(vol) ((vol)->size.y)
+#define mVipVolSizeZ(vol) ((vol)->size.z)
+#define mVipVolSizeT(vol) ((vol)->size.t)
+#define mVipVolType(vol) ((vol)->type)
+#define mVipVolVoxSizeX(vol) ((vol)->voxelSize.x)
+#define mVipVolVoxSizeY(vol) ((vol)->voxelSize.y)
+#define mVipVolVoxSizeZ(vol) ((vol)->voxelSize.z)
+#define mVipVolVoxSizeT(vol) ((vol)->voxelSize.t)
+#define mVipVolBorderWidth(vol) ((vol)->borderWidth)
+#define mVipVolShfjUnite(vol) ((vol)->shfj->unite)
+#define mVipVolShfjVmdType(vol) ((vol)->shfj->VmdType)
+#define mVipVolShfjScale(vol) ((vol)->shfj->scale)
+#define mVipVolShfjOffset(vol) ((vol)->shfj->offset)
 
 /*----------------------------------------------------------------------------*/
 	
