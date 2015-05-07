@@ -42,8 +42,8 @@
 
 #include <vip/vcomplex/vcomplex_gen.h>
 
-#define mVipRealPart(c)       (c).re
-#define mVipImaginaryPart(c)  (c).im
+#define mVipRealPart(c)       ((c).re)
+#define mVipImaginaryPart(c)  ((c).im)
 
 #ifdef __cplusplus
   }

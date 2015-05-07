@@ -61,13 +61,13 @@ extern "C" {
 
 #include <vip/histo/histo_ss.h>
 
-#define mVipHistoVal(h,g) (h)->val[(g)]
-#define mVipHistoRangeMin(h) (h)->range_min
-#define mVipHistoRangeMax(h) (h)->range_max
+#define mVipHistoVal(h,g) ((h)->val[(g)])
+#define mVipHistoRangeMin(h) ((h)->range_min)
+#define mVipHistoRangeMax(h) ((h)->range_max)
   /*NB, if you want to be sure that min and max are uptodate,
     use the functions VipGetHistoMin and VipGetHistoMax*/
-#define mVipHistoMin(h) (h)->min
-#define mVipHistoMax(h) (h)->max
+#define mVipHistoMin(h) ((h)->min)
+#define mVipHistoMax(h) ((h)->max)
 
 #define WRITE_HISTO_BINARY 0
 #define WRITE_HISTO_ASCII 1
