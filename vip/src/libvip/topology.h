@@ -45,13 +45,15 @@ in a 26 neighborhood -> speed-up the connectivity numbers CBAR or CSTAR computat
 /* relations are based on an ordering of 1+26 neighbors values corresponding
 to offset tab (namely 6/18/26 for genericity) in an internal buffer ordered_values[27]*/
 typedef struct topology26
-{ int **relation;   /*relation[a][b] means connection a-b (ordered according to 6/18/26 connectivity)*/
-  int  *nb6neighbors; /* nb6neighbors[a] = nb points of X 6-connected to a */ 
-  int  *nb18neighbors; /* nb18neighbors[a] = nb points of X 18-connected to a (and not 6-con...)*/
-  int  *nb26neighbors; /* nb26neighbors[a] = nb points of X 26-connected to a (and not 18-con...)*/
-  int  *offset;
-  /*offset to 26 neighbors, WARNING: volume and borderwidth dependent,
-		  similar to vip/connectivity structures but not necessarily the same ordering*/
+{
+  int *relation[27];  /*relation[a][b] means connection a-b (ordered according to 6/18/26 connectivity)*/
+  int relation_store[316]; /* stores all items of relation consecutively in memory */
+  int nb6neighbors[27];  /* nb6neighbors[a] = nb points of X 6-connected to a */
+  int nb18neighbors[27]; /* nb18neighbors[a] = nb points of X 18-connected to a (and not 6-con...)*/
+  int nb26neighbors[27]; /* nb26neighbors[a] = nb points of X 26-connected to a (and not 18-con...)*/
+  int offset[27];
+  /* offset to 26 neighbors, WARNING: volume and borderwidth dependent,
+     similar to vip/connectivity structures but not necessarily the same ordering*/
   int ordered_values[27];
 } Topology26Neighborhood;
 

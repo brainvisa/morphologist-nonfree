@@ -19,6 +19,7 @@
  *              1/6/99| jeff         | + surfaces simples
  ****************************************************************************/
 
+#include <assert.h>
 #include <math.h>
 
 #include <vip/alloc.h>
@@ -115,76 +116,11 @@ Topology26Neighborhood *VipCreateTopology26Neighborhood(Volume *vol)
   topo = (Topology26Neighborhood *)VipCalloc(1, sizeof(Topology26Neighborhood), NULL);
   if (!topo)
   { VipPrintfError("Error while allocating Topology structure");
-    VipPrintfExit("(topology)VipCreate26NeighborRelation");
+    VipPrintfExit("(topology)VipCreateTopology26Neighborhood");
     return((Topology26Neighborhood *)NULL);
   }
 
-  topo->relation = (int **)VipCalloc(27, sizeof(int *), NULL);
-  if (!topo->relation)
-  { VipPrintfError("Error while allocating relation Topology26Neighborhood field");
-    VipPrintfExit("(topology)VipCreate26NeighborRelation");
-    VipFree(topo);
-    return((Topology26Neighborhood *)NULL);
-  }
 
-  topo->nb6neighbors = (int *)VipCalloc(27, sizeof(int), NULL);
-  if (!topo->nb6neighbors)
-  { VipPrintfError("Error while allocating nb6neighbors Topology26Neighborhood field");
-    VipPrintfExit("(topology)VipCreate26NeighborRelation");
-    VipFree(topo->relation);
-    VipFree(topo);
-    return((Topology26Neighborhood *)NULL);
-  }
-
-  topo->nb18neighbors = (int *)VipCalloc(27, sizeof(int), NULL);
-  if (!topo->nb18neighbors)
-  { VipPrintfError("Error while allocating nb18neighbors Topology26Neighborhood field");
-    VipPrintfExit("(topology)VipCreate26NeighborRelation");
-    VipFree(topo->nb6neighbors);
-    VipFree(topo->relation);
-    VipFree(topo);
-    return((Topology26Neighborhood *)NULL);
-  }
- 
-  topo->nb26neighbors = (int *)VipCalloc(27, sizeof(int), NULL);
-  if (!topo->nb26neighbors)
-  { VipPrintfError("Error while allocating nb26neighbors Topology26Neighborhood field");
-    VipPrintfExit("(topology)VipCreate26NeighborRelation");
-    VipFree(topo->nb18neighbors);
-    VipFree(topo->nb6neighbors);
-    VipFree(topo->relation);
-    VipFree(topo);
-    return((Topology26Neighborhood *)NULL);
-  }
-
-  topo->offset = (int *)VipCalloc(27, sizeof(int), NULL);
-  if (!topo->offset)
-  { VipPrintfError("Error while allocating offset Topology26Neighborhood field");
-    VipPrintfExit("(topology)VipCreate26NeighborRelation");
-    VipFree(topo->nb26neighbors);
-    VipFree(topo->nb18neighbors);
-    VipFree(topo->nb6neighbors);
-    VipFree(topo->relation);
-    VipFree(topo);
-    return((Topology26Neighborhood *)NULL);
-  }
-
-  for (i=0; i<27; i++)
-  { topo->relation[i] = (int *)VipCalloc(26, sizeof(int), NULL);
-    if (!topo->relation[i])
-    { VipPrintfError("Error while allocating relation vectors");
-      VipPrintfExit("(topology)VipCreate26NeighborRelation");
-      for (;i--;)  VipFree(topo->relation[i]);
-      VipFree(topo->offset);
-      VipFree(topo->nb26neighbors);
-      VipFree(topo->nb18neighbors);
-      VipFree(topo->nb6neighbors);
-      VipFree(topo->relation);
-      VipFree(topo);
-      return((Topology26Neighborhood *)NULL);
-    }
-  }
- 
   /* neighbors ordering: 6-neighbors, 18-neighbors, 26-neighbors for genericity*/
 
   X[compteur] = Y[compteur] = Z[compteur] = 0;
@@ -223,11 +159,13 @@ Topology26Neighborhood *VipCreateTopology26Neighborhood(Volume *vol)
   linesize = VipOffsetLine(vol);
   slicesize = VipOffsetSlice(vol);
   offsetptr = topo->offset;
-  for (i=0; i<27; i++)  
+  for (i=0; i<27; i++)
     *offsetptr++ = X[i]+linesize*Y[i]+slicesize*Z[i];
 
+  rel = topo->relation_store;
   for (i=0; i<27; i++)
-  { rel = topo->relation[i];
+  {
+    topo->relation[i] = rel;
     nb6 = topo->nb6neighbors+i;
     nb18 = topo->nb18neighbors+i;
     nb26 = topo->nb26neighbors+i;
@@ -263,25 +201,17 @@ Topology26Neighborhood *VipCreateTopology26Neighborhood(Volume *vol)
       }
   }
 
+  /* Verify that the store has the correct size */
+  assert((void*)rel == (void*)topo->relation_store + sizeof(topo->relation_store));
+
   return(topo);
 }
 
 /*------------------------------------------------------------------*/
 
 void VipFreeTopology26Neighborhood(Topology26Neighborhood *topo)
-{ 
-  int i;
-
-  if (topo)
-    { if (topo->nb6neighbors)  VipFree(topo->nb6neighbors);
-    if (topo->nb18neighbors)  VipFree(topo->nb18neighbors);
-    if (topo->nb26neighbors)  VipFree(topo->nb26neighbors);
-    if (topo->offset)  VipFree(topo->offset);
-    for (i=27;i--;)
-      if (topo->relation[i])  VipFree(topo->relation[i]);
-    if (topo->relation)  VipFree(topo->relation);
-    VipFree(topo);
-    }
+{
+  VipFree(topo);
 }
 
 /*------------------------------------------------------------------*/
