@@ -208,7 +208,7 @@ int VipHomotopicInsideDilationSnakeRidge( Volume *ridge, Volume *vol, Volume *gr
     }
   if (VipTestType(vol,S16BIT)!=OK)
     {
-      VipPrintfError("Sorry,  VipHomotopicInsideDilationSnake is only implemented for S16BIT volume");
+      VipPrintfError("Sorry,  VipHomotopicInsideDilationSnakeRidge is only implemented for S16BIT volume");
       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnakeRidge");
       return(PB);
     }
@@ -219,13 +219,13 @@ int VipHomotopicInsideDilationSnakeRidge( Volume *ridge, Volume *vol, Volume *gr
     }
   if (VipTestType(graylevel,S16BIT)!=OK)
     {
-      VipPrintfError("Sorry,  VipHomotopicInsideDilationSnake is only implemented for S16BIT volume");
+      VipPrintfError("Sorry,  VipHomotopicInsideDilationSnakeRidge is only implemented for S16BIT volume");
       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnakeRidge");
       return(PB);
     }
   if (mVipVolBorderWidth(vol) < 1)
     {
-      VipPrintfError("Sorry, VipHomotopicInsideDilationSnake is only implemented with border");
+      VipPrintfError("Sorry, VipHomotopicInsideDilationSnakeRidge is only implemented with border");
       VipPrintfExit("(skeleton)VipHomotopicInsideDilationSnakeRidge");
       return(PB);
     }
