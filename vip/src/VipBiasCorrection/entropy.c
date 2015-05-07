@@ -1201,6 +1201,7 @@ total_average denotes the average including field (with averaging) */
   *delta_entropy += entropy;
   *delta_entropy /= entropy;
 
+  VipFreeConnectivityStruct(vcs);
   VipFreeHisto(hcurrent);
   for (i = 1; i<= 2*nb_sample_proba; i++)
     {

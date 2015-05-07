@@ -355,6 +355,10 @@ static Volume *VipGaussianCurvatureDistmapPreprocessing(Volume *distmap,
 	}
 
     printf("%d saddle point marker found\n",count);
+
+    VipFreeConnectivityStruct(vcs6);
+    VipFreeConnectivityStruct(vcsdil);
+
     return(distmap);
 }
 
@@ -577,6 +581,9 @@ Volume *VipLocalExtrema(Volume *vol, int connectivity, int forbidden, int extrem
    }
 
    printf("\n");
+
+   VipFreeConnectivityStruct(vcs);
+
    return(out);
  
 }
@@ -863,6 +870,7 @@ int VipComputeWatershedVoronoi(
 
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
+  VipFreeConnectivityStruct(vcs);
 
   return(OK);
 }

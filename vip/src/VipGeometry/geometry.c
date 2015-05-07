@@ -450,6 +450,7 @@ Volume *VipComputeGrad(Volume *result, char *input, float thigh)
       gradptr += vos->oLineBetweenSlice; /*skip border lines*/
    }
 
+  VipFreeConnectivityStruct(vcs);
   VipFreeVolume(crest);
 
                 

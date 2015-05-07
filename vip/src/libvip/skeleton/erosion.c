@@ -177,6 +177,7 @@ int VipHomotopicErosionFromInsideSnake( Volume *vol, Volume *graylevel, int nb_i
   VipChangeIntLabel(vol,VIP_IMMORTAL,object);  
   
   VipFreeTopology26Neighborhood(topo26);
+  VipFreeConnectivityStruct(vcs6);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   
@@ -305,6 +306,7 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
   VipChangeIntLabel(vol,VIP_FRONT,object);
   VipChangeIntLabel(vol,VIP_IMMORTAL,object);  
   
+  VipFreeConnectivityStruct(vcs6);
   VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
@@ -411,6 +413,7 @@ int VipHomotopicErosionFromInside( Volume *vol, Volume *graylevel, int nb_iterat
   VipChangeIntLabel(vol,VIP_FRONT,object);
   VipChangeIntLabel(vol,VIP_IMMORTAL,object);
   
+  VipFreeConnectivityStruct(vcs6);
   VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);

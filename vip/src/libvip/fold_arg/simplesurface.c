@@ -244,6 +244,9 @@ static int VipDilateForbidenJunctionBorderAndCurve( Volume *vol)
 
   VipChangeIntLabel(vol,TOUCHED,FORBIDEN_JUNCTION);
   printf("Junction and border dilations add %d forbidden points\n",n_points);
+
+  VipFreeConnectivityStruct(vcs);
+
   return(OK);
 }
 
@@ -793,6 +796,7 @@ static int NewSSVoronoiAndRecoverSmallOldSS( Vip3DBucket_S16BIT *bucklist,
     /*    printf("%d forbidden have not been touched by the ss-connectivity based dilation\n",n_remaining_point);*/
 
     VipFreeTopology26Neighborhood(topo26);
+    VipFreeConnectivityStruct(vcs);
     VipFreeS16BITPtrBucket(comp1);
     VipFreeS16BITPtrBucket(comp1bis);
     VipFreeS16BITPtrBucket(comp2);
@@ -888,6 +892,8 @@ static int PutJunctionPointToValue(Volume *vol,  Vip3DBucket_S16BIT *bucklist,
     }
 
   printf("%d points\n",n_junction_points);
+
+  VipFreeConnectivityStruct(vcs);
 
   return(OK);
     
@@ -1443,6 +1449,8 @@ static int PutOutsideBorderToHullLabel(Volume *squel,
       squel_ptr += vos->oLineBetweenSlice;
     }
 
+  VipFreeConnectivityStruct(vcs);
+
   return(OK);
 }
 
@@ -1578,6 +1586,8 @@ int labelFRONTIERE)
 		  return(PB);
 	      }
       }
+
+  VipFreeConnectivityStruct(vcs);
 
   return(OK);
 }
@@ -1789,6 +1799,7 @@ Vip3DBucket_S16BIT *GetSurfaceSimple(
   free(buf_flag_volume);
   VipFree3DBucket_S16BIT(temp);
 
+  VipFreeConnectivityStruct(vcs);
   VipFreeTopology26Neighborhood(topo26);
   VipFreeS16BITPtrBucket(comp1);
   VipFreeS16BITPtrBucket(comp1bis);

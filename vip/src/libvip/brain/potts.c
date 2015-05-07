@@ -299,6 +299,7 @@ int dumb)
       classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
    }
 
+   VipFreeConnectivityStruct(vcs);
 
    return(classif);
 }
@@ -503,6 +504,7 @@ int dumb)
       classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
    }
 
+   VipFreeConnectivityStruct(vcs);
 
    return(classif);
 }
@@ -677,6 +679,7 @@ Volume *VipGrayWhiteClassificationRegularisationForRobust2005(Volume *vol,VipT1H
       classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
    }
 
+   VipFreeConnectivityStruct(vcs);
 
    return(classif);
 }
@@ -983,6 +986,7 @@ int dumb, int nb_iterations)
       classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
    }
 
+   VipFreeConnectivityStruct(vcs);
 
    return(classif);
 }
@@ -1198,6 +1202,7 @@ int dumb, int nb_iterations)
       classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
    }
 
+   VipFreeConnectivityStruct(vcs);
 
    return(classif);
 }
@@ -1376,6 +1381,7 @@ int dumb, int nb_iterations,int T_VOID_GRAY_LOW, int T_VOID_GRAY_HIGH, int T_WHI
       classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
    }
 
+   VipFreeConnectivityStruct(vcs);
 
    return(classif);
 }
@@ -1829,6 +1835,7 @@ int dumb, int nb_iterations, float KPOTTS, int connectivity)
       classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
     }
 
+  VipFreeConnectivityStruct(vcs);
 
   return(classif);
 }
@@ -1955,6 +1962,8 @@ Volume *VipGrayWhiteClassificationForVoxelBasedAna(Volume *vol, VipT1HistoAnalys
     }
 
     VipSetBorderLevel(classif,BORDER_LABEL);
+
+    VipFreeConnectivityStruct(vcs26);
 
     return(classif);
 }
@@ -2121,6 +2130,8 @@ int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, V
 //     VipChangeIntLabel(classif,VIP_IMMORTAL,object);
 
     VipFreeTopology26Neighborhood(topo26);
+    VipFreeConnectivityStruct(vcs6);
+    VipFreeConnectivityStruct(vcs26);
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
 
@@ -2367,6 +2378,9 @@ int dumb, int nb_iterations, int threshold, int connectivity, int label)
         VipPermuteTwoIntBucket(&buck, &nextbuck);
         nextbuck->n_points = 0;
     }
+    VipFreeConnectivityStruct(vcs6);
+    VipFreeConnectivityStruct(vcs18);
+    VipFreeConnectivityStruct(vcs26);
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
     
@@ -2478,6 +2492,9 @@ int VipCleaningTopo(Volume *vol, Volume *matter, Volume *classif, int dumb, int 
     
     printf("\n");
     
+    VipFreeConnectivityStruct(vcs6);
+    VipFreeConnectivityStruct(vcs26);
+
     return(OK);
 }
 /*---------------------------------------------------------------------------*/
@@ -2564,6 +2581,8 @@ int VipCleaningConnectivity(Volume *vol, int connectivity, int type)
     }
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
+    VipFreeConnectivityStruct(vcs);
+    VipFreeConnectivityStruct(vcs6);
     
     VipChangeIntLabel(vol,VIP_FRONT,255);
     
@@ -2673,6 +2692,8 @@ Volume *VipGrayWhiteRegularisationForVoxelBasedAna(Volume *vol, Volume *classif,
 //         classif_ptr += classif_vos->oLineBetweenSlice; /*skip border lines*/
 //     }
     
+    VipFreeConnectivityStruct(vcs);
+
     return(classif);
 }
 
@@ -2894,6 +2915,9 @@ static double PotentielForVoxelBasedNeighbourhood(Volume *vol, Volume *classif, 
             VipPrintfExit("(potts)PotentielForVoxelBasedNeighbourhood");
             return(PB);
     }
+
+    VipFreeConnectivityStruct(vcs);
+    VipFreeConnectivityStruct(vcs6);
 
     return(result);
 }
@@ -3118,6 +3142,10 @@ int VipGrayRegularisation(Volume *vol)
         }
         ptr += vos->oLineBetweenSlice; /*skip border lines*/
     }
+
+    VipFreeConnectivityStruct(vcs6);
+    VipFreeConnectivityStruct(vcs18);
+    VipFreeConnectivityStruct(vcs26);
 
     return(OK);
 }
@@ -3470,6 +3498,8 @@ int label
   VipChangeIntLabel(vol,VIP_IMMORTAL,object);  
   
   VipFreeTopology26Neighborhood(topo26);
+  VipFreeConnectivityStruct(vcs6);
+  VipFreeConnectivityStruct(vcs26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   

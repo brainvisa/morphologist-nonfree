@@ -398,7 +398,9 @@ float Tinit, float geom,  int maxincrement, int algo)
       VipGetHistoEntropy(hcurrent,&entropy);
       printf("New entropy:  %f\n",entropy);
     }
-   
+
+  VipFreeConnectivityStruct(vcs);
+
   return(classif);
 }
 

@@ -1721,6 +1721,9 @@ static Volume *VipComputeSmoothCrest(Volume *crest, Volume *vol)
       volptr += vos->oLineBetweenSlice; /*skip border lines*/
       smoothptr += vos->oLineBetweenSlice; /*skip border lines*/
     }
+
+  VipFreeConnectivityStruct(vcs);
+
   return(smooth);
 }
 
@@ -1793,6 +1796,7 @@ Volume *VipComputeCrestGrad(Volume *crest, Volume *vol)
       volptr += vos->oLineBetweenSlice; /*skip border lines*/
       gradptr += vos->oLineBetweenSlice; /*skip border lines*/
     }
+  VipFreeConnectivityStruct(vcs);
   VipFreeVolume(smooth);
   return(grad);
 }
@@ -1877,6 +1881,7 @@ Volume *VipComputeCrestGradExtrema(Volume *grad, Volume *vol)
       volptr += vos->oLineBetweenSlice; /*skip border lines*/
       extremaptr += vos->oLineBetweenSlice; /*skip border lines*/
     }
+  VipFreeConnectivityStruct(vcs);
   VipFreeVolume(smooth);
   /*VipWriteTivoliVolume(extrema,"extrema");*/
   return(extrema);

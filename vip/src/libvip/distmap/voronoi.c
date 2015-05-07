@@ -649,6 +649,7 @@ int VipWatershedFrontPropagation( Volume *vol, Volume *altitude, Volume *plan_he
     
     VipCleanUpBorderFromImmortalsVoronoiObject( vol, buck_immortals, VIP_IMMORTAL, 0, CONNECTIVITY_26);
     
+    VipFreeConnectivityStruct(vcs);
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
     
@@ -859,5 +860,8 @@ int VipCleanUpBorderFromImmortalsVoronoiObject( Volume *vol, VipIntBucket *buck,
         }
         buckptr++;
     }
+
+    VipFreeConnectivityStruct(vcs);
+
     return(OK);
 }

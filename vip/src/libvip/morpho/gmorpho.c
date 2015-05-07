@@ -129,6 +129,9 @@ Volume *VipIntersectionDirectionalGrayLevelClosing(Volume *vol)
    }
 
    printf("\n");
+
+   VipFreeConnectivityStruct(vcs);
+
    return(out);
  
 }
@@ -206,6 +209,9 @@ Volume *VipGrayLevelPlanDilation(Volume *vol, int connectivity, int forbidden)
    }
 
    printf("\n");
+
+   VipFreeConnectivityStruct(vcs);
+
    return(out);
  
 }
@@ -329,6 +335,9 @@ Volume *VipGrayLevelPlanErosion(Volume *vol, int connectivity, int forbidden)
    }
 
    printf("\n");
+
+   VipFreeConnectivityStruct(vcs);
+
    return(out);
  
 }

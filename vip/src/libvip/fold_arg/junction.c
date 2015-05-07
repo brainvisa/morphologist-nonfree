@@ -293,7 +293,9 @@ JunctionPointList *GetListOfJunctionPoint(Volume *vol, int inside, int outside)
 		}
 	    jpl_ptr++;
 	}
-  
+
+    VipFreeConnectivityStruct(vcs);
+
     return(jpl);										
 }
 

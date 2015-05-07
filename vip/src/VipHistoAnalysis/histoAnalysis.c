@@ -1527,6 +1527,7 @@ Volume *VipComputeCrestAverageIntensity(Volume *crest, Volume *vol)
     smoothptr += vos->oLineBetweenSlice; /*skip border lines*/
   }
 
+  VipFreeConnectivityStruct(vcs);
 
   return(smooth);
 

@@ -123,7 +123,8 @@ int VipDilateInPartialVolume(Volume *vol, Volume *mask)
 
 	VipSingleThreshold( mask, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
 
-		
+        VipFreeConnectivityStruct(vcs6);
+
 	return(OK);
 		
 }
@@ -210,6 +211,9 @@ int VipDilateInPartialVolumeFar(Volume *vol, Volume *mask, int layer)
 	      mask_ptr += vos->oLineBetweenSlice; /*skip border lines*/
 	      vol_ptr += vos->oLineBetweenSlice; /*skip border lines*/
 	    }
+
+    VipFreeConnectivityStruct(vcs6);
+
     return(OK);	
 }
 /*---------------------------------------------------------------------------*/
@@ -267,6 +271,9 @@ int VipDilateVolumeBorder(Volume *vol, Volume *mask, int T_GRAY_CSF, int T_WHITE
         mask_ptr += vos->oLineBetweenSlice; /*skip border lines*/
         vol_ptr += vos->oLineBetweenSlice; /*skip border lines*/
     }
+
+    VipFreeConnectivityStruct(vcs);
+
     return(OK);
 }
 /*---------------------------------------------------------------------------*/
@@ -421,6 +428,8 @@ int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivit
     std = sqrt(std/nb_total);
     printf("sdt=%f\n", std), fflush(stdout);
 
+    VipFreeConnectivityStruct(vcs);
+
 //     return(histo_border);
 //     return(mean);
     return(mediane);
@@ -499,6 +508,9 @@ int VipVolumeEdges(Volume *edges, Vip_S16BIT *edges_ptr, int seuil)
     voisin2 = edges_ptr + vcs18->offset[2];
     voisin3 = edges_ptr + vcs18->offset[6];
     if(((*voisin1)>seuil && (*voisin2)>seuil) || ((*voisin1)>seuil && (*voisin3)>seuil)) return(1);
+
+    VipFreeConnectivityStruct(vcs6);
+    VipFreeConnectivityStruct(vcs18);
 
     return(0);
 }
@@ -601,6 +613,9 @@ int connectivity
         vol1_ptr += vos->oLineBetweenSlice; /*skip border lines*/
         vol2_ptr += vos->oLineBetweenSlice; /*skip border lines*/
     }
+
+    VipFreeConnectivityStruct(vcs);
+
     return(OK);
 }
 /*---------------------------------------------------------------------------*/
@@ -732,6 +747,8 @@ int connectivity
     
     if(VipSingleThreshold( mask, GREATER_OR_EQUAL_TO, 10000, BINARY_RESULT )==PB) return(PB);
     
+    VipFreeConnectivityStruct(vcs);
+
     return(OK);
 }
 /*---------------------------------------------------------------------------*/
@@ -809,7 +826,6 @@ float P[3]
   int icon, icon2, ix, iy, iz;
   int goodseed;
   VipOffsetStruct *vos;
-  VipConnectivityStruct *vcs, *vcs26;
   Vip_S16BIT *skin_ptr, *mask_ptr;
   Vip_S16BIT *vol_ptr, *edges_ptr, *var_ptr;
   Vip_S16BIT *ptr, *voisin, *voisin26;

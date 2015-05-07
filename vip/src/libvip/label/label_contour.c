@@ -66,6 +66,8 @@ Vip3DBucket_S16BIT *VipGetSingleLabelContour(Volume *vol, int label, int connexi
 	}
       }
 
+  VipFreeConnectivityStruct(vcs);
+
   return(bucket);
 }
 
