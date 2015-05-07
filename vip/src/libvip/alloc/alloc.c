@@ -69,12 +69,10 @@ void *VipRealloc(void *p, size_t size, char *message)
 }
 
 int VipFree(void *ptr)
-{    
+{
   if (!ptr)
     {
-      VipPrintfError("Try to free NULL pointer!");
-      VipPrintfExit("(Vip_alloc)VipFree");
-      return PB;
+      VipPrintfWarning("Trying to free NULL pointer");
     }
   free(ptr);
   return OK;
