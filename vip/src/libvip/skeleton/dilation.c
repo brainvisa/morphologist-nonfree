@@ -175,7 +175,7 @@ int VipHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int nb_iter
   
   VipChangeIntLabel(vol,VIP_FRONT,inside);
   
-  
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   
@@ -318,7 +318,7 @@ int VipHomotopicInsideDilationSnakeRidge( Volume *ridge, Volume *vol, Volume *gr
   
   VipChangeIntLabel(vol,VIP_FRONT,inside);
   
-  
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   
@@ -435,6 +435,7 @@ int VipHomotopicInsideDilation( Volume *vol, Volume *graylevel, int nb_iteration
     
     VipChangeIntLabel(vol,VIP_FRONT,inside);
     
+    VipFreeTopology26Neighborhood(topo26);
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
     
@@ -538,6 +539,7 @@ int VipHomotopicInsideVolumeDilation( Volume *vol1, Volume *vol2, int nb_iterati
     
     VipChangeIntLabel(vol1,VIP_FRONT,outside_domain);
     
+    VipFreeTopology26Neighborhood(topo26);
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
     
@@ -681,6 +683,7 @@ int VipFoetusHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int n
   VipChangeIntLabel(vol,VIP_FRONT,inside);
   
   
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   
@@ -840,6 +843,7 @@ int VipHomotopicGeodesicDilation( Volume *vol, int nb_iteration,
   VipChangeIntLabel(vol,VIP_FRONT,forbiden);
   
   
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   
@@ -1266,6 +1270,7 @@ int VipFrontOrderFromDistanceToClosing(VipIntBucket *buck, Volume *vol,
 //   VipChangeIntLabel(vol,VIP_FRONT,inside);
 //   
 //   
+//   VipFreeTopology26Neighborhood(topo26);
 //   VipFreeIntBucket(buck);
 //   VipFreeIntBucket(nextbuck);
 //   

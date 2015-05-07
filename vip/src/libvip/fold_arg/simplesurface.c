@@ -792,6 +792,7 @@ static int NewSSVoronoiAndRecoverSmallOldSS( Vip3DBucket_S16BIT *bucklist,
     n_remaining_point = VipGetNumberLabelPoints(vol, FORBIDEN_JUNCTION);
     /*    printf("%d forbidden have not been touched by the ss-connectivity based dilation\n",n_remaining_point);*/
 
+    VipFreeTopology26Neighborhood(topo26);
     VipFreeS16BITPtrBucket(comp1);
     VipFreeS16BITPtrBucket(comp1bis);
     VipFreeS16BITPtrBucket(comp2);
@@ -1788,6 +1789,7 @@ Vip3DBucket_S16BIT *GetSurfaceSimple(
   free(buf_flag_volume);
   VipFree3DBucket_S16BIT(temp);
 
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeS16BITPtrBucket(comp1);
   VipFreeS16BITPtrBucket(comp1bis);
   VipFreeS16BITPtrBucket(comp2);

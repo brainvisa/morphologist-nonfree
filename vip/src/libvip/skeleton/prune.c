@@ -172,6 +172,7 @@ int VipHomotopicOutsidePruning( Volume *vol, int inside, int outside )
 
   printf("0\n");
      
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
 
@@ -289,6 +290,7 @@ int VipHomotopicCurvePruning( Volume *vol, int inside, int outside )
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeConnectivityStruct(vcs26);
   VipFreeConnectivityStruct(vcs6);
 

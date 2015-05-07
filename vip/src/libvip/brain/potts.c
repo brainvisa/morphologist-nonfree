@@ -2120,6 +2120,7 @@ int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, V
 //     VipChangeIntLabel(classif,VIP_FRONT,object);
 //     VipChangeIntLabel(classif,VIP_IMMORTAL,object);
 
+    VipFreeTopology26Neighborhood(topo26);
     VipFreeIntBucket(buck);
     VipFreeIntBucket(nextbuck);
 
@@ -3468,6 +3469,7 @@ int label
   VipChangeIntLabel(vol,VIP_FRONT,object);
   VipChangeIntLabel(vol,VIP_IMMORTAL,object);  
   
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
   

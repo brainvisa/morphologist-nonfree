@@ -77,6 +77,7 @@ int label)
 
  if(VipTransferVolumeData(temp,vol)==PB) return(PB);
 
+ VipFreeTopology26Neighborhood(topo26);
  VipFreeVolume(temp);
  return(OK);
 }
@@ -139,6 +140,7 @@ int label)
 
  if(VipTransferVolumeData(temp,vol)==PB) return(PB);
 
+ VipFreeTopology26Neighborhood(topo26);
  VipFreeVolume(temp);
  return(OK);
 }
@@ -199,6 +201,7 @@ int outside)
 
  if(VipTransferVolumeData(temp,vol)==PB) return(PB);
 
+ VipFreeTopology26Neighborhood(topo26);
  VipFreeVolume(temp);
  return(OK);
 }
@@ -259,6 +262,7 @@ int outside)
 
  if(VipTransferVolumeData(temp,vol)==PB) return(PB);
 
+ VipFreeTopology26Neighborhood(topo26);
  VipFreeVolume(temp);
  return(OK);
 }

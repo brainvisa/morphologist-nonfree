@@ -474,6 +474,7 @@ int VipWatershedHomotopicSkeleton( Volume *vol, Volume *altitude, int immortal_e
 	  borderptr = borderptr->next;
 	}
     }
+  VipFreeTopology26Neighborhood(topo26);
   VipFree3DBucketList_S16BIT(border);
 	
   /*
@@ -646,6 +647,7 @@ int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mode )
 	  
       }
   
+  VipFreeTopology26Neighborhood(topo26);
   VipFreeIntBucket(buck);
   VipFreeIntBucket(nextbuck);
 
