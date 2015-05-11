@@ -349,24 +349,10 @@ int main(int argc, char *argv[])
       }
       
       printf("-------------------------------\n");
-      printf("Computing closing of %s...\n",vol->name);
-      printf("-------------------------------\n");
-      closing = VipCopyVolume(vol,"closing");
-      if (closing==PB) return (VIP_CL_ERROR);
-      if (fclosingsize > 0) {
-        if (VipClosing ( closing, CHAMFER_BALL_3D, fclosingsize ) == PB)
-          return (VIP_CL_ERROR);
-      }
-      VipChangeIntLabel( closing, 255, 1 );
-      VipMerge( closing, vol, VIP_MERGE_SAME_VALUES, 0, 0);
-      VipFreeVolume(vol);
-      
-      printf("-------------------------------\n");
       printf("CSF/Grey interface detection using homotopic erosion of %s...\n", cortexname);
       printf("-------------------------------\n");
 
-    
-      VipHomotopicErosionFromInside( cortex, closing, 100, 255, linside, loutside );
+      VipHomotopicErosionFromInside( cortex, vol, 100, 255, linside, loutside );
   }
     
     printf("-------------------------\n");
