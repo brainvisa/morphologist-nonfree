@@ -348,6 +348,16 @@ int main(int argc, char *argv[])
           VipFreeVolume(mask);
       }
       
+      if(version=='2')
+      {
+          /* The homotopic erosion from inside erodes the cortex until it
+             leaves an object that is one voxel thick. This object will be
+             considered to be part of the CSF, but as in the version 2 of the
+             cortex image this layer of one voxel in the CSF is no longer present
+             we pre-dilate the cortex by one voxel toward the outside. */
+          VipHomotopicGeodesicDilation(cortex, 1, 255, 11, 11, 0, FRONT_RANDOM_ORDER);        
+      }
+      
       printf("-------------------------------\n");
       printf("CSF/Grey interface detection using homotopic erosion of %s...\n", cortexname);
       printf("-------------------------------\n");
