@@ -764,7 +764,7 @@ int VipHomotopicGeodesicDilation( Volume *vol, int nb_iteration,
   VipIntBucket *buck, *nextbuck;
   Topology26Neighborhood *topo26;
   VipConnectivityStruct *vcs6;
-  int loop, count, totalcount;
+  int loop, count, totalcount, count2;
   Vip_S16BIT *first, *ptr;
   int *buckptr;
   int i;
@@ -811,38 +811,44 @@ int VipHomotopicGeodesicDilation( Volume *vol, int nb_iteration,
   loop=0;
   count = 1;
   totalcount = 0;
-  printf("loop: %3d, Added %6d",loop,0);	      	  
+  printf("loop: %3d, Added %6d", loop, 0);
 
   while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
-      {
-	if(loop==1) count=0;
-	totalcount += count;
-	count = 0;
-	printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Added %6d",loop,totalcount);
-	  fflush(stdout);
-	  count = 0;
-	  /* printf("Front size: %d\n",buck->n_points);*/
-	  
-	  buckptr = buck->data;
-	  for(i=buck->n_points;i--;)
-	    {
-	      ptr = first + *buckptr++;		 
+    {   
+        if(loop==1) count=0;
+        totalcount += count;
+        count = 0;
+        printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Added %6d", loop, totalcount);
+        fflush(stdout);
+        /* printf("Front size: %d\n",buck->n_points);*/
+         
+        count2 = 1;
+        while(count2)
+        {    
+            count2 = 0;
+            buckptr = buck->data;
+            for(i=buck->n_points; i--;)
+            {
+                ptr = first + *buckptr++;
+                if(*ptr==VIP_FRONT)
+                {
+                    if(VipIsASimplePointForLabel_S16BIT(topo26, ptr, object)==VTRUE)
+                    {
+                        *ptr = object;
+                        count++;
+                        count2++;
+                    }
+                }
+            }
+        }
+        
+        VipFillNextFrontFromOldFrontForDilation(first,buck,nextbuck,vcs6,domain,VIP_FRONT,object);
+        
+        /*bucket permutation*/
+        VipPermuteTwoIntBucket(&buck, &nextbuck);
+        nextbuck->n_points = 0;
+    }
 
-	      if (VipIsASimplePointForLabel_S16BIT(topo26, ptr, object)==VTRUE)
-		  {
-		      *ptr = object;
-		      count++;
-		  }
-	    }
-	      	      			
-	  VipFillNextFrontFromOldFrontForDilation(first,buck,nextbuck,vcs6,domain,VIP_FRONT,object);
-		  
-	  /*bucket permutation*/
-	  VipPermuteTwoIntBucket(&buck, &nextbuck);
-	  nextbuck->n_points = 0;
-	  
-      }
-  
   printf("\n");
   VipChangeIntLabel(vol,domain,forbiden);
   VipChangeIntLabel(vol,VIP_FRONT,forbiden);
