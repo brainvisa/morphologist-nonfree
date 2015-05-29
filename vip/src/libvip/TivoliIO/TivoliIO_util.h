@@ -305,13 +305,6 @@ long int roundFloat2Long(float f);
 int roundFloat2Int(float f);
 unsigned char roundFloat2UChar(float f);
 
-/***************************/
-/*                         */
-/*    MATH - functions    */
-/*                         */
-/***************************/
-void sincos(double f, double *s, double *c);
-
 /*********************************/
 /*                               */
 /*    HELP- USAGE - functions    */
