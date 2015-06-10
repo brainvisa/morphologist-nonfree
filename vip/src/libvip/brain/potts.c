@@ -1993,13 +1993,13 @@ int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, V
 	}
     if (VipTestType(classif,S16BIT)!=OK)
 	{
-	VipPrintfError("Sorry,  VipHomotopicErosionFromInside is only implemented for S16BIT volume");
+	VipPrintfError("Sorry,  VipErosionClassificationNeighbourhood is only implemented for S16BIT volume");
 	VipPrintfExit("(potts)VipErosionClassificationNeighbourhood");
 	return(PB);
 	}
     if (mVipVolBorderWidth(classif) < 1)
 	{
-	VipPrintfError("Sorry, VipHomotopicErosionFromInside is only implemented with border");
+	VipPrintfError("Sorry, VipErosionClassificationNeighbourhood is only implemented with border");
 	VipPrintfExit("(potts)VipErosionClassificationNeighbourhood");
 	return(PB);
 	}
