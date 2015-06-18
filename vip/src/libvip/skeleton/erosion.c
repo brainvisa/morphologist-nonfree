@@ -645,3 +645,133 @@ int VipFillNextFrontFromOldFrontForErosion(
     return(OK);
 }
 
+int
+VipHomotopicWellComposedErosionFromOutside (Volume * vol,
+                                            int nb_iteration,
+                                            Vip_S16BIT object,
+                                            Vip_S16BIT inside,
+                                            Vip_S16BIT outside)
+{
+  VipIntBucket *buck, *nextbuck;
+  VipConnectivityStruct *vcs6;
+  VipOffsetStruct *vos;
+  unsigned int loop, count, count2, totalcount;
+  Vip_S16BIT *first, *ptr;
+  int *buckptr;
+  int i;
+  int ret = PB;
+
+  if (VipVerifyAll (vol) == PB)
+    {
+      VipPrintfExit ("(skeleton)VipHomotopicWellComposedErosionFromOutside");
+      return (PB);
+    }
+  if (VipTestType (vol, S16BIT) != OK)
+    {
+      VipPrintfError
+        ("Sorry,  VipHomotopicWellComposedErosionFromOutside is only implemented for S16BIT volume");
+      VipPrintfExit ("(skeleton)VipHomotopicWellComposedErosionFromOutside");
+      return (PB);
+    }
+  if (mVipVolBorderWidth (vol) < 1)
+    {
+      VipPrintfError
+        ("Sorry, VipHomotopicWellComposedErosionFromOutside is only implemented with border");
+      VipPrintfExit ("(skeleton)VipHomotopicWellComposedErosionFromOutside");
+      return (PB);
+    }
+  if (0)                        /* debug output */
+    {
+      printf ("Initialization (object:%d, inside:%d, outside:%d)...\n",
+              object, inside, outside);
+    }
+  printf ("Homotopic well-composed erosion from outside...\n");
+
+  buck =
+    VipCreateFrontIntBucketForErosionFromOutside (vol, CONNECTIVITY_6,
+                                                  VIP_FRONT, object, outside);
+  if (!buck)
+    goto VipHomotopicWellComposedErosionFromOutside_cleanup_buck;
+
+  nextbuck =
+    VipAllocIntBucket (mVipMax (VIP_INITIAL_FRONT_SIZE, buck->n_points));
+  if (!nextbuck)
+    goto VipHomotopicWellComposedErosionFromOutside_cleanup_nextbuck;
+  nextbuck->n_points = 0;
+
+  vcs6 = VipGetConnectivityStruct (vol, CONNECTIVITY_6);
+  if (!vcs6)
+    goto VipHomotopicWellComposedErosionFromOutside_cleanup_vcs6;
+
+  vos = VipGetOffsetStructure (vol);
+  if (!vos)
+    goto VipHomotopicWellComposedErosionFromOutside_cleanup_vos;
+
+  first = VipGetDataPtr_S16BIT (vol);
+
+  /* main loop */
+  loop = 0;
+  count = 1;
+  totalcount = 0;
+  printf ("loop: %3d, Added %6d", loop, 0);
+
+  while ((loop++ < nb_iteration) && (count) && (buck->n_points > 0))
+    {
+      if (loop == 1)
+        count = 0;
+      totalcount += count;
+      count = 0;
+      printf ("\rloop: %3d, Added %6d", loop, totalcount);
+      fflush (stdout);
+      count = 0;
+
+      do {
+        count2 = 0;
+
+        buckptr = buck->data;
+        for (i = buck->n_points; i--;)
+          {
+            ptr = first + *buckptr++;
+
+            if (*ptr == VIP_FRONT &&
+                VipIsTopologicallyWellComposedForTwoLabel_S16BIT
+                (vos, ptr, outside, inside, outside))
+              {
+                *ptr = outside;
+                count2++;
+              }
+          }
+        count += count2;
+      } while(count2);
+
+      ret = VipFillNextFrontFromOldFrontForErosionFromOutside
+        (first, buck, nextbuck, vcs6, object, VIP_FRONT, outside, inside);
+      if(ret == PB)
+        goto VipHomotopicWellComposedErosionFromOutside_cleanup_all;
+
+      /* bucket permutation */
+      VipPermuteTwoIntBucket (&buck, &nextbuck);
+      nextbuck->n_points = 0;
+    }
+
+  printf ("\n");
+  VipChangeIntLabel (vol, VIP_FRONT, object);
+  VipChangeIntLabel (vol, VIP_IMMORTAL, object);
+
+  ret = OK;
+
+ VipHomotopicWellComposedErosionFromOutside_cleanup_all:
+  VipFree (vos);
+ VipHomotopicWellComposedErosionFromOutside_cleanup_vos:
+  VipFreeConnectivityStruct (vcs6);
+ VipHomotopicWellComposedErosionFromOutside_cleanup_vcs6:
+  VipFreeIntBucket (nextbuck);
+ VipHomotopicWellComposedErosionFromOutside_cleanup_nextbuck:
+  VipFreeIntBucket (buck);
+ VipHomotopicWellComposedErosionFromOutside_cleanup_buck:
+
+  if(ret == PB)
+    VipPrintfExit("(skeleton)VipHomotopicWellComposedErosionFromOutside");
+
+  return ret;
+}

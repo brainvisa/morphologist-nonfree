@@ -258,6 +258,22 @@ extern int VipFillNextFrontFromOldFrontVoronoiObject(
 
 extern VipIntBucket *VipCreateFrontIntBucketVoronoiObject( Volume *vol, int connectivity, int front_value, int domain, int outside);
 
+int
+VipHomotopicWellComposedErosionFromOutside (Volume * vol,
+                                            int nb_iteration,
+                                            Vip_S16BIT object,
+                                            Vip_S16BIT inside,
+                                            Vip_S16BIT outside);
+int
+VipHomotopicWellComposedDilationTowardInside (Volume * vol,
+                                              int nb_iteration,
+                                              Vip_S16BIT object,
+                                              Vip_S16BIT inside,
+                                              Vip_S16BIT forbidden,
+                                              Vip_S16BIT outside,
+                                              int front_mode);
+
+
 #ifdef __cplusplus
 }
 #endif

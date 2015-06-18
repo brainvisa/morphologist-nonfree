@@ -1095,6 +1095,136 @@ int VipFrontOrderFromDistanceToClosing(VipIntBucket *buck, Volume *vol,
     return(OK);
 }
 
+int
+VipHomotopicWellComposedDilationTowardInside (Volume * vol,
+                                              int nb_iteration,
+                                              Vip_S16BIT object,
+                                              Vip_S16BIT inside,
+                                              Vip_S16BIT forbidden,
+                                              Vip_S16BIT outside,
+                                              int front_mode)
+{
+  VipIntBucket *buck, *nextbuck;
+  VipConnectivityStruct *vcs6;
+  VipOffsetStruct *vos;
+  unsigned int loop, count, totalcount;
+  Vip_S16BIT *first, *ptr;
+  int *buckptr;
+  int i;
+  int ret = PB;
+
+  if (VipVerifyAll (vol) == PB)
+    {
+      VipPrintfExit ("(skeleton)VipHomotopicWellComposedDilationTowardInside");
+      return (PB);
+    }
+  if (VipTestType (vol, S16BIT) != OK)
+    {
+      VipPrintfError
+        ("Sorry,  VipHomotopicWellComposedDilationTowardInside is only implemented for S16BIT volume");
+      VipPrintfExit ("(skeleton)VipHomotopicWellComposedDilationTowardInside");
+      return (PB);
+    }
+  if (mVipVolBorderWidth (vol) < 1)
+    {
+      VipPrintfError
+        ("Sorry, VipHomotopicWellComposedDilationTowardInside is only implemented with border");
+      VipPrintfExit ("(skeleton)VipHomotopicWellComposedDilationTowardInside");
+      return (PB);
+    }
+  if (0)                        /* debug output */
+    {
+      printf ("Initialization (object:%d, inside:%d, forbidden:%d, outside:%d)...\n",
+              object, inside, forbidden, outside);
+    }
+  printf ("Homotopic well-composed dilation toward inside...\n");
+
+  /* VipCreateFrontIntBucketForDilation requires this */
+  VipSetBorderLevel(vol, outside);
+
+  buck =
+    VipCreateFrontIntBucketForDilation (vol, CONNECTIVITY_6, VIP_FRONT,
+                                        object, inside, front_mode);
+  if (!buck)
+    goto VipHomotopicWellComposedDilationTowardInside_cleanup_buck;
+
+  nextbuck =
+    VipAllocIntBucket (mVipMax (VIP_INITIAL_FRONT_SIZE, buck->n_points));
+  if (!nextbuck)
+    goto VipHomotopicWellComposedDilationTowardInside_cleanup_nextbuck;
+  nextbuck->n_points = 0;
+
+  vcs6 = VipGetConnectivityStruct (vol, CONNECTIVITY_6);
+  if (!vcs6)
+    goto VipHomotopicWellComposedDilationTowardInside_cleanup_vcs6;
+
+  vos = VipGetOffsetStructure (vol);
+  if (!vos)
+    goto VipHomotopicWellComposedDilationTowardInside_cleanup_vos;
+
+  first = VipGetDataPtr_S16BIT (vol);
+
+  /* main loop */
+  loop = 0;
+  count = 1;
+  totalcount = 0;
+  printf ("loop: %3d, Added %6d", loop, 0);
+
+  while ((loop++ < nb_iteration) && (count) && (buck->n_points > 0))
+    {
+      if (loop == 1)
+        count = 0;
+      totalcount += count;
+      count = 0;
+      printf ("\rloop: %3d, Added %6d", loop, totalcount);
+      fflush (stdout);
+      count = 0;
+
+      buckptr = buck->data;
+      for (i = buck->n_points; i--;)
+        {
+          ptr = first + *buckptr++;
+
+          if (VipIsTopologicallyWellComposedForLabel_S16BIT
+              (vos, ptr, object, object))
+            {
+              *ptr = object;
+              count++;
+            }
+        }
+
+      ret = VipFillNextFrontFromOldFrontForDilation
+        (first, buck, nextbuck, vcs6, inside, VIP_FRONT, object);
+      if(ret == PB)
+        goto VipHomotopicWellComposedDilationTowardInside_cleanup_all;
+
+      /* bucket permutation */
+      VipPermuteTwoIntBucket (&buck, &nextbuck);
+      nextbuck->n_points = 0;
+    }
+
+  printf ("\n");
+  VipChangeIntLabel (vol, inside, forbidden);
+  VipChangeIntLabel (vol, VIP_FRONT, forbidden);
+
+  ret = OK;
+
+ VipHomotopicWellComposedDilationTowardInside_cleanup_all:
+  VipFree (vos);
+ VipHomotopicWellComposedDilationTowardInside_cleanup_vos:
+  VipFreeConnectivityStruct (vcs6);
+ VipHomotopicWellComposedDilationTowardInside_cleanup_vcs6:
+  VipFreeIntBucket (nextbuck);
+ VipHomotopicWellComposedDilationTowardInside_cleanup_nextbuck:
+  VipFreeIntBucket (buck);
+ VipHomotopicWellComposedDilationTowardInside_cleanup_buck:
+
+  if(ret == PB)
+    VipPrintfExit("(skeleton)VipHomotopicWellComposedDilationTowardInside");
+
+  return ret;
+}
+
 /*---------------------------------------------------------------------------*/
 // int VipHomotopicInsideDilationSnake( Volume *vol, Volume *graylevel, int nb_iteration,
 // 				  int object, int inside, int outside, int front_mode,
