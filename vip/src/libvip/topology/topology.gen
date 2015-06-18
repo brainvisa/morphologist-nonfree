@@ -470,6 +470,7 @@ int VipComputeTopologicalClassificationForTwoLabelComplement_GENSTRING(Topology2
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*----------------------------------------------------------------------------*/
+/* Check if the point is 26-simple for the label (6-simple for the complement) */
 int VipIsASimplePointForLabel_GENSTRING(Topology26Neighborhood *top, 
                                         GENTYPE *adresse, int label)
 #PROTOTYPE_END
@@ -501,6 +502,7 @@ int VipIsASimplePointForLabel_GENSTRING(Topology26Neighborhood *top,
 #TYPE_LIST_EXTERN ANY_INT
 #PROTOTYPE_BEGIN
 /*----------------------------------------------------------------------------*/
+/* Check if the point is 26-simple for the complement (6-simple for the label) */
 int VipIsASimplePointForLabelComplement_GENSTRING(Topology26Neighborhood *top, 
                                         GENTYPE *adresse, int label)
 #PROTOTYPE_END
