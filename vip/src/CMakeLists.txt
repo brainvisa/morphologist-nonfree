@@ -22,3 +22,6 @@ foreach( _command ${_commands} )
                 COMPONENT ${PROJECT_NAME} )
 endforeach( _command )
 
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif(BUILD_TESTING)

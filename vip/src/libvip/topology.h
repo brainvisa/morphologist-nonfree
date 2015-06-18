@@ -18,6 +18,7 @@
  * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
  *--------------------|--------------|---------------------------------------
  *         10/04/97   |  J-F Mangin  |  extensions -> skeleton
+ *         18/06/2015 |  Y Leprince  |  introduce well-composed topology
  *              / /   |              |
  ****************************************************************************/
 
@@ -94,6 +95,48 @@ typedef struct topology26
 #define CC_18_ADJACENT 78
 #define CC_26_ADJACENT 79
 
+
+/* ======================== Well-composed topology ========================  */
+
+/* Well-composed images are binary or multi-label images in which no
+ * topological ambiguity exists. In other words, the objects are defined
+ * non-ambiguously with regard to the connectivity used (6, 18, or
+ * 26-connectivity). This property is achieved by excluding certain ambiguous
+ * cases, called critical configurations (see below).
+ *
+ * For a thorough introduction to 3D well-composed images, see L. J. Latecki.
+ * 3D Well-Composed Pictures. Graphical Models and Image Processing 59, 164–172
+ * (1997). doi:10.1006/gmip.1997.0422
+ */
+
+/*
+ * A binary 8-neighbourhood (cube of 2x2x2 voxels) may be in one of these three
+ * states regarding well-composedness:
+ */
+enum {
+  /* Non-critical configuration: neither of the two cases below happens, hence
+   * no topological ambiguity exists. */
+  WELL_COMPOSED_CRITICAL_NONE = 0,
+
+  /* Type 1 critical configuration: two voxels of an object are 18-adjacent
+   * (edge-adjacent), but not 6-adjacent (face-adjacent). */
+  WELL_COMPOSED_CRITICAL_C1 = 1,
+
+ /* Type 2 critical configuration: two voxels of an object are 26-adjacent
+  * (corner-adjacent), but not 6-adjacent (face-adjacent). */
+  WELL_COMPOSED_CRITICAL_C2 = 2
+};
+
+/* A binary 8-neighbourhood (cube of 2x2x2 voxels) has 2^8=256 possible
+ * configurations, which are listed in this table. This is a look-up table with
+ * an 8-bit index, whose bits represent a 2x2x2 binary neighbourhood, ordered
+ * as in VipIsWellComposedForCentralVoxel (topology/wellcomposed.gen). For
+ * each configuration the value is one of WELL_COMPOSED_CRITICAL_NONE,
+ * WELL_COMPOSED_CRITICAL_C1, or WELL_COMPOSED_CRITICAL_C2.
+ */
+extern const char vip_well_composed_critical_configuration_n8lookup[256];
+
+#include <vip/topology/wellcomposed_gen.h>
 
 /*this test discard non simple point which do not really split the background*/
 /*-----------------------------------------------------------------------*/

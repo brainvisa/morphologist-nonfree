@@ -1,0 +1,287 @@
+/****************************************************************************
+ * PROJECT     : V.I.P. Library
+ * MODULE NAME : vip/topology         * TYPE     : Function
+ * AUTHOR      : Yann Leprince        * CREATION : 18/06/2015
+ ****************************************************************************
+ * Copyright Télécom ParisTech (2015).
+ ****************************************************************************
+ *
+ * DESCRIPTION : Well-composed images and topology preservation
+ *
+ ****************************************************************************
+ * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
+ *--------------------|--------------|---------------------------------------
+ *         18/06/2015 |  Y Leprince  |  introduce well-composed topology
+ *           /  /     |              |
+ ****************************************************************************/
+
+#include <assert.h>
+
+#include <vip/topology.h>
+
+static int
+VipIsWellComposedForCentralVoxel (Vip_U8BIT neighbourhood[3][3][3])
+{
+  int x, y, z;
+  int n8lookup;
+  for (x = 0; x <= 1; ++x)
+    for (y = 0; y <= 1; ++y)
+      {
+        n8lookup = 0;
+
+        if (neighbourhood[x][y][0])
+          n8lookup |= 0x01;
+        if (neighbourhood[x + 1][y][0])
+          n8lookup |= 0x02;
+        if (neighbourhood[x][y + 1][0])
+          n8lookup |= 0x04;
+        if (neighbourhood[x + 1][y + 1][0])
+          n8lookup |= 0x08;
+
+        for (z = 1; z <= 2; ++z)
+          {
+            /* Values for neighbourhood[?][?][z - 1] are in the lower 4 bits
+               from the previous iteration */
+            n8lookup = (n8lookup << 4) & 0xf0;
+
+            if (neighbourhood[x][y][z])
+              n8lookup |= 0x01;
+            if (neighbourhood[x + 1][y][z])
+              n8lookup |= 0x02;
+            if (neighbourhood[x][y + 1][z])
+              n8lookup |= 0x04;
+            if (neighbourhood[x + 1][y + 1][z])
+              n8lookup |= 0x08;
+
+
+            if (vip_well_composed_critical_configuration_n8lookup[n8lookup])
+              return VFALSE;
+          }
+      }
+
+  return VTRUE;
+}
+
+static int
+VipIsPreservingWellComposedTopologyForCentralVoxel (Vip_U8BIT
+                                                    neighbourhood[3][3][3])
+{
+  /*
+   * The topology is preserved unless each of the three pairs of opposite
+   * 6-neighbours is made of two voxels having the same label (see N.J.
+   * Tustison, B.B. Avants, M. Siqueira, et J.C. Gee. Topological
+   * Well-Composedness and Glamorous Glue: A Digital Gluing Algorithm for
+   * Topologically Constrained Front Propagation. IEEE Transactions on Image
+   * Processing 20, no. 6 (June 2011): 1756–61. doi:10.1109/TIP.2010.2095021).
+   * Note that the authors forget to mention and implement the case where no
+   * 6-neighbour is in the object.
+   */
+
+  return (neighbourhood[0][1][1] != neighbourhood[2][1][1] ||
+          neighbourhood[1][0][1] != neighbourhood[1][2][1] ||
+          neighbourhood[1][1][0] != neighbourhood[1][1][2]);
+}
+
+
+#TYPED_FUNC_BEGIN VipFillPlain26NeighbourhoodForLabel_GENSTRING
+#TYPE_LIST_STATIC ANY_INT
+#PROTOTYPE_BEGIN
+static void
+VipFillPlain26NeighbourhoodForLabel_GENSTRING
+(Vip_U8BIT neighbourhood[3][3][3],
+ GENTYPE * address,
+ VipOffsetStruct * vos,
+ GENTYPE label)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int ix, iy, iz;
+  GENTYPE *ptr = address - (1 + vos->oLine + vos->oSlice);
+  Vip_U8BIT *nb_ptr = &neighbourhood[0][0][0];
+
+  for (iz = 0; iz < 3; ++iz)  /* loop on slices */
+    {
+      for (iy = 0; iy < 3; ++iy)      /* loop on lines */
+        {
+          for (ix = 0; ix < 3; ++ix)
+            {
+             *nb_ptr = ((*ptr) == label);
+
+              nb_ptr++;
+              ptr++;
+            }
+          ptr += vos->oLine - 3;
+        }
+      ptr += vos->oSlice - 3 * vos->oLine;
+    }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipFillPlain26NeighbourhoodForLabel_GENSTRING
+#TYPE_LIST_STATIC ANY_INT
+#PROTOTYPE_BEGIN
+static void
+VipFillPlain26NeighbourhoodForTwoLabel_GENSTRING
+(Vip_U8BIT neighbourhood[3][3][3],
+ GENTYPE * address,
+ VipOffsetStruct * vos,
+ GENTYPE label1, GENTYPE label2)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int ix, iy, iz;
+  GENTYPE *ptr = address - (1 + vos->oLine + vos->oSlice);
+  Vip_U8BIT *nb_ptr = &neighbourhood[0][0][0];
+
+  for (iz = 0; iz < 3; ++iz)  /* loop on slices */
+    {
+      for (iy = 0; iy < 3; ++iy)      /* loop on lines */
+        {
+          for (ix = 0; ix < 3; ++ix)
+            {
+              *nb_ptr = ((*ptr) == label1 || (*ptr) == label2);
+
+              nb_ptr++;
+              ptr++;
+            }
+          ptr += vos->oLine - 3;
+        }
+      ptr += vos->oSlice - 3 * vos->oLine;
+    }
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipIsTopologicallyWellComposedForLabel_GENSTRING
+#TYPE_LIST_EXTERN ANY_INT
+#PROTOTYPE_BEGIN
+int
+VipIsTopologicallyWellComposedForLabel_GENSTRING (VipOffsetStruct * vos,
+                                                  GENTYPE * address,
+                                                  GENTYPE candidate_label,
+                                                  GENTYPE label)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip_U8BIT neighbourhood[3][3][3];
+  VipFillPlain26NeighbourhoodForLabel_GENSTRING (neighbourhood, address, vos,
+                                                 label);
+
+  neighbourhood[1][1][1] = (candidate_label == label);
+
+  return VipIsWellComposedForCentralVoxel (neighbourhood)
+    && VipIsPreservingWellComposedTopologyForCentralVoxel (neighbourhood);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipIsTopologicallyWellComposedForTwoLabel_GENSTRING
+#TYPE_LIST_EXTERN ANY_INT
+#PROTOTYPE_BEGIN
+int
+VipIsTopologicallyWellComposedForTwoLabel_GENSTRING (VipOffsetStruct * vos,
+                                                     GENTYPE * address,
+                                                     GENTYPE candidate_label,
+                                                     GENTYPE label1,
+                                                     GENTYPE label2)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  Vip_U8BIT neighbourhood[3][3][3];
+  VipFillPlain26NeighbourhoodForTwoLabel_GENSTRING (neighbourhood,
+                                                    address, vos,
+                                                    label1, label2);
+
+  neighbourhood[1][1][1] = (candidate_label == label1 ||
+                            candidate_label == label2);
+
+  return VipIsWellComposedForCentralVoxel (neighbourhood)
+    && VipIsPreservingWellComposedTopologyForCentralVoxel (neighbourhood);
+}
+#FUNCTION_END
+#TYPED_FUNC_END
+
+#TYPED_FUNC_BEGIN VipVolumeIsWellComposedForLabel_GENSTRING
+#TYPE_LIST_EXTERN ANY_INT
+#PROTOTYPE_BEGIN
+int
+VipVolumeIsWellComposedForLabel_GENSTRING (Volume * vol, GENTYPE label)
+#PROTOTYPE_END
+#FUNCTION_BEGIN
+{
+  int t, z, y, x;
+  VipOffsetStruct *vos;
+  GENTYPE *ptr;
+  int n8lookup;
+
+  if (VipVerifyAll (vol) == PB || VipTestType (vol, GENSTRING) == PB)
+    {
+      VipPrintfExit ("VipVolumeIsWellComposedForLabel_GENSTRING");
+      return PB;  /* BUG: PB cannot be distinguished from VFALSE */
+    }
+
+  vos = VipGetOffsetStructure (vol);
+  if(!vos) {
+    VipPrintfExit ("VipVolumeIsWellComposedForLabel_GENSTRING");
+    return PB;
+  }
+  ptr = VipGetDataPtr_GENSTRING (vol) + vos->oFirstPoint;
+
+  for (t = 0; t < mVipVolSizeT (vol); ++t)  /* loop on volumes */
+    {
+      for (z = 0; z < mVipVolSizeZ (vol) - 1; ++z)  /* loop on slices */
+        {
+          for (y = 0; y < mVipVolSizeY (vol) - 1; ++y)      /* loop on lines */
+            {
+              n8lookup = 0;
+
+              if ((*ptr) == label)
+                n8lookup |= 0x01;
+              if (*(ptr + vos->oLine) == label)
+                n8lookup |= 0x02;
+              if (*(ptr + vos->oSlice) == label)
+                n8lookup |= 0x04;
+              if (*(ptr + vos->oLine + vos->oSlice) == label)
+                n8lookup |= 0x08;
+
+              for (x = 1; x < mVipVolSizeX (vol); ++x)
+                {
+                  ptr++;
+
+                  /* Values for the previous point are in the lower 4 bits from
+                     the previous iteration */
+                  n8lookup = (n8lookup << 4) & 0xf0;
+
+                  if (*(ptr) == label)
+                    n8lookup |= 0x01;
+                  if (*(ptr + vos->oLine) == label)
+                    n8lookup |= 0x02;
+                  if (*(ptr + vos->oSlice) == label)
+                    n8lookup |= 0x04;
+                  if (*(ptr + vos->oLine + vos->oSlice) == label)
+                    n8lookup |= 0x08;
+
+                  if (vip_well_composed_critical_configuration_n8lookup[n8lookup])
+                    {
+                      VipFree(vos);
+                      return VFALSE;
+                    }
+                }
+              ptr += vos->oPointBetweenLine + 1;
+            }
+          ptr += vos->oLine + vos->oLineBetweenSlice;
+        }
+      ptr += vos->oSlice + vos->oSliceBetweenVolume;
+    }
+
+  assert(ptr == (VipGetDataPtr_GENSTRING (vol) + vos->oFirstPoint
+                 + vos->oVolume * mVipVolSizeT (vol)));
+
+  /* Memory freed here must also be freed in other return paths */
+  VipFree (vos);
+
+  return VTRUE;
+}
+#FUNCTION_END
+#TYPED_FUNC_END

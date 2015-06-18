@@ -142,6 +142,7 @@ GENERICS	=		\
   skeleton/skeleton.gen		\
   TivoliIO/byteswapping.gen	\
   topology/topology.gen		\
+  topology/wellcomposed.gen		\
   transform/transform.gen	\
   util/util.gen			\
   util/util2.gen		\
@@ -227,6 +228,7 @@ SOURCES		=		\
   TivoliIO/tivoli_util.c	\
   TivoliIO/tivoli_volume.c	\
   topology/topology.c		\
+  topology/wellcomposed.c	\
   topology/topology_clas.c	\
   topology/topology_test.c	\
   util/file.c			\
