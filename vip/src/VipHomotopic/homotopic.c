@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
     char *hananame = NULL;
     float mG = -1., mW = -1.;
     int i;
+    int ret;
     char version = '2';
     float fclosingsize = 10.;
     int linside = 0;
@@ -282,6 +283,7 @@ int main(int argc, char *argv[])
       VipMerge(greylevel, classif, VIP_MERGE_ONE_TO_ONE, 200, 200);
       VipFreeVolume(copy_grey);
       
+      /* Define a brain hull by morphological closing of the brain mask */
       printf("-------------------------------\n");
       printf("Computing closing of %s...\n",vol->name);
       printf("-------------------------------\n");
@@ -300,16 +302,40 @@ int main(int argc, char *argv[])
       printf("-------------------------------\n");
       
       pyr = VipPutVolumeInPyramidAndCreatePyramid( closing, 3, PYR_MAX );
+      if(!pyr) return (VIP_CL_ERROR);
+      
+      /* A hollow bounding box is initialized around the brain (defined by
+       * non-zero values in the "closing" image). This bounding box is then
+       * closely fitted to the brain by iterating these two steps in a
+       * multi-scale setting, using 6-topology for the inside and the outside,
+       * and 26-topology for the thin object inbetween (label 255):
+       *
+       * 1. Homotopic dilation of the object toward the inside.
+       * 2. Homotopic erosion of the object from outside.
+       */
       pyrlab = VipCreateBoundingBoxLabelPyramid( pyr, 3, 255, linside, loutside );
+      if(!pyrlab) return (VIP_CL_ERROR);
       
       printf("-------------------------------\n");
       printf("Grey/White interface detection...\n");
       printf("-------------------------------\n");
 
-      VipHomotopicInsideDilation(pyrlab->image[0]->volume, pyr->image[0]->volume, 100, 255, linside, loutside, FRONT_RANDOM_ORDER);
+      /* Dilate the bounding box toward the inside until it reaches the white
+         matter. This creates an object that contains the cortex, and whose
+         inner boundary corresponds to the grey--white boundary. */
+      ret = VipHomotopicInsideDilation(pyrlab->image[0]->volume,
+                                       pyr->image[0]->volume, 100,
+                                       255, linside, loutside,
+                                       FRONT_RANDOM_ORDER);
+      if(ret == PB) return (VIP_CL_ERROR);
       if(version=='2')
       {
-          VipHomotopicGeodesicErosionFromOutside(pyrlab->image[0]->volume, 1, 255, linside, loutside);
+          /* Erode one voxel from the outside of the cortex, in order to
+             closely fit the brain hull (the outer boundary created by
+             VipCreateBoundingBoxLabelPyramid extends one voxel beyond the
+             brain hull). */
+          ret = VipHomotopicGeodesicErosionFromOutside(pyrlab->image[0]->volume, 1, 255, linside, loutside);
+          if(ret == PB) return (VIP_CL_ERROR);
       }
       VipCopyVolumeHeader( closing, pyrlab->image[0]->volume );
   }
