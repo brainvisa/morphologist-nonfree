@@ -16,7 +16,8 @@
  *****************************************************************************
  * REVISIONS :  DATE  |    AUTHOR    |       DESCRIPTION
  *--------------------|--------------|----------------------------------------
- *              / /   |              |
+ *         18/06/2015 | Yann Leprince| Take the voxel size into account
+ *                    |              | to allow anisotropic volumes
  *****************************************************************************/
 
 
@@ -191,7 +192,7 @@ Volume  *Vip3DGeometry_GENSTRING(
   float fxx, fxy, fyy, fyz, fzz, fxz;
   float mc, gc;
   float temp;
-
+  float factx, facty, factz;
 
   if (VipTestExist(vol)==PB || VipTestType(vol,ANY_TYPE)==PB)
       {
@@ -216,6 +217,13 @@ Volume  *Vip3DGeometry_GENSTRING(
   yoffset = VipOffsetLine(vol);
   zoffset = VipOffsetSlice(vol);
 
+  /* fact[xyz] is the multiplicative factor of the finite difference to obtain
+     the derivative, taking the voxel size into account
+     (1 / (2 * voxel spacing in direction [xyz])) */
+  VipGet3DVoxelSize(vol, &factx, &facty, &factz);
+  factx = 0.5f / factx;
+  facty = 0.5f / facty;
+  factz = 0.5f / factz;
 
   if(mVipVolSizeX(vol)<5 ||mVipVolSizeY(vol)<5||mVipVolSizeZ(vol)<5) 
       {
@@ -240,21 +248,49 @@ Volume  *Vip3DGeometry_GENSTRING(
 		  for (i=mVipVolSizeX(vol)-4; i--; imptr++, newptr++)
 		      {
 			  
-			  fx  = ((float)*(imptr+1) - *(imptr-1))  / 2.;
-			  fy  = ((float)*(imptr+yoffset) - *(imptr-yoffset))  / 2.;
-			  fz  = ((float)*(imptr+zoffset) - *(imptr-zoffset))  / 2.;
+			  fx  = factx * ((float)*(imptr+1) - *(imptr-1));
+			  fy  = facty * ((float)*(imptr+yoffset) - *(imptr-yoffset));
+			  fz  = factz * ((float)*(imptr+zoffset) - *(imptr-zoffset));
 			  norm = (fx*fx+fy*fy+fz*fz);
 			  if(norm>EPSILON)
 			      {
-				  fxx = (float)(*(imptr+2) - 2.*(*imptr) + *(imptr-2))/4.;
-				  fyy = (float)(*(imptr+2*yoffset) - 2.*(*imptr) + *(imptr-2*yoffset))/4.;
-				  fzz = (float)(*(imptr+2*zoffset) - 2.*(*imptr) + *(imptr-2*zoffset))/4.;
-				  fxy = (float)(*(imptr+1+yoffset) - *(imptr-1+yoffset)
-						- *(imptr+1-yoffset) + *(imptr-1-yoffset))/4.;
-				  fxz = (float)(*(imptr+1+zoffset) - *(imptr-1+zoffset)
-						- *(imptr+1-zoffset) + *(imptr-1-zoffset))/4.;
-				  fyz = (float)(*(imptr+yoffset+zoffset) - *(imptr-yoffset+zoffset)
-						- *(imptr+yoffset-zoffset) + *(imptr-yoffset-zoffset))/4.;
+				if(0)
+				{
+				  /* Calculate the second derivative using only first-order
+				     neighbours. This would allow the kernel to fit in a
+				     26-neighbourhood (3x3x3) instead of 5x5x5 with the method below
+				     (second-order neighbours). */
+				  /* TODO if this is method is chosen, exclude only one line at the
+				     border line instead of two */
+				  fxx = 4 * factx * factx
+				    * (float)(*(imptr+1) - 2*(*imptr) + *(imptr-1));
+				  fyy = 4 * facty * facty
+				    * (float)(*(imptr+yoffset) - 2*(*imptr) + *(imptr-yoffset));
+				  fzz = 4 * factz * factz
+				    * (float)(*(imptr+zoffset) - 2*(*imptr) + *(imptr-zoffset));
+				}
+				else
+				{
+				  /* Calculate second-order derivative using second-order
+				     neighbours. This is the code that has been in Vip since before
+				     2001, so some components may depend on its behaviour. The
+				     disadvantage is that it makes the kernel 5x5x5 voxels large. */
+				  fxx = factx * factx
+				    * (float)(*(imptr+2) - 2*(*imptr) + *(imptr-2));
+				  fyy = facty * facty
+				    * (float)(*(imptr+2*yoffset) - 2*(*imptr) + *(imptr-2*yoffset));
+				  fzz = factz * factz
+				    * (float)(*(imptr+2*zoffset) - 2*(*imptr) + *(imptr-2*zoffset));
+				}
+				  fxy = factx * facty
+				    * (float)(*(imptr+1+yoffset) - *(imptr-1+yoffset)
+					      - *(imptr+1-yoffset) + *(imptr-1-yoffset));
+				  fxz = factx * factz
+				    * (float)(*(imptr+1+zoffset) - *(imptr-1+zoffset)
+					      - *(imptr+1-zoffset) + *(imptr-1-zoffset));
+				  fyz = facty * factz
+				    * (float)(*(imptr+yoffset+zoffset) - *(imptr-yoffset+zoffset)
+					      - *(imptr+yoffset-zoffset) + *(imptr-yoffset-zoffset));
 				  switch(which)
 				      {
 				      case MEAN_CURVATURE:
@@ -262,8 +298,8 @@ Volume  *Vip3DGeometry_GENSTRING(
 					  norm = (float)sqrt((double)norm);
 					  mc =  (fx*fx*(fyy+fzz) - 2*fy*fz*fyz +
 						 fy*fy*(fxx+fzz) - 2*fx*fz*fxz +
-						 fz*fz*(fxx+fyy) - 2*fx*fy*fxy) 
-					      / ( 2. * norm * norm *norm ) ;
+						 fz*fz*(fxx+fyy) - 2*fx*fy*fxy)
+					      / ( 2 * norm * norm *norm ) ;
 					  if(which==MEAN_CURVATURE) *newptr = mc;
 					  else *newptr = -norm*mc;
 					  break;
@@ -293,12 +329,12 @@ Volume  *Vip3DGeometry_GENSTRING(
 					  mc =  (fx*fx*(fyy+fzz) - 2*fy*fz*fyz +
 						 fy*fy*(fxx+fzz) - 2*fx*fz*fxz +
 						 fz*fz*(fxx+fyy) - 2*fx*fy*fxy) 
-					      / ( 2. * norm ) ;
-                                          temp = mVipMax(0.,mc*mc-4*gc);
+					      / ( 2 * norm ) ;
+					  temp = mVipMax(0.f,mc*mc-4*gc);
 					  if(which == PRINCIPAL_CURVATURE_1)
-					      *newptr = 0.5*(mc + (float)sqrt((double)(temp)));
+					      *newptr = 0.5f*(mc + (float)sqrt((double)(temp)));
 					  else
-					      *newptr = 0.5*(mc - (float)sqrt((double)(temp)));
+					      *newptr = 0.5f*(mc - (float)sqrt((double)(temp)));
 					  break;
                                       case LAPLACIAN:
                                         *newptr = fxx + fyy + fzz;
