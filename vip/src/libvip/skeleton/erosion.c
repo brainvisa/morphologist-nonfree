@@ -219,7 +219,7 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
   VipIntBucket *buck, *nextbuck;
   Topology26Neighborhood *topo26;
   VipConnectivityStruct *vcs6;
-  int loop, count;
+  int loop, count, count2;
   Vip_S16BIT *first, *ptr;
   int *buckptr;
   int i;
@@ -283,19 +283,26 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
       count = 0;
       printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bloop: %3d, Deleted: %6d",loop,totalcount);
       fflush(stdout);
-	  
-      /*	  printf("Front size: %d\n",buck->n_points);*/
-	  
-      buckptr = buck->data;
-      for(i=buck->n_points;i--;)
-	{
-	  ptr = first + *buckptr++;
-	  if (VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT(topo26, ptr, inside, outside)==TOPO_BORDER_POINT)
-	    {
-	      *ptr = outside;
-	      count++;
-	    }
-	}
+      /* printf("Front size: %d\n",buck->n_points);*/
+
+      do {
+        count2 = 0;
+        buckptr = buck->data;
+        for(i=buck->n_points;i--;)
+          {
+            ptr = first + *buckptr++;
+
+            if (*ptr == VIP_FRONT &&
+                VipComputeTopologicalClassificationForTwoLabelComplement_S16BIT
+                (topo26, ptr, inside, outside) == TOPO_BORDER_POINT)
+              {
+                *ptr = outside;
+                count2++;
+              }
+          }
+        count += count2;
+      } while(count2);
+
       VipFillNextFrontFromOldFrontForErosionFromOutside(first,buck,nextbuck,vcs6,object,VIP_FRONT,outside,inside);
 		  
       /*bucket permutation*/
