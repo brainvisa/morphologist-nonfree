@@ -2,6 +2,9 @@ cmake_minimum_required( VERSION 2.6 )
 find_package( brainvisa-cmake REQUIRED )
 BRAINVISA_PROJECT()
 
+# This defines BUILD_TESTING and is thus preferred to plain enable_testing()
+include(CTest)
+
 BRAINVISA_FIND_PACKAGE( aims-free REQUIRED )
 
 include( "${AIMS-FREE_USE_FILE}" )
