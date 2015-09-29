@@ -6758,7 +6758,6 @@ oTRACE = TRACE; TRACE = OFF;
         /*bnew: a better name*/
         sprintf ( name, "%sSlice%5d", volume->name, slice );
         newVolume = duplicateVolumeStructure ( volume, name );
-        free ( name );
         
 	newVolume->size.z = 1;
 	newVolume->borderWidth = 0;

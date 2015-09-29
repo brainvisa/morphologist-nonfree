@@ -47,6 +47,7 @@ void VipFreeStringWick( VipStringListItem* item )
       item2 = item->next;
       free( item->string );
       free( item );
+      item = item2;
     }
 }
 
