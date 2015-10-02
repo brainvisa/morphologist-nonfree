@@ -388,11 +388,6 @@ int main(int argc, char *argv[])
       (void)fprintf(stderr,"Can not open this image: %s\n",input);
       return(VIP_CL_ERROR);
     }
-  if (brainname==NULL)
-    {
-      VipPrintfError("input arg is required by VipSplitBrain");
-      return(Usage());
-    }
   if (VipTestImageFileExist(brainname)==PB)
     {
       (void)fprintf(stderr,"Can not open this brain image: %s\n",brainname);

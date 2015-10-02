@@ -39,7 +39,7 @@
 #include <vip/skeleton_static.h>
 
 int CreateAndSplitConnectivityMask(Volume*,int,DistmapMask**,DistmapMask**);
-
+int VipCleanUpBorderFromImmortalsVoronoiObject( Volume *vol, VipIntBucket *buck, int immortals, int outside, int connectivity);
 
 /*----------------------------------------------------------------------------*/
 Volume *VipComputeVoronoi (
@@ -791,7 +791,7 @@ int outside)
 }
 
 /*-------------------------------------------------------------------------*/
-int VipCleanUpBorderFromImmortalsVoronoiObject( Volume *vol, VipIntBucket *buck, int *immortals, int outside, int connectivity)
+int VipCleanUpBorderFromImmortalsVoronoiObject( Volume *vol, VipIntBucket *buck, int immortals, int outside, int connectivity)
 {
     int *buckptr;
     Vip_S16BIT *first, *ptr, *ptr_neighbor;

@@ -121,10 +121,16 @@ void **matAlloc (int lines,
   tmp = (char *)mallocT(lines * columns * elem_size);
   mat = (void **) mallocT(lines * sizeof(char *)); 
 
-  for (i = lines; --i >= 0;)
+  for (i = lines; --i > 0;)
   {
     mat[i] = &tmp[i * columns * elem_size];
   }
+
+  /* This last assignment could be done in the loop, but doing it separately
+     makes it explicit that the address pointed to by tmp not leaked (this
+     should silence the static analyser warning) */
+  mat[0] = tmp;
+
   return mat;
 }
 
@@ -318,7 +324,8 @@ char *charMalloc(size_t length)
                                V->ref.x, V->ref.x, V->ref.z, V->ref.x );
                for ( iTab = 0; iTab < nTab; iTab++ )
                    (void) fprintf ( stdtrace, "\t" );
-               (void) fprintf ( stdtrace, "\t%d bytes allocated", V->size3Db );
+               (void) fprintf ( stdtrace, "\t%lu bytes allocated",
+                                (unsigned long)V->size3Db );
                                  
                                  break;
                          default :
@@ -706,11 +713,13 @@ int m_zero_filename(char *base, char *name, int number)
   char *name;
   char *s0, *s1, *s2;
   int len;
+  int s0_free = VFALSE, s1_free = VFALSE, s2_free = VFALSE;
 
   if (baseName == NULL)
     {
     printf("Warning: 'baseName' is empty in funcion 'composeName'");
     s0 = charMalloc(9);
+    s0_free = VTRUE;
     len = 9;
     strcpy(s0, "emptyName");
     }
@@ -723,6 +732,7 @@ int m_zero_filename(char *base, char *name, int number)
   if (ext1 == NULL)
     {
     s1 = charMalloc(0);
+    s1_free = VTRUE;
     strcpy(s1, "");
     }
   else
@@ -733,6 +743,7 @@ int m_zero_filename(char *base, char *name, int number)
   if (ext2 == NULL)
     {
     s2 = charMalloc(0);
+    s2_free = VTRUE;
     strcpy(s2, "");
     }
   else
@@ -743,6 +754,13 @@ int m_zero_filename(char *base, char *name, int number)
 
   name = charMalloc(len);
   sprintf(name, "%s%s%s", s0, s1, s2);
+
+  if(s0_free)
+    free(s0);
+  if(s1_free)
+    free(s1);
+  if(s2_free)
+    free(s2);
 
   return(name);
 }
@@ -807,11 +825,9 @@ int printUsage(char *usageOf)
 /*----------------------------------------------------------------------------*/
 {
   FILE *fp=NULL;
-  char *filename;
+  char filename[151];
   char c, *charPtr;
   
-  filename=charMalloc(150);
-      
   /* search current directory first */
   sprintf(filename, "%s_U.txt", usageOf);
   if ((fp=fopen(filename, "r"))!=NULL)
@@ -850,10 +866,8 @@ int printHelp(char *helpOn)
 {
 
   FILE *fp=NULL;
-  char *filename;
+  char filename[151];
   char c, *charPtr;
-  
-  filename=charMalloc(150);
 
   /* search current directory first */
   sprintf(filename, "%s_H.txt", helpOn);

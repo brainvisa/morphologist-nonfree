@@ -290,7 +290,7 @@ int VipCreateHistogram(Volume *vol, Volume *mask, Volume *edges, int connectivit
     Vip_S16BIT *edges_ptr, *voisin;
     int histo_val, nb_total = 0;
     int icon, ix, iy, iz;
-    float mean = 0, std = 0, mediane;
+    float mean = 0, std = 0, mediane = 0;
     
     if (VipVerifyAll(vol)==PB)
     {

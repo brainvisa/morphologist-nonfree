@@ -19,12 +19,15 @@
  *              / /   |              |
  ****************************************************************************/
 
+#define _XOPEN_SOURCE /* for fileno */
+
 #include <vip/volume.h>
 #include <vip/util.h>
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 
 static void Usage()

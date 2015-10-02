@@ -1103,7 +1103,7 @@ int trackD4
       VipPrintfExit("VipComputeSSSingularityList");
       return(PB);
     }
-  if((ssstruct->d1_e==NULL))
+  if(ssstruct->d1_e==NULL)
     {
       VipPrintfError("Null extremum volume");
       VipPrintfExit("VipComputeSSSingularityList");

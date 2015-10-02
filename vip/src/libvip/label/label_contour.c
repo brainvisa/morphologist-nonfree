@@ -50,8 +50,11 @@ Vip3DBucket_S16BIT *VipGetSingleLabelContour(Volume *vol, int label, int connexi
     for (j=0; j<ysize; j++, imptr+=vos->oPointBetweenLine)
       for (i=0; i<xsize; i++, imptr++)
       { if (*imptr == label)
-	{ for (cpt=0, loop=vcs->nb_neighbors; (loop--) && ((*(imptr+vcs->offset[loop]) == label) 
-							|| (*(imptr+vcs->offset[loop]) == -1)); cpt++);
+	{ for (cpt=0, loop=vcs->nb_neighbors;
+               (loop--) && ((*(imptr+vcs->offset[loop]) == label)
+                            || (*(imptr+vcs->offset[loop]) == -1));
+               cpt++)
+            ;
           if (cpt != vcs->nb_neighbors)
 	  { if (bucket->n_points == bucket->size)  
             { VipIncrease3DBucket_S16BIT(bucket, 10000);

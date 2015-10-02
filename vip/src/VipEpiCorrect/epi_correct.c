@@ -4,6 +4,10 @@
 #include <string.h>
 #include <vip/epidistorsion/dyn_alloc.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #include <vip/epidistorsion/param.h>
 #define NDEF_PARAM 0
 

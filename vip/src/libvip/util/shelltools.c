@@ -12,6 +12,8 @@
  *              / /   |              |
  ****************************************************************************/
 
+#define _DEFAULT_SOURCE  /* to have unistd.h define readlink and DT_DIR */
+
 #include <vip/util/shelltools.h>
 #include <vip/util/file.h>
 #include <sys/types.h>
