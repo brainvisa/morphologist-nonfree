@@ -41,6 +41,7 @@ FOREACH( _currentGeneric ${_generics} )
                       COMMAND "${CMAKE_COMMAND}" -E remove -f "${_g}.gen" "${_g}_gen.h" "${_g}_gen_static.h"
                       DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${_currentGeneric}" VipPreprocessing
  )
+  set_source_files_properties( "${_g}_gen.c" "${_tmpincdir}/${_f}_gen.h" "${_tmpincdir}/${_f}_gen_static.h" PROPERTIES GENERATED true )
   set( _genericsGenerated ${_genericsGenerated} "${_g}_gen.c" "${_tmpincdir}/${_f}_gen.h" "${_tmpincdir}/${_f}_gen_static.h" )
   # Add the generated *.c file to the list of sources for the library
   SET( _sources ${_sources} "${_g}_gen.c" )
@@ -54,11 +55,10 @@ ENDFOREACH( _currentGeneric ${_generics} )
 # Define vip library
 #------------------------------------------------------------------------------
 ADD_LIBRARY( vip SHARED ${_sources} )
-# add_dependencies( vip ${headersTarget} ${genericsSources} )
-if( CMAKE_MAJOR_VERSION GREATER 2 )
-  cmake_policy(SET CMP0046 OLD)
-endif()
-add_dependencies( vip ${headersTarget} ${headersTarget2} ${_genericsGenerated} )
+# This custom target is needed because add_dependencies cannot be used to add
+# dependencies on files.
+add_custom_target( vip-generated DEPENDS ${_genericsGenerated} )
+add_dependencies( vip ${headersTarget} ${headersTarget2} vip-generated )
 set_property( TARGET vip PROPERTY VERSION ${${PROJECT_NAME}_VERSION} )
 TARGET_LINK_LIBRARIES( vip ${AIMS-FREE_LIBRARIES} )
 BRAINVISA_INSTALL( TARGETS vip DESTINATION lib COMPONENT ${PROJECT_NAME} )
