@@ -1679,7 +1679,7 @@ SSCascade *clist, Vip1DScaleSpaceStruct *volstruct)
       return(PB);
     } 
   if(cwalker!=NULL) vol2 = cwalker->volume;
-  else vol2 = 0.000001;
+  else vol2 = 0;
   if(cwalker!=NULL)
     {
       if(   ((float) vol2/ (float)vol1)<0.01) /*we get a long life noise mode*/

@@ -4,11 +4,12 @@
    According to Numer.Recip.			F.H. 27.10.93
 ----------------------------------------------------------------------- */
 
+#include <vip/epidistorsion/fourier.h>
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <vip/epidistorsion/fourier.h>
-
+#include <vip/util.h>
 
 #define SWAP(a,b) tempr=(a);(a)=(b);(b)=tempr;
 
@@ -158,7 +159,7 @@ void ft_3rd_dim(double ***dat, int size2, int size1, int size0)
     return;
 
   if((copy = calloc(size2*2, sizeof(double))) == NULL) {
-    printf("%s\n","alloc failed in ft_3rd_dim");
+    VipPrintfExit("alloc failed in ft_3rd_dim\n");
   }
   
   for(i=0; i<size1; i++) {
@@ -189,7 +190,7 @@ void ft_2nd_dim(double ***dat, int size2, int size1, int size0)
   double *copy;
  
   if((copy = calloc(size1*2, sizeof(double))) == NULL) {
-    printf("%s\n","alloc failed in ft_2nd_dim");
+    VipPrintfExit("alloc failed in ft_2nd_dim\n");
   }
   
   for(m=0; m<size2; m++) {
@@ -220,7 +221,7 @@ void ift_2nd_dim(double ***dat, int size2, int size1, int size0)
   double *copy;
  
   if((copy = calloc(size1*2, sizeof(double))) == NULL) {
-    printf("%s\n","alloc failed in ft_2nd_dim");
+    VipPrintfExit("alloc failed in ft_2nd_dim\n");
   }
   for(m=0; m<size2; m++) {
    for(k=0; k<2*size0; k+=2) {

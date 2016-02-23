@@ -1737,7 +1737,7 @@ Vip3DBucket_S16BIT *GetSurfaceSimple(
 										
 		      if( !(*(flag_volume+jump+vcs->offset[i])) )
 			{
-			  if((*(in+jump+vcs->offset[i])==labelSS))
+			  if(*(in+jump+vcs->offset[i])==labelSS)
 			    {
 			      C18 = VipComputeCbarForTwoLabelComplement_S16BIT(topo26, in+jump+vcs->offset[i], inside, outside);
 			      if (C18!=2)

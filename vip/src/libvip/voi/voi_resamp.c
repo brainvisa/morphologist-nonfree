@@ -252,7 +252,8 @@ int VipVoiIterateWithDepResampLinearWithMC(
    for (i=0; i < roi->NbVoi; i++)
      {
        paquetmescourant = VipVoiFirstPtrMesVector( roi );
-       for (t=0; t < epoch; t++, paquetmescourant=VipVoiNextPtrMesVector( roi ) );
+       for (t=0; t < epoch; t++, paquetmescourant=VipVoiNextPtrMesVector( roi ) )
+         ;
        
        {
 	 pointentier   = PaquetDeDeplaEntier->data;

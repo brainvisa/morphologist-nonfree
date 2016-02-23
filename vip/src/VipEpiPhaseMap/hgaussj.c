@@ -40,10 +40,19 @@ int gaussj(double **a, int n, double **b, int m)
   icol=irow=-1;
 
   indxc = calloc(n, sizeof(int));
-  indxr = calloc(n, sizeof(int));
-  ipiv  = calloc(n, sizeof(int));
-  if(indxc==NULL || indxr==NULL || ipiv==NULL)
+  if(indxc==NULL)
     return -1;
+  indxr = calloc(n, sizeof(int));
+  if(indxr==NULL) {
+    free(indxc);
+    return -1;
+  }
+  ipiv  = calloc(n, sizeof(int));
+  if(ipiv==NULL) {
+    free(indxc);
+    free(indxr);
+    return -1;
+  }
     
   for(i=0; i<n; i++)
     ipiv[i]=0;
@@ -141,10 +150,19 @@ int gaussj1(double **a, int n, double *b)
   icol = irow = -1;
 
   indxc = calloc(n, sizeof(int));
-  indxr = calloc(n, sizeof(int));
-  ipiv  = calloc(n, sizeof(int));
-  if(indxc==NULL || indxr==NULL || ipiv==NULL)
+  if(indxc==NULL)
     return -1;
+  indxr = calloc(n, sizeof(int));
+  if(indxr==NULL) {
+    free(indxc);
+    return -1;
+  }
+  ipiv  = calloc(n, sizeof(int));
+  if(ipiv==NULL) {
+    free(indxc);
+    free(indxr);
+    return -1;
+  }
     
   for(i=0; i<n; i++)
     ipiv[i]=0;

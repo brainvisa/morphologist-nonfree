@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE /* for strncasecmp */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

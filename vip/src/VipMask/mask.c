@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
   else
     vol = VipReadVolumeWithBorder(input,0);
 
-  if ((vol==PB))
+  if (vol==PB)
     {
       VipPrintfError("Reading Problem...");
       return(VIP_CL_ERROR);

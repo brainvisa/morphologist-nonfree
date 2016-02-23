@@ -11,6 +11,15 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_1_PI
+#define M_1_PI 0.31830988618379067154
+#endif
+
+
 void CorrectPhaseMap (double ***shift_map, double ***epi, double ***epi_gmap, double ***gmap,param_mat *par_epi,
 		      double cst, double ***phasemap, double ***mask, param_mat *par_echo, param *par) {
 /* ---------------------------------------------------------------

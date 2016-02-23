@@ -25,6 +25,17 @@
 #ifndef VIP_UTIL_H
 #define VIP_UTIL_H
 
+#ifndef __has_feature
+  #define __has_feature(x) 0  /* Compatibility with non-clang compilers. */
+#endif
+#ifndef CLANG_ANALYZER_NORETURN
+  #if __has_feature(attribute_analyzer_noreturn)
+    #define CLANG_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
+  #else
+    #define CLANG_ANALYZER_NORETURN
+  #endif
+#endif
+
 #ifdef __cplusplus
   extern "C" {
 #endif
@@ -130,7 +141,7 @@ char *caller);
 /*----------------------------------------------------------------------------*/
 (
 	const char		    *fname
-);
+) CLANG_ANALYZER_NORETURN;
 
 /*----------------------------------------------------------------------------*/
 	extern

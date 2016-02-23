@@ -33,6 +33,12 @@
 #ifndef VIP_TIVOLI_UTIL_H
 #define VIP_TIVOLI_UTIL_H
 
+/* Ignore __attribute__ on non-GCC compilers */
+#if !(defined(__GNUC__) || defined(__attribute__))
+#define __attribute__(a) /* nothing */
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -212,7 +218,7 @@ char *charMalloc(size_t  length);
 /*----------------------------------------------------------------------------*/
 (
 	char		    *fname
-);
+) __attribute__((__noreturn__));
 
 
 /*----------------------------------------------------------------------------*/

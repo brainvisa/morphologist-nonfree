@@ -19,7 +19,7 @@
  *              / /   |              |
  *****************************************************************************/
 
-
+#define _XOPEN_SOURCE 500 /* for stdlib.h to define mkstemp */
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1446,7 +1446,7 @@ static void			PreVipPrintfExitInFunction( char *fname)
   (void) fflush ( stdout );
   (void) fprintf ( stderr, "\n------------------------------" );
   (void) fprintf ( stderr, "\n!! VIP Preprocessing Exit" );
-  if (error!=NULL && strlen(error)!=0)
+  if (strlen(error)!=0)
     (void) fprintf ( stderr, ":\n    %s", error );
   (void) fprintf( stderr, "\n------------------------------\n" );
   (void) fflush ( stderr );

@@ -12,6 +12,7 @@
  *              / /   |              |
  ****************************************************************************/
 
+#define _XOPEN_SOURCE 500  /* to have unistd.h define readlink */
 
 #include <vip/util/file.h>
 #include <string.h>
