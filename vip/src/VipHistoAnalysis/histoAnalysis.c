@@ -150,7 +150,7 @@ int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
   stripped_input = NULL;
   strcat(gpfilename,".py");
   gpfile = fopen(gpfilename,"w");
-  fprintf( gpfile, "#!/usr/bin/env python\n\n" );
+  fprintf( gpfile, "#!/usr/bin/env python2\n\n" );
   fprintf( gpfile, "import pylab\n" );
   fprintf( gpfile, "import numpy\n" );
   fprintf( gpfile, "import os\n" );
@@ -173,7 +173,7 @@ int plotMatplotlib( char *histofile, int xmax, int hmax, int gnuplot_title )
     free( gpfilename );
     return PB;
   }
-  strcpy(systemcommand, "python ");
+  strcpy(systemcommand, "python2 ");
   strcat(systemcommand,gpfilename);
   printf( "%s\n", systemcommand );
   if(system(systemcommand))
@@ -1119,7 +1119,7 @@ int main(int argc, char *argv[])
           free( output );
         return PB;
       }
-      sprintf( systemcommand, "python %s%c%s.py", VipTmpDirectory(),
+      sprintf( systemcommand, "python2 %s%c%s.py", VipTmpDirectory(),
                VipFileSeparator(), stripped_input );
       break;
     }

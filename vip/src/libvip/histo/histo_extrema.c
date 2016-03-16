@@ -2239,7 +2239,7 @@ int VipCreatePlotFileFromExtrema(
           VipPrintfExit("VipCreatePlotFileFromExtrema");
           return(PB);
         }
-        fprintf( fcommandps, "#!/usr/bin/env python\n" );
+        fprintf( fcommandps, "#!/usr/bin/env python2\n" );
         fprintf( fcommandps, "import matplotlib, os\n" );
         fprintf( fcommandps, "matplotlib.use( 'ps' )\n" );
         fprintf( fcommandps, "import pylab\n" );
@@ -2278,7 +2278,7 @@ int VipCreatePlotFileFromExtrema(
     break;
   case 1:
     /* matplotlib */
-    fprintf( fcommand, "#!/usr/bin/env python\n" );
+    fprintf( fcommand, "#!/usr/bin/env python2\n" );
     fprintf( fcommand, "#matplotlib command file to look at %s histogram and "
       "primal sketch analysis result\n\n", name );
     fprintf( fcommand, "import pylab, numpy, os\n\n" );
@@ -2713,7 +2713,7 @@ int VipCreatePlotFileFromExtrema(
       system(command);
       break;
     case 1: /* matplotlib */
-      sprintf(command,"python %s", fcommandpsname );
+      sprintf(command,"python2 %s", fcommandpsname );
       printf( "%s\n", command );
       system(command);
     }
