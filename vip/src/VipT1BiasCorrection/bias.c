@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
   int compression = 0;
   int compressionset = VFALSE;
   int tauto = VTRUE;
-  int thbackground = 15;
+  float thbackground = 15;
   int thresholdlow = 15;
   int thresholdlowset = VFALSE;
   int thresholdhigh = 100000;
@@ -663,6 +663,7 @@ int main(int argc, char *argv[])
   
   vol = VipReadVolumeWithBorder(input,0);
   min_volume = VipGetVolumeMin(vol);
+  printf("min_volume=%f\n", min_volume), fflush(stdout);
   VipFreeVolume(vol);
   
   if(tauto==VTRUE)
@@ -727,7 +728,7 @@ int main(int argc, char *argv[])
       {
           histo = VipComputeVolumeHisto(deriche);
           ratio = 0;
-          comphisto = VipGetPropUndersampledHisto(histo, 50, &ratio, &compression, 1, 100);
+          comphisto = VipGetPropUndersampledHisto(histo, 50, &ratio, &compression, 1, 100);//Test a 80, retrouver pourquoi.
           printf("Gradient image compression: %d\n", ratio);
           VipFreeHisto(comphisto);
           VipFreeHisto(histo);
@@ -790,7 +791,7 @@ int main(int argc, char *argv[])
       VipResizeBorder(masked, 1);
       if (VipSingleThreshold(masked, LOWER_OR_EQUAL_TO, min_volume, BINARY_RESULT)==PB) return(VIP_CL_ERROR);
       VipConnectivityChamferErosion(masked, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
-      if (VipConnexVolumeFilter(masked, CONNECTIVITY_6, -1, CONNEX_BINARY)==PB) return(PB);
+      if (VipConnexVolumeFilter(masked, CONNECTIVITY_6, -1, CONNEX_BINARY)==PB) return(PB); //Ne pas garder la plus grande composante connexe mais virer les plus petites cc avec un hystersis?
       VipConnectivityChamferDilation(masked, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
       VipSetBorderLevel( masked,255);
       VipResizeBorder( masked, 0 );
@@ -798,8 +799,13 @@ int main(int argc, char *argv[])
         the zero voxel in the background mean intensity*/
       VipComputeRobustStatInMaskVolume(vol, thresholdedvol, &mean, &sigma, VFALSE);
       printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
-      thbackground = (int)(mean+1*sigma+0.5);
-      if (thbackground>0) VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+      thbackground = (mean+1.*sigma+0.5);
+      printf("thbackground=%f\n", thbackground), fflush(stdout);
+      if (thbackground>0) 
+      {
+          printf("merge\n");
+          VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
+      }
       
       VipResizeBorder( vol, 3 );
       VipResizeBorder( thresholdedvol, 3 );
@@ -812,7 +818,7 @@ int main(int argc, char *argv[])
       
       printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
       thresholdlowset = VTRUE;
-      thresholdlow = (int)(mean+1*sigma+0.5);
+      thresholdlow = (int)(mean+1.*sigma+0.5);
       if (thresholdlow==0) thresholdlow = 1;
       printf("threshold for corner background/tissue: %d\n", thresholdlow);
       
@@ -832,9 +838,9 @@ int main(int argc, char *argv[])
 
       printf("Background stats: mean: %f; sigma: %f\n", mean, sigma);
       thresholdlowset=VTRUE;
-      thresholdlow = (int)(mean+2*sigma+0.5);
+      thresholdlow = (int)(mean+2.*sigma+0.5);
       printf("Global threshold background/tissue: %d\n", thresholdlow);
-      mask = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, thresholdlow, GREYLEVEL_RESULT);
+      mask = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, thresholdlow, GREYLEVEL_RESULT);//GREATER_THAN ou GREATER_OR_EQUAL_TO ?
       //Peut etre rajouter un filtre pour enlever des voxels de bruit se baladant ?
     }
   

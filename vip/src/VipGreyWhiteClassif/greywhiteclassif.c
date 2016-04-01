@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
           else
             {
               VipPrintfError("This format is not implemented for writing");
-              VipPrintfExit("(commandline)VipDilation");
+              VipPrintfExit("(commandline)VipGreyWhiteClassif");
               return(VIP_CL_ERROR);
             }
         }
