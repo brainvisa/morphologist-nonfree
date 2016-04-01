@@ -287,12 +287,14 @@ int main(int argc, char *argv[])
       printf("-------------------------------\n");
       printf("Computing closing of %s...\n",vol->name);
       printf("-------------------------------\n");
-      closing = VipCopyVolume(greylevel,"closing");
+      closing = VipReadVolumeWithBorder(classifname, fclosingsize+1);
       if (closing==PB) return (VIP_CL_ERROR);
+      VipResizeBorder(closing, 1);
       if (fclosingsize > 0) {
         if (VipClosing ( closing, CHAMFER_BALL_3D, fclosingsize ) == PB)
           return (VIP_CL_ERROR);
       }
+      VipResizeBorder(closing, fclosingsize+1);
       VipChangeIntLabel( closing, 255, 1 );
       VipMerge( closing, greylevel, VIP_MERGE_SAME_VALUES, 0, 0);
       VipFreeVolume(greylevel);
