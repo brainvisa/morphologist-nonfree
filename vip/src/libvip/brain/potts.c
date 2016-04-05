@@ -3549,3 +3549,72 @@ static float deltaGPotentialWtoG(int glevel,float KG,float mG,float sigmaG,
 
     return(KG*potG-KW*potW);
 }
+
+
+/*-------------------------------------------------------------------------*/
+int VipRegularisation(Volume *vol, int label)
+/*-------------------------------------------------------------------------*/
+{
+    Vip_S16BIT *ptr, *first, *voisin;
+    VipOffsetStruct *vos;
+    VipConnectivityStruct *vcs6, *vcs18, *vcs26;
+    int icon;
+    int ix, iy, iz, n;
+    int nb_vcs6, nb_vcs18, nb_vcs26;
+    
+    if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
+    {
+        VipPrintfExit("(VipRegularisation");
+        return(PB);
+    }
+    
+    vos = VipGetOffsetStructure(vol);
+    first = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
+//     ptr = first;
+    
+    vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
+    vcs18 = VipGetConnectivityStruct( vol, CONNECTIVITY_18 );
+    vcs26 = VipGetConnectivityStruct( vol, CONNECTIVITY_26 );
+    
+    for (n=0; n<3; n++)
+    {
+        ptr = first;
+        for ( iz = mVipVolSizeZ(vol); iz-- ; )               /* loop on slices */
+        {
+            for ( iy = mVipVolSizeY(vol); iy-- ; )            /* loop on lines */
+            {
+                for ( ix = mVipVolSizeX(vol); ix-- ; )/* loop on points */
+                {
+                    if(*ptr!=label)
+                    {
+                        nb_vcs6=0;
+                        for (icon=0;icon<vcs6->nb_neighbors;icon++)
+                        {
+                            voisin = ptr + vcs6->offset[icon];
+                            if(*voisin==label)
+                            {
+                                nb_vcs6++;
+                            }
+                        }
+                        nb_vcs18=0;
+                        for (icon=0;icon<vcs18->nb_neighbors;icon++)
+                        {
+                            voisin = ptr + vcs18->offset[icon];
+                            if(*voisin==label)
+                            {
+                                nb_vcs18++;
+                            }
+                        }
+                        if(nb_vcs6>=3 && nb_vcs18>=9) *ptr=label;
+                    }
+                    ptr++;
+                }
+                ptr += vos->oPointBetweenLine;  /*skip border points*/
+            }
+            ptr += vos->oLineBetweenSlice; /*skip border lines*/
+        }
+        
+    }
+
+    return(OK);
+}
