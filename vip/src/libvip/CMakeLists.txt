@@ -60,6 +60,7 @@ ADD_LIBRARY( vip SHARED ${_sources} )
 add_custom_target( vip-generated DEPENDS ${_genericsGenerated} )
 add_dependencies( vip ${headersTarget} ${headersTarget2} vip-generated )
 set_property( TARGET vip PROPERTY VERSION ${${PROJECT_NAME}_VERSION} )
+set_target_properties( vip PROPERTIES LINKER_LANGUAGE CXX )
 TARGET_LINK_LIBRARIES( vip ${AIMS-FREE_LIBRARIES} )
 BRAINVISA_INSTALL( TARGETS vip DESTINATION lib COMPONENT ${PROJECT_NAME} )
 
