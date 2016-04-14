@@ -811,7 +811,7 @@ int main(int argc, char *argv[])
 	  cc++;
 	}
     }
-  if(write_seed==VTRUE) VipWriteTivoliVolume(template,"temp+seed-final");
+  if(write_seed==VTRUE  && TemplateUse==VTRUE) VipWriteTivoliVolume(template,"temp+seed-final");
 
   VipChangeIntLabel( seed, 255, 0 );
   if(write_seed==VTRUE) VipWriteTivoliVolume(seed,"seed");
@@ -1620,7 +1620,7 @@ static int Help()
   (void)printf("        [-e[rosion] {float (default :2mm)}]\n");
   (void)printf("Initial erosion size, then step by step increasing by 0.5mm\n");
   (void)printf("        [-c[csize] {int (default :500)}]\n");
-  (void)printf("Connected component minima lsize to enter the seed selection process\n");
+  (void)printf("Connected component minimal size to enter the seed selection process\n");
   (void)printf("        [-P[oints] {AC,PC,IH coord filename (*.tal) (default:not used)}]\n");
   (void)printf("Correct format for the commissure coordinate file toto.APC:\n");
   (void)printf("AC: 91 88 113\nPC: 91 115 109\nIH: 90 109 53\n");  
