@@ -17,6 +17,7 @@ foreach( _command ${_commands} )
   endforeach( _f ${_proSources} )
   brainvisa_add_executable( ${_target} ${_sources} )
   target_link_libraries( ${_target} vip )
+  set_target_properties( ${_target} PROPERTIES LINKER_LANGUAGE CXX )
   BRAINVISA_INSTALL( TARGETS ${_target}
                 DESTINATION bin
                 COMPONENT ${PROJECT_NAME} )
