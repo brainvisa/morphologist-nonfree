@@ -31,50 +31,61 @@
 
 /*-------------------------------------------------------------------------*/
 static int VipAddBucketToTalInertia(Vip3DBucket_S16BIT *buck,
-				VipMatrix_VDOUBLE *covar,
-				Vip3DPoint_VFLOAT vox,
-				VipTalairach *tal);
+                                    VipMatrix_VDOUBLE *covar,
+                                    Vip3DPoint_VFLOAT vox,
+                                    VipTalairach *tal);
 /*-------------------------------------------------------------------------*/
+
 /*-------------------------------------------------------------------------*/
 static int VipPutBucketInDepthAndLocation(Vip3DBucket_S16BIT *buck,
-			       float *maxdepth, Vip3DPoint_S16BIT **loc, Volume *depth,
-			       VipOffsetStruct *vos); 
+                                          float *maxdepth,
+                                          Vip3DPoint_S16BIT **loc,
+                                          Volume *depth,
+                                          VipOffsetStruct *vos); 
 /*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
 static int VipPutBucketInTwoDepth(Vip3DBucket_S16BIT *buck,
-			       float *mindepth, float *maxdepth, Volume *depth,
-			       VipOffsetStruct *vos);
-/*-------------------------------------------------------------------------*/
-/*-------------------------------------------------------------------------*/
-static int  VipPutBucketInTalBoundingBox(    Vip3DBucket_S16BIT *buck,
-    Vip3DPoint_VFLOAT *boxmin, Vip3DPoint_VFLOAT *boxmax, VipTalairach *tal);
+                                  float *mindepth, float *maxdepth,
+                                  Volume *depth,
+                                  VipOffsetStruct *vos);
 /*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
-static int  VipPutBucketInBoundingBox(    Vip3DBucket_S16BIT *buck,
-Vip3DPoint_S16BIT *boxmin, Vip3DPoint_S16BIT *boxmax);
+static int  VipPutBucketInTalBoundingBox(Vip3DBucket_S16BIT *buck,
+                                         Vip3DPoint_VFLOAT *boxmin,
+                                         Vip3DPoint_VFLOAT *boxmax,
+                                         VipTalairach *tal);
+/*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
+static int  VipPutBucketInBoundingBox(Vip3DBucket_S16BIT *buck,
+                                      Vip3DPoint_S16BIT *boxmin,
+                                      Vip3DPoint_S16BIT *boxmax);
+/*-------------------------------------------------------------------------*/
+
 /*-------------------------------------------------------------------------*/
 static int FillArgBoxAndVoxSize(Volume *squel, FoldArg *arg,
-				       int inside, int outside);
+                                int inside, int outside);
 /*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
-static int VipAddBucketToGravity(Vip3DBucket_S16BIT *buck,Vip3DPoint_VFLOAT *g);
+static int VipAddBucketToGravity(Vip3DBucket_S16BIT *buck,
+                                 Vip3DPoint_VFLOAT *g);
 /*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
 static int VipAddBucketToNormal(Vip3DBucket_S16BIT *buck,
-				VipMatrix_VDOUBLE *covar,
-				Vip3DPoint_VFLOAT vox,
-				double G[3]);
+                                VipMatrix_VDOUBLE *covar,
+                                Vip3DPoint_VFLOAT vox,
+                                double G[3]);
 /*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/
-FoldArg *CreateFoldArgFromSquel( char *name, Volume *skeleton, int inside, int outside, int limitsssize,
-int compute_triang, char *rootsvoronoi_name)
+FoldArg *CreateFoldArgFromSquel(char *name, Volume *skeleton,
+                                int inside, int outside,
+                                int limitsssize, int compute_triang,
+                                char *rootsvoronoi_name)
 /*-------------------------------------------------------------------------*/
 {
   FoldArg *arg;
@@ -88,22 +99,24 @@ int compute_triang, char *rootsvoronoi_name)
 
   arg = CreateEmptyFoldArg(name);
   if(arg==PB) return(PB);
-
+  
+  VipSetBorderLevel(skeleton, outside);
+  
   if(FillArgBoxAndVoxSize(skeleton, arg, inside, outside)==PB) return(PB);
 
-  arg->ss_list = VipComputeFoldArgSSList( skeleton, inside, outside, limitsssize, rootsvoronoi_name);
+  arg->ss_list = VipComputeFoldArgSSList(skeleton, inside, outside, limitsssize, rootsvoronoi_name);
   if(arg->ss_list == PB) return(PB);
 
-  arg->jset = VipComputeFoldArgJunctionSet( skeleton, arg->ss_list, inside, outside);
+  arg->jset = VipComputeFoldArgJunctionSet(skeleton, arg->ss_list, inside, outside);
   if(arg->jset==PB) return(PB);
 
   arg->ppset = VipComputeFoldArgPliDePassageSet(arg->ss_list, arg->jset);
   if(arg->ppset==PB) return(PB);
   
-  arg->cortex_jset = VipComputeFoldArgCortexRelationSet( skeleton, arg->ss_list);
+  arg->cortex_jset = VipComputeFoldArgCortexRelationSet(skeleton, arg->ss_list);
   if(arg->cortex_jset==PB) return(PB);
   
-  if(compute_triang==VTRUE) VipComputeTmtkTriangulation( skeleton, arg);
+  if(compute_triang==VTRUE) VipComputeTmtkTriangulation(skeleton, arg);
   
   return(arg);
 }
