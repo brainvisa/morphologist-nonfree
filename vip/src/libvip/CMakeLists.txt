@@ -35,7 +35,7 @@ FOREACH( _currentGeneric ${_generics} )
   ADD_CUSTOM_COMMAND( OUTPUT "${_g}_gen.c" "${_tmpincdir}/${_f}_gen.h" "${_tmpincdir}/${_f}_gen_static.h"
                       COMMAND "${CMAKE_COMMAND}" -E make_directory "${_p}"
                       COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${_currentGeneric}" "${_g}.gen"
-                      COMMAND "${CMAKE_COMMAND}" -E chdir "${_p}" "${CMAKE_BINARY_DIR}/bin/VipPreprocessing" "${_f}.gen"
+                      COMMAND "${CMAKE_COMMAND}" -E chdir "${_p}" "${CMAKE_BINARY_DIR}/bin/VipPreprocessing${CMAKE_EXECUTABLE_SUFFIX}" "${_f}.gen"
                       COMMAND "${CMAKE_COMMAND}" -E copy "${_g}_gen.h" "${_tmpincdir}/${_f}_gen.h"
                       COMMAND "${CMAKE_COMMAND}" -E copy "${_g}_gen_static.h" "${_tmpincdir}/${_f}_gen_static.h"
                       COMMAND "${CMAKE_COMMAND}" -E remove -f "${_g}.gen" "${_g}_gen.h" "${_g}_gen_static.h"
