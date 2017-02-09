@@ -98,6 +98,9 @@ int main(int argc, char *argv[])
   float pt = 0.;
   VipTalairach tal, *coord=NULL;
   char *edgesname = NULL;
+  char pathoname[256]="";
+  Volume *patho = NULL;
+  char pathomode = 'e';
   int random_seed = time(NULL);
 
   readlib = ANY_FORMAT;
@@ -152,11 +155,6 @@ int main(int argc, char *argv[])
           if(++i >= argc || !strncmp(argv[i],"-",1)) return Usage();
           label = atoi(argv[i]);
         }
-      else if (!strncmp (argv[i], "-Points", 2)) 
-        {
-          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-          strcpy(point_filename,argv[i]);
-        }
       else if (!strncmp (argv[i], "-edges", 3)) 
         {
           if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -191,6 +189,29 @@ int main(int argc, char *argv[])
         {
           if(++i >= argc || !strncmp(argv[i],"-",1)) return Usage();
           niterations= atoi(argv[i]);
+        }
+      else if (!strncmp (argv[i], "-patho", 3)) 
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return Usage();
+          strcpy(pathoname,argv[i]);
+        }
+      else if (!strncmp (argv[i], "-pmode", 3)) 
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          else if(argv[i][0]=='e') pathomode = 'e';
+          else if(argv[i][0]=='w') pathomode = 'w';
+          else if(argv[i][0]=='g') pathomode = 'g';
+          else
+          {
+              VipPrintfError("This lesion mode is unknown");
+              VipPrintfExit("(commandline)VipGreyWhiteClassif");
+              return(VIP_CL_ERROR);
+          }
+        }
+      else if (!strncmp (argv[i], "-Points", 2)) 
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          strcpy(point_filename,argv[i]);
         }
       else if (!strncmp (argv[i], "-KPOTTS", 2)) 
         {
@@ -344,6 +365,26 @@ int main(int argc, char *argv[])
   if (sW > 0)
       hana->white->sigma = (int)(sW+0.5);
 
+  
+  if(strcmp(pathoname,""))
+  {
+      printf("Reading pathology mask...\n");
+      patho = VipReadVolumeWithBorder(pathoname, 1);
+      if(patho==PB) return(VIP_CL_ERROR);
+      if(pathomode=='e')
+      {
+          if(VipMerge(mask, patho, VIP_MERGE_ALL_TO_ONE, 0, 0)==PB) return(VIP_CL_ERROR);
+      }
+      else if(pathomode=='w')
+      {
+          if(VipMerge(vol, patho, VIP_MERGE_ALL_TO_ONE, 0, hana->white->mean)==PB) return(VIP_CL_ERROR);
+      }
+      else if(pathomode=='g')
+      {
+          if(VipMerge(vol, patho, VIP_MERGE_ALL_TO_ONE, 0, hana->gray->mean)==PB) return(VIP_CL_ERROR);
+      }
+  }
+  
   if(algo=='N')
   {
       copy = VipDeriche3DGaussian( vol, 1., NEW_FLOAT_VOLUME );
@@ -475,6 +516,22 @@ int main(int argc, char *argv[])
       VipFreeVolume(copy);
       VipFreeVolume(copy2);
       
+      if(patho)
+      {
+          if(pathomode=='e')
+          {
+              if(VipMerge(ventricles, patho, VIP_MERGE_ALL_TO_ONE, 0, 255)==PB) return(VIP_CL_ERROR);
+          }
+//       else if(pathomode=='w')
+//       {
+//           if(VipMerge(vol, patho, VIP_MERGE_ALL_TO_ONE, 0, hana->white->mean)==PB) return(VIP_CL_ERROR);
+//       }
+//       else if(pathomode=='g')
+//       {
+//           if(VipMerge(vol, patho, VIP_MERGE_ALL_TO_ONE, 0, hana->gray->mean)==PB) return(VIP_CL_ERROR);
+//       }
+      }
+      
       if( VipDilation( ventricles, CHAMFER_BALL_3D, 1.5*little_opening_size )== PB) return(PB);
       
       //Selection d'un hemisphere
@@ -510,8 +567,8 @@ int main(int argc, char *argv[])
       VipFreeVolume(white);
       
       sulcus = VipCopyVolume(mc, "copy_mc");
-      VipSingleFloatThreshold(sulcus,GREATER_OR_EQUAL_TO,0.6,BINARY_RESULT);
-      copy = VipTypeConversionToS16BIT( sulcus , RAW_TYPE_CONVERSION);
+      VipSingleFloatThreshold(sulcus, GREATER_OR_EQUAL_TO, 0.6, BINARY_RESULT);
+      copy = VipTypeConversionToS16BIT(sulcus, RAW_TYPE_CONVERSION);
       white = VipCreateSingleThresholdedVolume(classif, GREATER_OR_EQUAL_TO, 200, BINARY_RESULT);
       VipMerge(white, classif, VIP_MERGE_ONE_TO_ONE, 100, 255);
       if(VipConnexVolumeFilter( white, CONNECTIVITY_6,-1, CONNEX_BINARY )==PB) return(PB);
@@ -543,7 +600,7 @@ int main(int argc, char *argv[])
       printf("Computing white matter core ...\n");
       white = VipCreateSingleThresholdedVolume(classif, EQUAL_TO, 201, BINARY_RESULT);
       VipMerge(white, extedge, VIP_MERGE_ONE_TO_ONE, 255, 0);
-      if(VipDilation( copy, CHAMFER_BALL_3D, 2.*little_opening_size )== PB) return(PB);
+      if(VipDilation(copy, CHAMFER_BALL_3D, 2.*little_opening_size)==PB) return(PB);
       VipMerge(white, copy, VIP_MERGE_ONE_TO_ONE, 255, 0);
       VipFreeVolume(copy);
       
@@ -604,7 +661,7 @@ int main(int argc, char *argv[])
       copy2 = VipCopyVolume(vsulcus, "copy_sulcus");
 //      VipConnectivityChamferDilation(copy, 1, CONNECTIVITY_26, FRONT_PROPAGATION);
 //      VipConnectivityChamferDilation(copy, 1, CONNECTIVITY_6, FRONT_PROPAGATION);
-      if(VipDilation( copy2, CHAMFER_BALL_3D, 2.5 )== PB) return(PB);
+      if(VipDilation(copy2, CHAMFER_BALL_3D, 2.5)==PB) return(PB);
       VipMerge(copy2, copy, VIP_MERGE_ONE_TO_ONE, 0, 0);
       VipMerge(copy, copy2, VIP_MERGE_ONE_TO_ONE, 255, 512);
       
@@ -615,6 +672,9 @@ int main(int argc, char *argv[])
       
       //Premiere croissance
       copy = VipCreateSingleThresholdedVolume(white, EQUAL_TO, 0, BINARY_RESULT);
+      
+      if(patho) VipMerge(classif, patho, VIP_MERGE_ALL_TO_ONE, 0, 100);
+      
       VipHomotopicErosionFromInsideSnakeNeighbourhood(white, vol, classif, 60, 255, 0, 11, 1., hana->gray->sigma, hana->white->sigma, WHITE_LABEL);
       VipSingleThreshold(white, EQUAL_TO, 0, BINARY_RESULT);
       
@@ -646,7 +706,7 @@ int main(int argc, char *argv[])
       VipCleaningConnectivity(copy, CONNECTIVITY_6, 1);
 
       white = VipCopyVolume( copy, "white" );
-
+      
       if(ratio>1.4)
       {
           VipMerge(copy, classif, VIP_MERGE_ONE_TO_ONE, 11, 11);
@@ -726,22 +786,41 @@ int main(int argc, char *argv[])
       classif = VipCopyVolume(white, "grey_white");
   }
   
+  if(patho)
+  {
+      if(pathomode=='e')
+      {
+          if(VipMerge(classif, patho, VIP_MERGE_ALL_TO_ONE, 0, 0)==PB) return(VIP_CL_ERROR);
+      }
+      else if(pathomode=='w')
+      {
+          if(VipMerge(classif, patho, VIP_MERGE_ALL_TO_ONE, 0, 200)==PB) return(VIP_CL_ERROR);
+      }
+      else if(pathomode=='g')
+      {
+          if(VipMerge(classif, patho, VIP_MERGE_ALL_TO_ONE, 0, 100)==PB) return(VIP_CL_ERROR);
+      }
+      VipFreeVolume(patho);
+  }
+  
+  
+  
   printf("-------------------------\n");
-  printf("Writing %s...\n",output);
-  if (writelib == TIVOLI)
+  printf("Writing %s...\n", output);
+  if(writelib == TIVOLI)
     {
-      if(VipWriteTivoliVolume(classif,output)==PB) {
+      if(VipWriteTivoliVolume(classif, output)==PB) {
         return(VIP_CL_ERROR);
       }
     }
-  else if (writelib == SPM)
+  else if(writelib == SPM)
     {
-      if(VipWriteSPMVolume(classif,output)==PB) {
+      if(VipWriteSPMVolume(classif, output)==PB) {
         return(VIP_CL_ERROR);
       }
     }
   else
-    if(VipWriteVolume(classif,output)==PB) {
+    if(VipWriteVolume(classif, output)==PB) {
       return(VIP_CL_ERROR);
     }
   
@@ -768,6 +847,8 @@ static int Usage()
   (void)fprintf(stderr,"        [-sg[ray] {float (default:?.han)}]\n");
   (void)fprintf(stderr,"        [-mw[hite] {float (default:?.han)}]\n");
   (void)fprintf(stderr,"        [-sw[hite] {float (default:?.han)}]\n");
+  (void)fprintf(stderr,"        [-pa[tho] {pathology binary mask, default:no}]\n");
+  (void)fprintf(stderr,"        [-pm[ode] {char e/w/g: exclude/include as wm/include as gm, default:e}]\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: a, v, s or t (default:a)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v, s  or t (default:t)}]\n");
   (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
@@ -811,6 +892,9 @@ static int Help()
   (void)printf("        [-sg[ray] {float (default:?.han)}]\n");
   (void)printf("        [-mw[hite] {float (default:?.han)}]\n");
   (void)printf("        [-sw[hite] {float (default:?.han)}]\n");
+  (void)printf("        [-pa[tho] {pathology binary mask, default:no}]\n");
+  (void)printf("Add a mask of the lesion to the classification process\n");
+  (void)printf("        [-pm[ode] {char e/w/g: choice between exclude or include as white matter or grey matter the mask of a lesion in the classification, default:e}]\n");
   (void)printf("        [-r[eadformat] {char: a, v, s or t (default:a)}]\n");
   (void)printf("        [-w[riteformat] {char: v, s or t (default:t)}]\n");
   (void)printf("        [-srand {int (default: time}]\n");
