@@ -70,6 +70,8 @@ HEADERS	=			\
   morpho.h			\
   nomen.h			\
   nomen/nomen_def.h		\
+  object.h \
+  object/structure.h \
   pca.h				\
   pca/pca.h			\
   pvec.h			\
@@ -243,4 +245,5 @@ SOURCES		=		\
   voi/voi_utils.c		\
   volume/volume.c               \
   fold_arg/mesh_aims.cc         \
-  volume/vol_carto.cc
+  volume/vol_carto.cc \
+  object/object.cc

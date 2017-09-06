@@ -6,13 +6,19 @@ BRAINVISA_PROJECT()
 include(CTest)
 
 BRAINVISA_FIND_PACKAGE( aims-free REQUIRED )
-
 include( "${AIMS-FREE_USE_FILE}" )
+
+BRAINVISA_FIND_PACKAGE( soma-io REQUIRED )
+include( "${SOMA-IO_USE_FILE}" )
 
 math( EXPR result "${aims-free_VERSION_MINOR}+1" )
 BRAINVISA_DEPENDENCY( RUN DEPENDS "aims-free" RUN ">= ${aims-free_VERSION};<< ${aims-free_VERSION_MAJOR}.${result}" )
 
-set( MORPHOLOGIST-PRIVATE_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include" ${AIMS-FREE_INCLUDE_DIRS} )
+math( EXPR result "${soma-io_VERSION_MINOR}+1" )
+BRAINVISA_DEPENDENCY( RUN DEPENDS "soma-io" RUN ">= ${soma-io_VERSION};<< ${soma-io_VERSION_MAJOR}.${result}" )
+BRAINVISA_DEPENDENCY( DEV DEPENDS "soma-io" DEV ">= ${soma-io_VERSION};<< ${soma-io_VERSION_MAJOR}.${result}" )
+
+set( MORPHOLOGIST-PRIVATE_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/include" ${AIMS-FREE_INCLUDE_DIRS} ${SOMA-IO_INCLUDE_DIRS} )
 include_directories( ${MORPHOLOGIST-PRIVATE_INCLUDE_DIRS} )
 
 add_subdirectory( vip )
