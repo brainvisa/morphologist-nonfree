@@ -46,7 +46,7 @@ FOREACH( _currentGeneric ${_generics} )
   # Add the generated *.c file to the list of sources for the library
   SET( _sources ${_sources} "${_g}_gen.c" )
   # Install non static generated headers
-  BRAINVISA_INSTALL( FILES "${_tmpincdir}/${_f}_gen.h" "${_tmpincdir}/${_f}_gen_static.h" DESTINATION include/${_headersDir}/${_d} COMPONENT ${PROJECT_NAME} )
+  BRAINVISA_INSTALL( FILES "${_tmpincdir}/${_f}_gen.h" "${_tmpincdir}/${_f}_gen_static.h" DESTINATION include/${_headersDir}/${_d} COMPONENT ${PROJECT_NAME}-dev )
 #  SET( _doxygenInput ${_doxygenInput} "${_g}_gen.h" )
 ENDFOREACH( _currentGeneric ${_generics} )
 
