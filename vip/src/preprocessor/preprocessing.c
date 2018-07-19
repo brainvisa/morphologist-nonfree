@@ -123,7 +123,7 @@ int filecat( const char ** infile,
              const char *  outfile_mode)
 {
     FILE *fs, *ft;
-    char * m;
+    const char * m;
     char ch;
     int i;
     
@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
                                 ++file_count;
                             }
                         }
-                        filecat( (char**)&files[0], file_count, externh_filename, NULL );
+                        filecat( (const char**)&files[0], file_count, externh_filename, NULL );
                     }
                     
                     if(((n_type_list==1)&&(extern_static_flag[0]==STATIC))||(n_type_list==2))
@@ -381,7 +381,7 @@ int main(int argc, char *argv[])
                                 ++file_count;
                             }
                         }
-                        filecat( (char**)&files[0], file_count, statich_filename, NULL );
+                        filecat( (const char**)&files[0], file_count, statich_filename, NULL );
                     }
                     if(n_type_list==1)
                     {
@@ -546,7 +546,7 @@ int main(int argc, char *argv[])
                         }
                         (void)fclose(c_file);
 
-                        filecat( (char**)&files[0], func_ntype, c_filename, NULL );
+                        filecat( (const char**)&files[0], func_ntype, c_filename, NULL );
                     
                         c_file = fopen(c_filename,"a");
                         if(debug_file==TRUE) printf("fopen %s a\n",c_filename);
@@ -1008,7 +1008,7 @@ int main(int argc, char *argv[])
                                     ++file_count;
                                 }
                             }
-                            filecat( (char**)&files[0], file_count, externh_filename, NULL );
+                            filecat( (const char**)&files[0], file_count, externh_filename, NULL );
                         }
 
                         if(((n_type_list==1)&&(extern_static_flag[0]==STATIC))||(n_type_list==2))
@@ -1023,7 +1023,7 @@ int main(int argc, char *argv[])
                                     ++file_count;
                                 }
                             }
-                            filecat( (char**)&files[0], file_count, statich_filename, NULL );
+                            filecat( (const char**)&files[0], file_count, statich_filename, NULL );
                         }
                         if(n_type_list==1)
                         {
@@ -1280,7 +1280,7 @@ int main(int argc, char *argv[])
 
                             }
                             (void)fclose(c_file);
-                            filecat( (char**)&files[0], func_ntype, c_filename, NULL );
+                            filecat( (const char**)&files[0], func_ntype, c_filename, NULL );
                             
                             c_file = fopen(c_filename,"a");
                             if(!c_file)
