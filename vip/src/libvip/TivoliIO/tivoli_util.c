@@ -390,8 +390,8 @@ float ask_float(float *def, float *mini, float *maxi, char *comment)
 	printf(": ");
 	setbuf(stdin, NULL);
 
-	scanf("%127s", input);
-	if (strlen(input) == 0)
+	int n = scanf("%127s", input);
+	if ((n == 0) || (strlen(input) == 0))
 		if (def == NULL)
 		{
 			printf("You have to answer me something !  Try again !");
@@ -476,7 +476,7 @@ char *getMyName(
                 int maxsize)
 {
   char *rep;
-  int flag, l;
+  int flag, l, n;
   
   printftrace(IN,"getMyName");
   if(maxsize<=0)
@@ -492,9 +492,9 @@ char *getMyName(
   while(flag)
   {
     printf(":");
-    scanf("%s", rep);
+    n = scanf("%s", rep);
     l = strlen(rep);
-    if(l<=0 || l>maxsize) printf("???\n");
+    if((n!=1) || (l<=0) || (l>maxsize)) printf("???\n");
     else flag = VFALSE;
   }
   printftrace(OUT,"");
@@ -507,14 +507,24 @@ int getManicheanRep(
                     char *question)
 {
   char rep[200];
+  int flag = VTRUE, n;
   
   printftrace(IN,"getManicheanRep");
-  printf("\n%s (o/n)\n\n", question);
-  (void)scanf("%s",rep);
-  printftrace(OUT,"");
-  if( (*rep=='o') || (*rep=='O') || 
-     (*rep=='y') || (*rep=='Y') ) return(VTRUE);
-  else return(VFALSE);
+
+  while ( flag )
+  {
+    printf("\n%s (o/n)\n\n", question);
+    n = scanf("%s",rep);
+    printftrace(OUT,"");
+    if ( n != 1 ) printf( "???\n" );
+    else
+    {
+      flag = VFALSE;
+      if( (*rep=='o') || (*rep=='O') || 
+          (*rep=='y') || (*rep=='Y') ) return(VTRUE);
+      else return(VFALSE);
+    }
+  }
 }
 
 

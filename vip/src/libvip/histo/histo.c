@@ -1010,7 +1010,11 @@ VipHisto *VipReadHisto(char *name)
   if(mode == WRITE_HISTO_ASCII)
     {
 	/*test old format versus new format*/
-	fgets(line, 256, f);
+	if ( !fgets(line, 256, f) )
+  {
+    VipPrintfExit("VipReadHisto : Corrupted file");
+	  return(PB);
+  }
 	i = sscanf(line,"%d%d",&test1,&test2);
 	if(i!=2) oldformat=VTRUE;
 	rewind(f);
@@ -1042,7 +1046,12 @@ VipHisto *VipReadHisto(char *name)
 	    {
 		rangemin = 10000000;
 		rangemax = -10000000;
-		for(fgets(line, 256, f);!feof(f);fgets(line, 256, f))
+    if ( !fgets(line, 256, f) )
+    {
+      VipPrintfExit("VipReadHisto : Corrupted file");
+	    return(PB);
+    }
+		while(!feof(f))
 		    {
 			i = sscanf(line,"%d%d",&test1,&test2);
 			if(i!=2) 
@@ -1054,16 +1063,31 @@ VipHisto *VipReadHisto(char *name)
 				if(test1>rangemax) rangemax=test1;
 				if(test1<rangemin) rangemin=test1;
 			    }
+      if ( !feof(f) && !fgets(line, 256, f) )
+      {
+        VipPrintfExit("VipReadHisto : Corrupted file");
+	      return(PB);
+      }
 		    }
 		rewind(f);
 		h = VipCreateHisto(rangemin,rangemax);
-		for(fgets(line, 256, f);!feof(f);fgets(line, 256, f))
+    if ( !fgets(line, 256, f) )
+    {
+      VipPrintfExit("VipReadHisto : Corrupted file");
+	    return(PB);
+    }
+		while(!feof(f))
 		    {
 			i = sscanf(line,"%d%d",&test1,&test2);
 			if(i==2)
 			    {
 				mVipHistoVal(h,test1)=test2;
 			    }
+      if ( !feof(f) && !fgets(line, 256, f) )
+      {
+        VipPrintfExit("VipReadHisto : Corrupted file");
+	      return(PB);
+      }
 		    }
 	    }
     }

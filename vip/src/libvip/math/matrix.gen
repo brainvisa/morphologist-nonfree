@@ -864,6 +864,7 @@ VipMatrix_GENSTRING *VipReadMatrix_GENSTRING(char *filename, size_t dimx, size_t
   if (!matrix)
   { VipPrintfError("Error while allocating matrix");
     VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+    fclose(file);
     return((VipMatrix_GENSTRING *)NULL);
   }
 
@@ -872,39 +873,87 @@ VipMatrix_GENSTRING *VipReadMatrix_GENSTRING(char *filename, size_t dimx, size_t
   switch(type)
   { case U8BIT : for (j=0; j<dimx; j++)
                    for (i=0; i<dimy; i++)  
-                   { fscanf(file, "%d", &temp);
+                   { if ( fscanf(file, "%d", &temp) != 1 )
+                     {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                      matptr[j][i] = (unsigned char)temp;
                    }
                  break;
     case S8BIT : for (j=0; j<dimx; j++)
                    for (i=0; i<dimy; i++)  
-                   { fscanf(file, "%d", &temp);
+                   { if ( fscanf(file, "%d", &temp) != 1 )
+                     {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                      matptr[j][i] = (char)temp;
                    }
                  break;
     case U16BIT : for (j=0; j<dimx; j++)
                     for (i=0; i<dimy; i++)  
-                      fscanf(file, "%hu",(unsigned short*)&matptr[j][i]);
+                      if ( fscanf(file, "%hu",(unsigned short*)&matptr[j][i]) != 1 )
+                      {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                   break;
     case S16BIT : for (j=0; j<dimx; j++)
                     for (i=0; i<dimy; i++)  
-                      fscanf(file, "%hd",(short*) &matptr[j][i]);
+                      if ( fscanf(file, "%hd",(short*) &matptr[j][i]) != 1 )
+                      {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                   break;
     case U32BIT : for (j=0; j<dimx; j++)
                     for (i=0; i<dimy; i++)
-                      fscanf(file, "%lu",(unsigned long*)&matptr[j][i]);
+                      if ( fscanf(file, "%lu",(unsigned long*)&matptr[j][i]) != 1 )
+                      {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                   break;
     case S32BIT : for (j=0; j<dimx; j++)
                     for (i=0; i<dimy; i++)
-                      fscanf(file, "%ld",(long*)&matptr[j][i]);
+                      if ( fscanf(file, "%ld",(long*)&matptr[j][i]) != 1 )
+                      {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                   break;
     case VFLOAT : for (j=0; j<dimx; j++)
                    for (i=0; i<dimy; i++)
-                     fscanf(file, "%f",(float*)&matptr[j][i]);
+                     if ( fscanf(file, "%f",(float*)&matptr[j][i]) != 1 )
+                     {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                  break;
     case VDOUBLE : for (j=0; j<dimx; j++)
                     for (i=0; i<dimy; i++)
-                      fscanf(file, "%lf",(double*)&matptr[j][i]);
+                      if ( fscanf(file, "%lf",(double*)&matptr[j][i]) != 1 )
+                      {
+                        VipPrintfError("Error while reading matrix item");
+                        VipPrintfExit("(Vip_matrix.c)VipReadMatrix");
+                        fclose(file);
+                        return((VipMatrix_GENSTRING *)NULL);
+                     }
                   break;
   }
 
