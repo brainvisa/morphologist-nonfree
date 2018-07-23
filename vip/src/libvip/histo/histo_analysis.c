@@ -66,7 +66,11 @@ VipT1HistoAnalysis *VipReadT1HistoAnalysis(char *name)
 	      return(PB);
 	    }
 	}
-    fgets(buf, 255, f);
+    if ( !fgets(buf, 255, f) )
+    {
+      VipPrintfExit("VipReadT1HistoAnalysis : Corrupted file");
+	    return(PB);
+    }
     if(strstr(buf,"SPGR")!=NULL)
 	ana->sequence = MRI_T1_SPGR;
     else if (strstr(buf,"inversion recovery")!=NULL)
@@ -80,7 +84,12 @@ VipT1HistoAnalysis *VipReadT1HistoAnalysis(char *name)
 	    VipPrintfExit("VipReadT1HistoAnalysis");
 	    return(PB);
 	}
-    for(fgets(buf, 255, f);!feof(f);fgets(buf, 255, f))
+    if ( !fgets(buf, 255, f) )
+    {
+      VipPrintfExit("VipReadT1HistoAnalysis : Corrupted file");
+	    return(PB);
+    }
+    while(!feof(f))
 	{
 	    if(strstr(buf,"background")!=NULL)
 		{
@@ -155,6 +164,11 @@ VipT1HistoAnalysis *VipReadT1HistoAnalysis(char *name)
 		    ana->brain->mean = mean;
 		    ana->brain->sigma = sigma;
 		}
+    if ( !feof(f) && !fgets(buf, 255, f) )
+    {
+      VipPrintfExit("VipReadT1HistoAnalysis : Corrupted file");
+	    return(PB);
+    }
 	}
     return(ana);
 

@@ -2710,12 +2710,18 @@ int VipCreatePlotFileFromExtrema(
     {
     case 0: /* gnuplot */
       sprintf(command,"gnuplot %s %s", fcommandpsname, fcommandname);
-      system(command);
+      if ( system(command) < 0 )
+      {
+        printf( "ERROR : system command failed\n" );
+      }
       break;
     case 1: /* matplotlib */
       sprintf(command,"python2 %s", fcommandpsname );
       printf( "%s\n", command );
-      system(command);
+      if ( system(command) < 0 )
+      {
+        printf( "ERROR : system command failed\n" );
+      }
     }
     VipRm( fcommandpsname, 0 );
   }

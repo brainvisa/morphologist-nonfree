@@ -215,62 +215,142 @@ char *name)
 	}
 
     printf("Reading referentiel for %s...\n",name);
-    fgets(w, VIP_NAME_MAXLEN, fp);
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
     if(*w!='r')
 	{
 	    fprintf(stderr,"Pb dans %s (rotation)\n",filename);
 	    VipPrintfExit("VipReadOldARGtoRef");
 	    return(PB);
 	}
-    fscanf(fp,"%d%d",&(arg->gotoref_filled),&(arg->gonetoref));
-    fscanf(fp, "%f%f%f", &(arg->gotoref.t.x), &(arg->gotoref.t.y), &(arg->gotoref.t.z));
-    fscanf(fp, "%lf%lf%lf", &(arg->gotoref.r.xx), &(arg->gotoref.r.xy), &(arg->gotoref.r.xz));
-    fscanf(fp, "%lf%lf%lf", &(arg->gotoref.r.yx), &(arg->gotoref.r.yy), &(arg->gotoref.r.yz));
-    fscanf(fp, "%lf%lf%lf", &(arg->gotoref.r.zx), &(arg->gotoref.r.zy), &(arg->gotoref.r.zz));
-    fgets(w, VIP_NAME_MAXLEN, fp);
-    fgets(w, VIP_NAME_MAXLEN, fp);
+    if ( fscanf(fp,"%d%d",&(arg->gotoref_filled),&(arg->gonetoref)) != 2 )
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( fscanf(fp, "%f%f%f", &(arg->gotoref.t.x), &(arg->gotoref.t.y), &(arg->gotoref.t.z)) != 3)
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( fscanf(fp, "%lf%lf%lf", &(arg->gotoref.r.xx), &(arg->gotoref.r.xy), &(arg->gotoref.r.xz)) != 3)
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( fscanf(fp, "%lf%lf%lf", &(arg->gotoref.r.yx), &(arg->gotoref.r.yy), &(arg->gotoref.r.yz)) != 3)
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( fscanf(fp, "%lf%lf%lf", &(arg->gotoref.r.zx), &(arg->gotoref.r.zy), &(arg->gotoref.r.zz)) != 3)
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
     if(*w!='s')
 	{
 	    fprintf(stderr,"Pb dans %s (scale)\n",filename);
 	    VipPrintfExit("VipReadOldARGtoRef");
 	    return(PB);
 	}
-    fscanf(fp, "%f%f%f", &(arg->scaleref.x), &(arg->scaleref.y), &(arg->scaleref.z));
-    fgets(w, VIP_NAME_MAXLEN, fp);
-    fgets(w, VIP_NAME_MAXLEN, fp);
+    if ( fscanf(fp, "%f%f%f", &(arg->scaleref.x), &(arg->scaleref.y), &(arg->scaleref.z)) != 3)
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
     if(*w!='b')
 	{
 	    fprintf(stderr,"Pb dans %s (box)\n",filename);
 	    VipPrintfExit("VipReadOldARGtoRef");
 	    return(PB);
 	}
-    fscanf(fp, "%d%d%d", &x, &y, &z);
+    if ( fscanf(fp, "%d%d%d", &x, &y, &z) != 3 )
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
     arg->min_ima.x = x;
     arg->min_ima.y = y;
     arg->min_ima.z = z;
-    fscanf(fp, "%d%d%d", &x, &y, &z);
+    if ( fscanf(fp, "%d%d%d", &x, &y, &z) != 3 )
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
     arg->max_ima.x = x;
     arg->max_ima.y = y;
     arg->max_ima.z = z;
-    fgets(w, VIP_NAME_MAXLEN, fp);
-    fgets(w, VIP_NAME_MAXLEN, fp);
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
     if(*w!='r')
 	{
 	    fprintf(stderr,"Pb dans %s (refbox)\n",filename);
 	    VipPrintfExit("VipReadOldARGtoRef");
 	    return(PB);
 	}
-    fscanf(fp, "%f%f%f", &(arg->min_ref.x), &(arg->min_ref.y), &(arg->min_ref.z));
-    fscanf(fp, "%f%f%f", &(arg->max_ref.x), &(arg->max_ref.y), &(arg->max_ref.z));
-    fgets(w, VIP_NAME_MAXLEN, fp);
-    fgets(w, VIP_NAME_MAXLEN, fp);
+    if ( fscanf(fp, "%f%f%f", &(arg->min_ref.x), &(arg->min_ref.y), &(arg->min_ref.z)) != 3 )
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( fscanf(fp, "%f%f%f", &(arg->max_ref.x), &(arg->max_ref.y), &(arg->max_ref.z)) != 3)
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
+    if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldARGtoRef: File is corrupted");
+	    return(PB);
+		}
     if(*w!='v')
 	{
 	    fprintf(stderr,"Pb dans %s (voxel geometry)\n",filename);
 	    VipPrintfExit("VipReadOldARGtoRef");
 	    return(PB);
 	}
-    fscanf(fp, "%f%f%f", &(arg->vox.x), &(arg->vox.y), &(arg->vox.z));
+    if ( fscanf(fp, "%f%f%f", &(arg->vox.x), &(arg->vox.y), &(arg->vox.z)) != 3 )
+		{
+	    VipPrintfExit("VipReadOldARGtoRef: Fail to read the items");
+	    return(PB);
+		}
     n = fscanf(fp,"%s%d%s%d%s%d%s%d",buf1,&(arg->CAfilled),
 	       buf2,&CAx,buf3,&CAy,buf4,&CAz);
     if(n!=8)
@@ -386,7 +466,13 @@ char *name)
   if(!sslist) return(PB);
   sslist->n_ss = 0;
 
-  for(fgets(w, VIP_NAME_MAXLEN, fp);!feof(fp);fgets(w, VIP_NAME_MAXLEN, fp))
+  if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+	{
+      VipPrintfExit("VipOldReadSSfile : File is corrupted");
+      return(PB);
+	}
+
+  while(!feof(fp))
     {
       if (*w != '#')
 	{
@@ -611,6 +697,12 @@ char *name)
 	      return(PB);
 	    }
 	}
+	  if ( !feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+	      VipPrintfExit("VipOldReadSSfile : File is corrputed");
+	      return(PB);
+		}
+
     }
   if(nlu!=sslist->n_ss)
     {
@@ -677,7 +769,14 @@ SurfaceSimpleList *sslist)
   jset->first_bi = NULL;
 
   first.next = NULL;
-  for(fgets(w, VIP_NAME_MAXLEN, fp);!feof(fp);fgets(w, VIP_NAME_MAXLEN, fp))
+
+  if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+	{
+		VipPrintfExit("VipReadOldJunctionSet : Corrupted file");
+    return(PB);
+	}
+
+  while(!feof(fp))
     {
       if (*w != '#')
 	{
@@ -824,6 +923,11 @@ SurfaceSimpleList *sslist)
 	      return(PB);
 	    }				
 	}
+	  if (!feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp))
+		{
+			VipPrintfExit("VipReadOldJunctionSet : Corrupted file");
+	    return(PB);
+		}
     }
   if(nlu!=jset->n_bi)
     {
@@ -894,7 +998,14 @@ SurfaceSimpleList *sslist)
   jset->first_bi = NULL;
 
   first.next = NULL;
-  for(fgets(w, VIP_NAME_MAXLEN, fp);!feof(fp);fgets(w, VIP_NAME_MAXLEN, fp))
+
+  if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+	{
+		VipPrintfExit("VipReadOldCortexRelationSet : Corrupted file");
+    return(PB);
+	}
+
+  while(!feof(fp))
     {
       if (*w != '#')
 	{
@@ -1026,6 +1137,11 @@ SurfaceSimpleList *sslist)
 	      return(PB);
 	    }				
 	}
+	  if ( !feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp) )
+		{
+			VipPrintfExit("VipReadOldCortexRelationSet : Corrupted file");
+	    return(PB);
+		}
     }
   if(nlu!=jset->n_bi)
     {
@@ -1091,7 +1207,14 @@ SurfaceSimpleList *sslist)
   ppset->first_pp = NULL;
 
   first.next = NULL;
-  for(fgets(w, VIP_NAME_MAXLEN, fp);!feof(fp);fgets(w, VIP_NAME_MAXLEN, fp))
+
+  if ( !fgets(w, VIP_NAME_MAXLEN, fp) )
+	{
+	  VipPrintfExit("VipReadOldPliDePassageSet : Corrupted file");
+    return(PB);
+	}
+
+  while(!feof(fp))
     {
       if (*w != '#')
 	{
@@ -1204,6 +1327,11 @@ SurfaceSimpleList *sslist)
 	      return(PB);
 	    }				
 	}
+	  if (!feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp))
+		{
+			VipPrintfExit("VipReadOldPliDePassageSet : Corrupted file");
+	    return(PB);
+		}
     }
   if(nlu!=ppset->n_pp)
     {
