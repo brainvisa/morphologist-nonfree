@@ -305,8 +305,13 @@ int main(int argc, char *argv[])
         temp_file[i] = NULL;
     }
 
-    for(fgets(buffer, BUFFER_MAXLENGTH, gen_file);!feof(gen_file);
-        fgets(buffer, BUFFER_MAXLENGTH, gen_file),count++)
+    if ( !fgets(buffer, BUFFER_MAXLENGTH, gen_file) )
+    {
+        sprintf(error,"File %s is corrupted\n",statich_filename);
+        PreVipPrintfExit(error);
+    }
+
+    for(;!feof(gen_file);count++)
     {
         if(*buffer=='#')
         {
@@ -1328,6 +1333,12 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+        }
+
+        if ( !fgets(buffer, BUFFER_MAXLENGTH, gen_file) && !feof(gen_file) )
+        {
+          sprintf(error,"File %s is corrupted\n",statich_filename);
+          PreVipPrintfExit(error);
         }
     }
 

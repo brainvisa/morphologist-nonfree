@@ -94,11 +94,23 @@ char *name)
   while (fgets(buff, 512, fp) != NULL)
     {
     sscanf(buff, "%f %f %f",&(dep->t.x), &(dep->t.y), &(dep->t.z));
-    fgets(buff, 512, fp);
+    if ( !fgets(buff, 512, fp) )
+    {
+      VipPrintfExit("(depla)Corrupted buffer");
+      return(PB);
+    }
     sscanf(buff, "%lf %lf %lf",&(dep->r.xx), &(dep->r.xy), &(dep->r.xz));
-    fgets(buff, 512, fp);
+    if ( !fgets(buff, 512, fp) )
+    {
+      VipPrintfExit("(depla)Corrupted buffer");
+      return(PB);
+    }
     sscanf(buff, "%lf %lf %lf",&(dep->r.yx), &(dep->r.yy), &(dep->r.yz));
-    fgets(buff, 512, fp);
+    if ( !fgets(buff, 512, fp) )
+    {
+      VipPrintfExit("(depla)Corrupted buffer");
+      return(PB);
+    }
     sscanf(buff, "%lf %lf %lf",&(dep->r.zx), &(dep->r.zy), &(dep->r.zz));
     dep++;
     }
