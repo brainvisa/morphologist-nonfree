@@ -1063,7 +1063,7 @@ VipHisto *VipReadHisto(char *name)
 				if(test1>rangemax) rangemax=test1;
 				if(test1<rangemin) rangemin=test1;
 			    }
-      if ( !feof(f) && !fgets(line, 256, f) )
+      if ( !fgets(line, 256, f) && !feof(f) )
       {
         VipPrintfExit("VipReadHisto : Corrupted file");
 	      return(PB);
@@ -1083,7 +1083,7 @@ VipHisto *VipReadHisto(char *name)
 			    {
 				mVipHistoVal(h,test1)=test2;
 			    }
-      if ( !feof(f) && !fgets(line, 256, f) )
+      if ( !fgets(line, 256, f) && !feof(f) )
       {
         VipPrintfExit("VipReadHisto : Corrupted file");
 	      return(PB);

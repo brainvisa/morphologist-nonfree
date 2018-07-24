@@ -697,7 +697,7 @@ char *name)
 	      return(PB);
 	    }
 	}
-	  if ( !feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp) )
+	  if ( !fgets(w, VIP_NAME_MAXLEN, fp) && !feof(fp) )
 		{
 	      VipPrintfExit("VipOldReadSSfile : File is corrputed");
 	      return(PB);
@@ -923,7 +923,7 @@ SurfaceSimpleList *sslist)
 	      return(PB);
 	    }				
 	}
-	  if (!feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp))
+	  if (!fgets(w, VIP_NAME_MAXLEN, fp) && !feof(fp) )
 		{
 			VipPrintfExit("VipReadOldJunctionSet : Corrupted file");
 	    return(PB);
@@ -1137,7 +1137,7 @@ SurfaceSimpleList *sslist)
 	      return(PB);
 	    }				
 	}
-	  if ( !feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp) )
+	  if ( !fgets(w, VIP_NAME_MAXLEN, fp) && !feof(fp) )
 		{
 			VipPrintfExit("VipReadOldCortexRelationSet : Corrupted file");
 	    return(PB);
@@ -1327,7 +1327,7 @@ SurfaceSimpleList *sslist)
 	      return(PB);
 	    }				
 	}
-	  if (!feof(fp) && !fgets(w, VIP_NAME_MAXLEN, fp))
+	  if (!fgets(w, VIP_NAME_MAXLEN, fp) && !feof(fp) )
 		{
 			VipPrintfExit("VipReadOldPliDePassageSet : Corrupted file");
 	    return(PB);

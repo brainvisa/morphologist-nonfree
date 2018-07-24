@@ -164,7 +164,7 @@ VipT1HistoAnalysis *VipReadT1HistoAnalysis(char *name)
 		    ana->brain->mean = mean;
 		    ana->brain->sigma = sigma;
 		}
-    if ( !feof(f) && !fgets(buf, 255, f) )
+    if ( !fgets(buf, 255, f) && !feof(f) )
     {
       VipPrintfExit("VipReadT1HistoAnalysis : Corrupted file");
 	    return(PB);
