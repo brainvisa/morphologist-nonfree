@@ -78,7 +78,7 @@ static void			PreVipPrintfExitInFunction( char *fname);
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-static void PreVipPrintfWarning (char *s);
+/* static void PreVipPrintfWarning (char *s); */
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
@@ -196,7 +196,6 @@ int main(int argc, char *argv[])
     char *bufferptr;
     int prototype_count;
     int body_count;
-    char command[BUFFER_MAXLENGTH];
 #ifdef _WIN32
     char dirinclude_name[BUFFER_MAXLENGTH]=".\\";
 #else
@@ -1512,9 +1511,9 @@ static void PreVipPrintfError ( char *s )
 }
 
 /*----------------------------------------------------------------------------*/
-static void PreVipPrintfWarning ( char *s )
+/* static void PreVipPrintfWarning ( char *s ) */
 /*----------------------------------------------------------------------------*/
-{
+/* {
   (void) fflush ( stdout );
   (void) fprintf ( stderr, "\n------------------------------" );
   (void) fprintf ( stderr, "\n! VIP Preprocessing Warning" );
@@ -1523,3 +1522,4 @@ static void PreVipPrintfWarning ( char *s )
   (void) fprintf( stderr, "\n------------------------------\n" );
   (void) fflush ( stderr );
 }
+*/

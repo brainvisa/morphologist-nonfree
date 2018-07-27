@@ -648,11 +648,11 @@ static int Vider_BucketsConnectivity(Volume *vol,
 /*---------------------------------------------------------------------------*/
 {
   DistmapMask_point *maskptr;
-  Vip_S16BIT *ptr, *central, *voisin;
+  Vip_S16BIT *ptr, *voisin;
   VipIntBucket *chaine, *buckptr;
   int *pointptr;
   int newskip;
-  int i, j, l, neighbor, aux2;
+  int i, j, l, neighbor;
   int iplus1;
   
   
@@ -677,8 +677,6 @@ static int Vider_BucketsConnectivity(Volume *vol,
           pointptr = liste[i]->data;
           for ( j=liste[i]->n_points; j--; )
             {
-              central = ptr + *pointptr;
-              aux2 = *central;
               maskptr = mask->first_point;
               
               for ( l=mask->length; l--; )
@@ -782,12 +780,12 @@ static int Vider_BucketsConnectivityVoronoi(Volume *vol,
 /*---------------------------------------------------------------------------*/
 {
   DistmapMask_point *maskptr;
-  Vip_S16BIT *ptr, *central, *voisin, *labelptr, *centrallabelptr;
+  Vip_S16BIT *ptr, *voisin, *labelptr, *centrallabelptr;
   VipIntBucket *chaine, *buckptr;
   int labelcentral;
   int *pointptr;
   int newskip;
-  int i, j, l, neighbor, aux2;
+  int i, j, l, neighbor;
   int iplus1;
   
   
@@ -813,8 +811,6 @@ static int Vider_BucketsConnectivityVoronoi(Volume *vol,
 	  pointptr = liste[i]->data;
 	  for ( j=liste[i]->n_points; j--; )
 	    {
-	      central  = ptr + *pointptr;
-	      aux2 = *central;
 	      centrallabelptr = labelptr + *pointptr; 
 	      labelcentral = *centrallabelptr;
               

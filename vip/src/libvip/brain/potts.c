@@ -64,8 +64,8 @@ static float deltaGPotentialGtoW(int glevel,float KG,float mG,float sigmaG,
 			     float KW,float mW,float sigmaW);
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
-static float deltaGPotentialWtoG(int glevel,float KG,float mG,float sigmaG,
-			     float KW,float mW,float sigmaW);
+/*static float deltaGPotentialWtoG(int glevel,float KG,float mG,float sigmaG,
+			     float KW,float mW,float sigmaW);*/
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 static VipIntBucket *VipCreateFrontIntBucketGWClassifObject( Volume *vol, Volume *classif, int connectivity, int front_value, int domain, int outside);
@@ -107,7 +107,7 @@ int dumb)
   Volume *classif;
   Vip_U8BIT *classif_ptr, *classif_first;
   Vip_S16BIT *data_ptr, *data_first;
-  int sigma_gray_left, sigma_gray_right, sigma_white_left, sigma_white_right;
+  /*int sigma_gray_left, sigma_gray_right, sigma_white_left, sigma_white_right;*/
   int T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, T_GRAY_WHITE_LOW, T_GRAY_WHITE_HIGH, T_WHITE_FAT;
   VipOffsetStruct *data_vos, *classif_vos;
   VipConnectivityStruct *vcs;
@@ -133,10 +133,10 @@ int dumb)
 
   if(ana->gray!=NULL && ana->white!=NULL)
     {
-      sigma_gray_left = ana->gray->left_sigma;
+      /*sigma_gray_left = ana->gray->left_sigma;
       sigma_gray_right = ana->gray->right_sigma;
       sigma_white_left = ana->white->left_sigma;
-      sigma_white_right = ana->white->right_sigma;
+      sigma_white_right = ana->white->right_sigma;*/
       if(ana->sequence==MRI_T1_SPGR && ana->partial_volume_effect==VFALSE)
 	{
 	  T_VOID_GRAY_LOW = ana->gray->mean - 5*ana->gray->left_sigma;
@@ -312,7 +312,7 @@ int dumb)
   Volume *classif;
   Vip_U8BIT *classif_ptr, *classif_first;
   Vip_S16BIT *data_ptr, *data_first;
-  int sigma_gray_left, sigma_gray_right, sigma_white_left, sigma_white_right;
+  /*int sigma_gray_left, sigma_gray_right, sigma_white_left, sigma_white_right;*/
   int T_VOID_GRAY_LOW, T_VOID_GRAY_HIGH, T_GRAY_WHITE_LOW, T_GRAY_WHITE_HIGH, T_WHITE_FAT;
   VipOffsetStruct *data_vos, *classif_vos;
   VipConnectivityStruct *vcs;
@@ -338,10 +338,10 @@ int dumb)
 
   if(ana->gray!=NULL && ana->white!=NULL)
     {
-      sigma_gray_left = ana->gray->left_sigma;
+      /*sigma_gray_left = ana->gray->left_sigma;
       sigma_gray_right = ana->gray->right_sigma;
       sigma_white_left = ana->white->left_sigma;
-      sigma_white_right = ana->white->right_sigma;
+      sigma_white_right = ana->white->right_sigma;*/
       if(ana->sequence==MRI_T1_SPGR && ana->partial_volume_effect==VFALSE)
 	{
 	  T_VOID_GRAY_LOW = ana->gray->mean - 5*ana->gray->left_sigma;
@@ -1875,18 +1875,16 @@ Volume *VipGrayWhiteClassificationForVoxelBasedAna(Volume *vol, VipT1HistoAnalys
 /*---------------------------------------------------------------------------*/
 {
     Volume *classif;
-    Vip_S16BIT *classif_ptr, *classif_first, *cvoisin;
-    Vip_S16BIT *data_ptr, *data_first, *gvoisin;
+    Vip_S16BIT *classif_ptr, *classif_first;
+    Vip_S16BIT *data_ptr, *data_first;
     VipOffsetStruct *data_vos, *classif_vos;
     VipConnectivityStruct *vcs26;
     int T_VOID_GRAY_HIGH=0;
     int T_GRAY_WHITE_LOW=0;
     int T_GRAY_WHITE_HIGH=0;
     int T_WHITE_FAT = 0;
-    int ix, iy, iz, icon;
+    int ix, iy, iz;
     int temp;
-    double mW, mG, sW, sG;
-    int nbW, nbG;
 
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
@@ -1980,11 +1978,10 @@ int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, V
     int *buckptr;
     int i;
     int icon;
-    int valeur;
     int temp;
     double mW, mG, sW, sG;
     int nbW, nbG, nnG, nnW;
-    float KW, KG, deltaU;
+    /*float KW, KG, deltaU;*/
     
     if (VipVerifyAll(classif)==PB)
 	{
@@ -2034,8 +2031,8 @@ int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, V
     loop=0;
     count = 1;
     totalcount = 0;
-    KG = 2*1 - 0.00001;
-    KW = 4*1 + 0.00001;
+    /*KG = 2*1 - 0.00001;
+    KW = 4*1 + 0.00001;*/
     printf("loop: %3d, Added %6d",loop,0);
 
     while((loop++<nb_iteration)&&(count)&&(buck->n_points>0))
@@ -2062,7 +2059,7 @@ int VipErosionClassificationNeighbourhood( Volume *classif, Volume *graylevel, V
 		nbG=0;
 		nnG = 0;
 		nnW = 0;
-		deltaU = 0;
+		/*deltaU = 0;*/
 		for (icon=0; icon<vcs6->nb_neighbors; icon++)
 		{
 		    cvoisin = cptr + vcs6->offset[icon];
@@ -2143,30 +2140,20 @@ int VipGrayWhiteClassificationForVoxelBasedNeighbourhood(Volume *vol, Volume *cl
 int dumb, int nb_iterations, int threshold, int connectivity, int label)
 /*---------------------------------------------------------------------------*/
 {
+    (void)(dumb);
     Volume *topo=NULL;
-    VipIntBucket *buck, *nextbuck, *buck_immortals;
+    VipIntBucket *buck, *nextbuck;
     Vip_S16BIT *classif_ptr, *classif_first, *classif_voisin;
-    Vip_S16BIT *mean_data_ptr, *mean_data_first;
     Vip_S16BIT *data_ptr, *data_first, *voisin;
     Vip_S16BIT *matter_ptr, *matter_first, *matter_voisin;
     Vip_S16BIT *topo_ptr, *topo_first;
-    VipOffsetStruct *data_vos, *classif_vos, *matter_vos;
     VipConnectivityStruct *vcs6, *vcs18, *vcs26;
-    Volume *ventricules=NULL;
     int *buckptr;
     int icon; 
-    int i, n;
-    int temp;
-    int nmodif;
-    int currentlabel, neighbor_label, currentlabelsur2, newlabel=0, newlabelsur2;
-    int mask_val, partial_val, next_val, next_val2, mask_val2;
-    double deltaU;
-    int front = VFALSE;
-    int ix, iy, iz;
+    int i;
     int loop, count;
-    int delta_white, delta_gray, m;
     int nb6, wnb;
-    double wmean, wsigma;
+    double wmean = 0.0, wsigma = 0.0;
 
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB || VipVerifyAll(classif)==PB || VipTestType(classif,S16BIT)==PB)
     {
@@ -2200,7 +2187,6 @@ int dumb, int nb_iterations, int threshold, int connectivity, int label)
         printf("loop: %3d,count: %5d",loop, count);
         fflush(stdout);
         count = 0;
-        m = 0;
         
         topo = VipCreateSingleThresholdedVolume(matter, EQUAL_TO, 255, BINARY_RESULT);
         VipTopologicalClassificationForLabel(topo, 0);
@@ -2392,10 +2378,11 @@ int dumb, int nb_iterations, int threshold, int connectivity, int label)
 int VipCleaningTopo(Volume *vol, Volume *matter, Volume *classif, int dumb, int nb_iterations, int label, int threshold)
 /*---------------------------------------------------------------------------*/
 {
+    (void)(dumb);
     Volume *topo=NULL;
     VipIntBucket *buck, *nextbuck;
     Vip_S16BIT *topo_ptr, *topo_first;
-    Vip_S16BIT *data_ptr, *data_first, *voisin;
+    Vip_S16BIT *data_ptr, *data_first;
     Vip_S16BIT *matter_ptr, *matter_first;
     Vip_S16BIT *classif_ptr, *classif_first;
     VipConnectivityStruct *vcs6, *vcs26;
@@ -2507,7 +2494,7 @@ int VipCleaningConnectivity(Volume *vol, int connectivity, int type)
     int *buckptr;
     int i, icon;
     int loop, count;
-    int nb, nb6;
+    int nb /*, nb6*/;
     
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
@@ -2730,9 +2717,10 @@ static double PotentielForVoxelBasedAna2011(int label, int graylevel, double mW,
 static double PotentielForVoxelBasedNeighbourhood(Volume *vol, Volume *classif, Vip_S16BIT *vol_ptr, Vip_S16BIT *classif_ptr, int connectivity, int label)
 /*---------------------------------------------------------------------------*/
 {
+    (void)(classif);
     int icon;
     VipConnectivityStruct *vcs, *vcs6;
-    Vip_S16BIT *classif_voisin, *vol_voisin, *white_voisin;
+    Vip_S16BIT *classif_voisin, *vol_voisin;
     double result;
     double mean;
     int nb, nb6;
@@ -3012,10 +3000,11 @@ int domain,
 int outside)
 /*-------------------------------------------------------------------------*/
 {
-    int *buckptr, *dirptr;
-    Vip_S16BIT *ptr, *ptr_classif;
-    Vip_S16BIT *ptr_neighbor, *ptr_neighbor2, *ptr_neighbor_classif;
-    int i, dir, dir2;
+    (void)(first_classif_point);
+    int *buckptr;
+    Vip_S16BIT *ptr/*, *ptr_classif*/;
+    Vip_S16BIT *ptr_neighbor/*, *ptr_neighbor2, *ptr_neighbor_classif*/;
+    int i, dir /*, dir2*/;
     int front;
 
     if(first_vol_point==NULL)
@@ -3041,7 +3030,7 @@ int outside)
     for(i=buck->n_points;i--;)
     {
         ptr = first_vol_point + *buckptr;
-        ptr_classif = first_classif_point + *buckptr;
+        /*ptr_classif = first_classif_point + *buckptr;*/
         if(*ptr==front_value || *ptr==VIP_IMMORTAL) /*the point has not be put to outside*/
         {
             if(nextbuck->n_points==nextbuck->size)
@@ -3055,7 +3044,7 @@ int outside)
             for(dir=0; dir<vcs->nb_neighbors; dir++)
             {
                 ptr_neighbor = ptr + vcs->offset[dir];
-                ptr_neighbor_classif = ptr_classif + vcs->offset[dir];
+                /*ptr_neighbor_classif = ptr_classif + vcs->offset[dir];*/
                 front = VTRUE;
 //                 for(dir2=0; dir2<vcs->nb_neighbors; dir2++)
 //                 {
@@ -3091,8 +3080,8 @@ int VipGrayRegularisation(Volume *vol)
     VipOffsetStruct *vos;
     VipConnectivityStruct *vcs6, *vcs18, *vcs26;
     int icon;
-    int ix, iy, iz, n;
-    int nb_vcs6, nb_vcs18, nb_vcs26;
+    int ix, iy, iz;
+    int nb_vcs6, nb_vcs18;
     
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
@@ -3169,11 +3158,13 @@ int label
 /*-------------------------------------------------------------------------*/
 
 {
+  (void)(sigmaG);
+  (void)(sigmaW);
   VipIntBucket *buck, *nextbuck;
   Topology26Neighborhood *topo26;
   VipConnectivityStruct *vcs6, *vcs26;
   int loop, count;
-  Vip_S16BIT *first, *ptr, *voisin, *voisin2;
+  Vip_S16BIT *first, *ptr, *voisin/*, *voisin2*/;
   Vip_S16BIT *gfirst, *gptr, *gvoisin;
   Vip_S16BIT *cfirst, *cptr, *cvoisin;
   int *buckptr;
@@ -3183,7 +3174,6 @@ int label
   float deltaU;
   int icon;
   int totalcount;
-  int valeur;
   int immortality = VFALSE;
   int temp;
 
@@ -3533,10 +3523,10 @@ static float deltaGPotentialGtoW(int glevel,float KG,float mG,float sigmaG,
 }
 
 /*---------------------------------------------------------------------------*/
-static float deltaGPotentialWtoG(int glevel,float KG,float mG,float sigmaG,
-			     float KW,float mW,float sigmaW)
+/*static float deltaGPotentialWtoG(int glevel,float KG,float mG,float sigmaG,
+			     float KW,float mW,float sigmaW)*/
 /*---------------------------------------------------------------------------*/
-{
+/*{
     float potG, potW;
 
     if(glevel<=(mG+sigmaG)) potG = -1.;
@@ -3548,7 +3538,7 @@ static float deltaGPotentialWtoG(int glevel,float KG,float mG,float sigmaG,
     else potW = -1. - (glevel-mW+sigmaW)/sigmaW;
 
     return(KG*potG-KW*potW);
-}
+}*/
 
 
 /*-------------------------------------------------------------------------*/
@@ -3557,10 +3547,10 @@ int VipRegularisation(Volume *vol, int label)
 {
     Vip_S16BIT *ptr, *first, *voisin;
     VipOffsetStruct *vos;
-    VipConnectivityStruct *vcs6, *vcs18, *vcs26;
+    VipConnectivityStruct *vcs6, *vcs18;
     int icon;
     int ix, iy, iz, n;
-    int nb_vcs6, nb_vcs18, nb_vcs26;
+    int nb_vcs6, nb_vcs18;
     
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {
@@ -3574,7 +3564,6 @@ int VipRegularisation(Volume *vol, int label)
     
     vcs6 = VipGetConnectivityStruct( vol, CONNECTIVITY_6 );
     vcs18 = VipGetConnectivityStruct( vol, CONNECTIVITY_18 );
-    vcs26 = VipGetConnectivityStruct( vol, CONNECTIVITY_26 );
     
     for (n=0; n<3; n++)
     {

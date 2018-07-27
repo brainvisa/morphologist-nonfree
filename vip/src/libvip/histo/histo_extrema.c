@@ -58,7 +58,7 @@ static int NatureSign( int n);
 static int FittingNatures(int n1, int n2);
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
-static char *StringNature( int n);
+/* static char *StringNature( int n);*/
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 static int CheckExtremaConsistenceAndPruneS8BIT(
@@ -820,7 +820,7 @@ SSCascade *VipDetectCascadeFromD2( SSSingularity *list,SSSingularity *s)
 int VipCountSingularitiesStillAlive( SSSingularity *slist, int *n, int scalemax )
 /*---------------------------------------------------------------------------*/
 {
-    char *nat;
+    /*char *nat;*/
 
   if(slist==NULL)
     {
@@ -834,8 +834,8 @@ int VipCountSingularitiesStillAlive( SSSingularity *slist, int *n, int scalemax 
       if((slist->mate==NULL)&&(slist->scale_event==scalemax))
 	{
 	  (*n)++;
-	  nat = StringNature(slist->nature);
 	  /*
+	  nat = StringNature(slist->nature);
 	  printf("%s singularity moving from %d to %d\n",nat,slist->loc[0],slist->loc[slist->scale_event]);
 	  */
 	}
@@ -846,9 +846,9 @@ int VipCountSingularitiesStillAlive( SSSingularity *slist, int *n, int scalemax 
 }
 
 /*---------------------------------------------------------------------------*/
-static char *StringNature( int n)
+/*static char *StringNature( int n)*/
 /*---------------------------------------------------------------------------*/
-{
+/*{
   char *s;
   
   s = VipMalloc(6,"StringNature");
@@ -871,7 +871,7 @@ static char *StringNature( int n)
       return(PB);
     }
   return(s);
-}
+}*/
 
 /*---------------------------------------------------------------------------*/
 static int NatureSign( int n)
@@ -1660,10 +1660,9 @@ int VipComputeSSSingularityGammaExtrema( SSSingularity *s, float gamma, Singular
 int VipComputeSSSingularitySpeedMinima( SSSingularity *s, Singularity *sval, int nval, float dscale )
 /*---------------------------------------------------------------------------*/
 {
+  (void)(dscale); /*compilation warning*/
   double *speedbuf; 
   int i;
-  float bidon = dscale; /*compilation warning*/
-  bidon = 0.;
 
   if(s==NULL || !sval)
     {
@@ -1723,13 +1722,12 @@ int VipComputeSSSingularitySpeedMinima( SSSingularity *s, Singularity *sval, int
 int VipComputeSSSingularityGaussianLikeSpeed( SSSingularity *s, Singularity *sval, int nval, float dscale, float sigmamin,  int nature)
 /*---------------------------------------------------------------------------*/
 {
+  (void)(dscale); /*compilation warning*/
   double *speedbuf; 
   int i;
   double sigmamin2;
   double EPSILON = 0.0000001;
   double speed_factor;
-  float bidon = dscale; /*compilation warning*/
-  bidon = 0.;
 
   if(s==NULL || !sval)
     {
@@ -1941,7 +1939,6 @@ Volume *VipDetectExtremaFrom1DSS( Volume *ss)
   VipOffsetStruct *vos;
   int i,scale;
   int xsize;
-  int nblobs;
   double temp,left,right;
   int first_extremum;
   int last_extremum;
@@ -1983,7 +1980,6 @@ Volume *VipDetectExtremaFrom1DSS( Volume *ss)
       lineptr = ssptr;
       extremaptr = extrema;
       for(i=mVipVolSizeX(ss);i--;) *extremaptr++=0;
-      nblobs = 0;
       ssptr++; /*skip first point*/
       for ( i = 1; i<=xsize; i++)/* loop on points */
 	{

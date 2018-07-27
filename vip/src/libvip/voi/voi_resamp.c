@@ -218,6 +218,7 @@ int VipVoiIterateWithDepResampLinearWithMC(
 )
 /*---------------------------------------------------------------------------*/
 {
+  (void)(dep);
   Vip_S16BIT                   *imptr, *ptr, tmp;
   int                          i, j, t;
 
@@ -234,9 +235,6 @@ int VipVoiIterateWithDepResampLinearWithMC(
   int                         stock1, stock2, stock3;
   int                         SEIZE, DEUXPUIS16;
   int                         lineSizeRef, sliceSizeRef;
-
-  VipDeplacement *bidon = dep; /*pour warning de compil...*/
-  bidon = NULL;
 
    SEIZE = 16;
    DEUXPUIS16 = 65536;
@@ -304,6 +302,7 @@ int VipVoiIterateWithDepResampLinearWithMC(
        paquetoffcourant    = VipVoiNextPtrOffset( roi );
        PaquetDeDeplaEntier = VipVoiNextPtrDepla( roi );
      }
+  tabpaquetmescourant = tabpaquetmescourant; // arning de compil...
 
   return(OK);
 }
@@ -315,6 +314,7 @@ int VipVoiIterateWithDepResampLinear(
 )
 /*---------------------------------------------------------------------------*/
 {
+  (void)(dep);
   Vip_S16BIT                   *imptr, *ptr, tmp;
   int                          i, j, t;
 
@@ -331,9 +331,6 @@ int VipVoiIterateWithDepResampLinear(
   int                         stock1, stock2, stock3;
   int                         SEIZE, DEUXPUIS16;
   int                         lineSizeRef, sliceSizeRef;
-
-  VipDeplacement *bidon = dep; /*pour warning de compil...*/
-  bidon = NULL;
 
    SEIZE = 16;
    DEUXPUIS16 = 65536;
@@ -397,6 +394,7 @@ int VipVoiIterateWithDepResampLinear(
        paquetoffcourant    = VipVoiNextPtrOffset( roi );
        PaquetDeDeplaEntier = VipVoiNextPtrDepla( roi );
      }
+  tabpaquetmescourant = tabpaquetmescourant; // arning de compil...
 
   return(OK);
 }
@@ -444,6 +442,7 @@ int VipVoiIterateWithIdentity(
        paquetoffcourant    = VipVoiNextPtrOffset( roi );
        tabpaquetmescourant = VipVoiNextPtrMes( roi );
      }
-   
+   tabpaquetmescourant = tabpaquetmescourant; // compilation warning
+
    return(OK);
 }

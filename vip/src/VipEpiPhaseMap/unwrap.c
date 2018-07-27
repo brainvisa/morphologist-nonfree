@@ -108,7 +108,10 @@ int CheckNeighbours (double **mask, double **phasemap, int refy, int refx) {
   return flag;
 }
 
-int FindReferencePoint (int *ref_y, int *ref_x, double **mask, double **phasemap, int start_y, int start_x, int s_y, int s_x) {
+int FindReferencePoint (int *ref_y, int *ref_x, double **mask, double **phasemap, int start_y, int start_x, int s_y, int s_x)
+{
+  (void)(phasemap);
+  (void)(s_x);
   /* ---------------------------------------------------------------
      Finds a reference point lying within the mask
      A candidate point is kept if his
@@ -119,12 +122,12 @@ int FindReferencePoint (int *ref_y, int *ref_x, double **mask, double **phasemap
      (The proposed values only aim to prevent the algorithm from
      choosing incorrect points)
      ---------------------------------------------------------------- */
-  int refx, refy, found;
+  int refx, refy /*, found*/;
   
   refx = start_x;
   refy = start_y;
   
-  found = NO;
+  /*found = NO;*/
 
   /* Old research */
 

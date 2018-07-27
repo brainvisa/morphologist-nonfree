@@ -499,10 +499,9 @@ int VipWatershedFrontPropagation( Volume *vol, Volume *altitude, Volume *plan_he
     int loop, count, immortals;
     int dir;
     Vip_S16BIT *first, *ptr, *ptr_neighbor;
-    Vip_S16BIT *afirst, *aptr, *phfirst, *phptr;
+    Vip_S16BIT *afirst, *aptr, *phfirst = NULL, *phptr;
     int *buckptr;
     int i, m;
-    Vip3DBucket_S16BIT *border, *borderptr;
     float interval;
 
     if (VipVerifyAll(vol)==PB)
@@ -659,6 +658,7 @@ int VipWatershedFrontPropagation( Volume *vol, Volume *altitude, Volume *plan_he
 /*----------------------------------------------------------------------------*/
 VipIntBucket *VipCreateFrontIntBucketVoronoiObject( Volume *vol, int connectivity, int front_value, int domain, int outside)
 {
+    (void)(outside);
     Vip_S16BIT *ptr, *voisin;
     int i, NbTotalPts;
     VipIntBucket *buck;
@@ -793,6 +793,8 @@ int outside)
 /*-------------------------------------------------------------------------*/
 int VipCleanUpBorderFromImmortalsVoronoiObject( Volume *vol, VipIntBucket *buck, int immortals, int outside, int connectivity)
 {
+    (void)(immortals);
+    (void)(outside);
     int *buckptr;
     Vip_S16BIT *first, *ptr, *ptr_neighbor;
     VipConnectivityStruct *vcs;

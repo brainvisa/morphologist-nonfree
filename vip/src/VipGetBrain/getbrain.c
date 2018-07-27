@@ -57,7 +57,6 @@ int main(int argc, char *argv[])
     float dscale = 0.5;
     int i;
     Volume *vol=NULL, *brain=NULL, *converter=NULL, *vol2=NULL;
-    Volume *classif=NULL, *copy=NULL;
     char analyse = 'y';
     int track = 5;
     float berosion = 2.1;
@@ -67,7 +66,7 @@ int main(int argc, char *argv[])
     float brecover = 3.;
     float wrecover = 30.;
     int vthreshold = 14;
-    VipT1HistoAnalysis *ana;
+    VipT1HistoAnalysis *ana = NULL;
     char mode = 'S';
     char brainname[1024];
     int brainflag = VFALSE;
@@ -100,19 +99,11 @@ int main(int argc, char *argv[])
     int xCP=0, yCP=0, zCP=0;
     int xP=0, yP=0, zP=0;
     char point_filename[VIP_NAME_MAXLEN]="";
-    float CA[3], CP[3], P[3], d[3];
+    float CA[3], CP[3], P[3];
     VipTalairach tal, *talptr=NULL, *coord=NULL;
     int talset = VFALSE;
     int layer = 0;
     char layeronly = 'n';
-    /**/
-    VipHisto *histo;
-    char histoname[1024];
-    char stripped_input[1024];
-    char *root1, *root2;
-    Volume *var = NULL;
-    int Seuil_Gray_White = 0;
-    /**/
     int random_seed = time(NULL);
 
     readlib = ANY_FORMAT;
@@ -798,7 +789,7 @@ int main(int argc, char *argv[])
         VipSingleThreshold( vol, GREATER_OR_EQUAL_TO,  1, BINARY_RESULT );
     }
   
-    if(fillwhite=='y' && ana &&layeronly!='y')
+    if((fillwhite=='y') && ana && (layeronly!='y'))
     {
         if(vol2==NULL)
         {

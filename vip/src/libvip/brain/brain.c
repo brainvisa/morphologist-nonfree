@@ -520,13 +520,14 @@ int VipVolumeEdges(Volume *edges, Vip_S16BIT *edges_ptr, int seuil)
 int VipCreateBrainSeed(
 Volume *vol,
 Volume *var,
-VipT1HistoAnalysis *ana,
+VipT1HistoAnalysis * ana,
 int T_GRAY_WHITE,
 int T_WHITE_FAT,
 int SEUIL_VAR
 )
 {
     Volume *mask;
+    (void)(ana);
 
     VipDoubleThreshold( vol, VIP_BETWEEN_OR_EQUAL_TO, T_GRAY_WHITE, T_WHITE_FAT, BINARY_RESULT );
 
@@ -553,7 +554,7 @@ int connectivity
     int ix, iy, iz, icon;
     VipOffsetStruct *vos;
     VipConnectivityStruct *vcs;
-    Vip_S16BIT *vol1_ptr, *vol2_ptr;
+    Vip_S16BIT *vol1_ptr = NULL, *vol2_ptr = NULL;
     Vip_S16BIT *mask_ptr;
     Vip_S16BIT *voisin;
 
@@ -636,7 +637,7 @@ int connectivity
     VipIntBucket *buck, *nextbuck;
     int i, m;
     VipConnectivityStruct *vcs;
-    Vip_S16BIT *first, *ptr, *ptr_neighbor;
+    Vip_S16BIT *first, *ptr;
     Vip_S16BIT *vfirst, *vptr;
     int *buckptr;
 
@@ -812,26 +813,30 @@ float P[3]
 /*---------------------------------------------------------------------------*/
 {
 
+  (void)(ridge);
+  (void)(debug);
+  (void)(variance_threshold);
+
   Volume *brain=NULL, *copyvol=NULL, *distmap=NULL, *classif=NULL;
   Volume *skin=NULL, *brainball=NULL;
   Volume *var=NULL, *mask=NULL, *mask2=NULL, *white=NULL;
-  Volume *mean_vol;
-  int i, nb_voisin;
-  int T_VOID_GRAY_1 = 0, T_VOID_GRAY_2 = 0, T_VOID_GRAY_LOW = 0, T_VOID_GRAY_HIGH = 0;
-  int T_GRAY_WHITE_LOW = 0, T_GRAY_WHITE_HIGH = 0, T_GRAY_WHITE_SECUREGRAY;
+  /* Volume *mean_vol; */
+  /* int i, nb_voisin; */
+  int /*T_VOID_GRAY_1 = 0, T_VOID_GRAY_2 = 0, */ T_VOID_GRAY_LOW = 0, T_VOID_GRAY_HIGH = 0;
+  int T_GRAY_WHITE_LOW = 0, T_GRAY_WHITE_HIGH = 0 /* , T_GRAY_WHITE_SECUREGRAY */;
   int T_WHITE_FAT_LOW_1 = 0, T_WHITE_FAT_LOW_2 = 0, T_WHITE_FAT_HIGH = 0;
-  int T_GRAY_CSF = 0, nb_total = 0;
+  int T_GRAY_CSF = 0 /*, nb_total = 0 */;
   float little_opening_size;
   int var_seuil;
-  int icon, icon2, ix, iy, iz;
+  int /* icon, icon2, */ ix, iy, iz;
   int goodseed;
   VipOffsetStruct *vos;
   Vip_S16BIT *skin_ptr, *mask_ptr;
-  Vip_S16BIT *vol_ptr, *edges_ptr, *var_ptr;
-  Vip_S16BIT *ptr, *voisin, *voisin26;
+  /* Vip_S16BIT *vol_ptr, *edges_ptr, *var_ptr; */
+  Vip_S16BIT *ptr/*, *voisin, *voisin26 */;
   int seuil = 0;
-  VipHisto *histo;
-  char histoname[1024];
+  /* VipHisto *histo;
+  char histoname[1024]; */
   float ptPlanHemi[3];
   float d[3], pt = 0.;
   float mean=0;
@@ -854,13 +859,13 @@ float P[3]
 
   if(ana->gray!=NULL && ana->white!=NULL)
     {
-        T_VOID_GRAY_1 = ana->gray->mean - 0.2*ana->gray->sigma;
-        T_VOID_GRAY_2 = ana->gray->mean + 0.2*(ana->white->mean - ana->gray->mean);
+        /* T_VOID_GRAY_1 = ana->gray->mean - 0.2*ana->gray->sigma; */
+        /* T_VOID_GRAY_2 = ana->gray->mean + 0.2*(ana->white->mean - ana->gray->mean); */
 	T_VOID_GRAY_LOW = ana->gray->mean - 2.5*ana->gray->sigma;
 	T_VOID_GRAY_HIGH = ana->gray->mean - 1.7*ana->gray->sigma;
 	T_GRAY_WHITE_LOW = ana->gray->mean + (ana->white->mean - ana->gray->mean)/2;
         T_GRAY_WHITE_HIGH = ana->gray->mean + 0.75*(ana->white->mean - ana->gray->mean);
-	T_GRAY_WHITE_SECUREGRAY = ana->gray->mean + 2*ana->gray->sigma;
+	/* T_GRAY_WHITE_SECUREGRAY = ana->gray->mean + 2*ana->gray->sigma; */
         T_WHITE_FAT_LOW_1 = ana->white->mean + 2.5*ana->white->sigma;
 	T_WHITE_FAT_LOW_2 = ana->white->mean + 4*ana->white->sigma;
 	T_WHITE_FAT_HIGH = ana->white->mean + 6*ana->white->sigma;
@@ -1647,12 +1652,14 @@ Volume *ridge
 
  */
 {
+  (void)(nb_iterations);
+
   Volume *mask=NULL, *classif=NULL, *white=NULL, *volcopy=NULL;
   float erosion_size;
   float dilation_size;
   float threshold_dist;
-  int T_VOID_GRAY_LOW=0, T_VOID_GRAY_HIGH=0, T_WHITE_FAT_LOW=0, T_WHITE_FAT_HIGH=0;
-  int T_GRAY_WHITE=0, T_GRAY_WHITE_SECUREGRAY=0,T_GRAY_WHITE_LOW =0,T_GRAY_WHITE_HIGH=0;
+  int T_VOID_GRAY_LOW=0, T_VOID_GRAY_HIGH=0, T_WHITE_FAT_HIGH=0;
+  int T_GRAY_WHITE_SECUREGRAY=0,T_GRAY_WHITE_LOW =0,T_GRAY_WHITE_HIGH=0;
 
   dumb=VFALSE;
 
@@ -1672,9 +1679,9 @@ Volume *ridge
     {  
       T_VOID_GRAY_LOW = ana->gray->mean - 2.5*ana->gray->sigma;
       T_VOID_GRAY_HIGH = ana->gray->mean - 2.*ana->gray->sigma;
-      T_GRAY_WHITE = ana->gray->mean + (ana->white->mean - ana->gray->mean)/2;
+      /* T_GRAY_WHITE = ana->gray->mean + (ana->white->mean - ana->gray->mean)/2; */
       T_GRAY_WHITE_SECUREGRAY = ana->gray->mean + 2*ana->gray->sigma;
-      T_WHITE_FAT_LOW = ana->white->mean + 2.5*ana->white->sigma;
+      /* T_WHITE_FAT_LOW = ana->white->mean + 2.5*ana->white->sigma; */
       T_WHITE_FAT_HIGH = ana->white->mean + 3* ana->white->sigma;
       T_GRAY_WHITE_LOW = ana->gray->mean + ana->gray->right_sigma;
       T_GRAY_WHITE_HIGH = ana->white->mean - ana->white->left_sigma;
@@ -1920,7 +1927,7 @@ pour en maitriser mieux l'interface ds brainVISA: 20-5-2003, JFM
   float little_opening_size;
   int ix, iy, iz;
   int T_VOID_GRAY_LOW=0, T_VOID_GRAY_HIGH=0, T_WHITE_FAT_LOW=0, T_WHITE_FAT_HIGH=0;
-  int T_GRAY_WHITE=0, T_GRAY_WHITE_SECUREGRAY;
+  int T_GRAY_WHITE=0;
   VipOffsetStruct *vos;
   Vip_S16BIT *skin_ptr;
   Vip_S16BIT *mask_ptr;
@@ -1950,7 +1957,7 @@ pour en maitriser mieux l'interface ds brainVISA: 20-5-2003, JFM
 	  T_VOID_GRAY_HIGH = ana->gray->mean - 1.7*ana->gray->sigma;
 	}
       T_GRAY_WHITE = ana->gray->mean + (ana->white->mean - ana->gray->mean)/2;
-      T_GRAY_WHITE_SECUREGRAY = ana->gray->mean + 2*ana->gray->sigma;
+      /* T_GRAY_WHITE_SECUREGRAY = ana->gray->mean + 2*ana->gray->sigma; */
       T_WHITE_FAT_LOW = ana->white->mean + 4*ana->white->sigma;
       T_WHITE_FAT_HIGH = ana->white->mean + 6*ana->white->sigma;
     }
@@ -2796,14 +2803,12 @@ int T_gray_white
 )
 /*---------------------------------------------------------------------------*/
 {
+  (void)(T_white_fat_low);
+  (void)(T_gray_white);
   Volume *volcopy=NULL, *mask=NULL, *white=NULL, *classif=NULL;
   float erosion_size;
   float dilation_size;
   float threshold_dist;
-  int bidon; /*compilation warning*/
-  bidon = T_white_fat_low;
-  bidon = T_gray_white;
-  bidon = 0;
 
   volcopy = VipCopyVolume(vol,"volcopy");
 
@@ -2951,14 +2956,12 @@ int nb_iterations
 )
 /*---------------------------------------------------------------------------*/
 {
+  (void)(nb_iterations);
   Volume *brain=NULL, *mask=NULL, *white=NULL, *classif=NULL;
   float erosion_size;
   int dilation_size;
   int threshold_dist;
   int T_csf_gray, T_white_fat_low, T_gray_white;
-  int bidon; /*compilation warning*/
-  bidon = nb_iterations;
-  bidon = 0;
 
   if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
     {

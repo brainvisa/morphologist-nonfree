@@ -202,12 +202,12 @@ int main(int argc, char *argv[])
   char *his_output = NULL;
   char *tmphisto = NULL;
   char *systemcommand = NULL;
-  int readlib, writelib;
+  /*int readlib, writelib;*/
   int offset=0;
   int scalemax = 1000;
   int nbiter;
   float dscale = 0.5;
-  Vip1DScaleSpaceStruct *volstruct;
+  Vip1DScaleSpaceStruct *volstruct = NULL;
   int i;
   VipHisto *shorthisto, *histo_surface;
   Volume *vol=NULL;
@@ -240,18 +240,11 @@ int main(int argc, char *argv[])
   int undersampling_factor = 0;
   /**/
   int u=0;
-  int factor;
-  VipHisto *historesamp = NULL;
+  int factor = 0;
+  /*VipHisto *historesamp = NULL;*/
   int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
-  int j=0, k=0, l=0;
+  int j=0, l=0;
   float contrast = 0, ratio_GW = 0;
-  float ratio_SigG1=0, ratio_SigG2=0;
-  float moyenne_gray_mean = 0;
-  float moyenne_white_mean = 0;
-  float std_gray_mean = 0;
-  float std_white_mean = 0;
-  float ratio_min = 0;
-  FILE* fichier = NULL;
   /**/
   int variance_threshold = -1;
   int variance_pourcentage = -1;
@@ -267,8 +260,8 @@ int main(int argc, char *argv[])
   int random_seed = time(NULL);
   /*    char mask_name[256], temp_string[256];*/
 
-  readlib = ANY_FORMAT;
-  writelib = VIDA;
+  /*readlib = ANY_FORMAT;
+  writelib = VIDA;*/
 
   /*loop on command line arguments*/
 
@@ -529,7 +522,7 @@ int main(int argc, char *argv[])
     else if (!strncmp (argv[i], "-readformat", 2))
     {
       if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-      if(argv[i][0]=='t') readlib = TIVOLI;
+      /*if(argv[i][0]=='t') readlib = TIVOLI;
       else if(argv[i][0]=='a') readlib = ANY_FORMAT;
       else if(argv[i][0]=='v') readlib = VIDA;
       else if(argv[i][0]=='s') readlib = SPM;
@@ -538,7 +531,7 @@ int main(int argc, char *argv[])
         VipPrintfError("This format is not implemented for reading");
         VipPrintfExit("(commandline)VipHistoAnalysis");
         return(VIP_CL_ERROR);
-      }
+      }*/
     }
     else if (!strncmp(argv[i], "-help",2)) return(Help());
     else return(Usage());
@@ -850,7 +843,7 @@ int main(int argc, char *argv[])
 
   if(mode=='i')
   {
-    historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);
+    /*historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);*/
     if(factor==0 && undersampling_factor==1) u = 1;
     else if (factor==1 && undersampling_factor==2) u = undersampling_factor/2;
     else

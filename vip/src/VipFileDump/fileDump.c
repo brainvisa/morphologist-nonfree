@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
   size = fileStat.st_size;
   /* ## does not support large files! */
   fileptr = (unsigned char *)calloc((size_t)size, sizeof(unsigned char));
-  if ( fread((void *)fileptr, sizeof(unsigned char), (size_t)size, theFile) != size )
+  if ( fread((void *)fileptr, sizeof(unsigned char), (size_t)size, theFile) != (size_t)size )
   {
     printf("Error reading file...\n");
     fclose(theFile);

@@ -367,7 +367,7 @@ VipT1HistoAnalysis *VipAnalyseCascadesRidge(SSCascade *clist, Vip1DScaleSpaceStr
   float dist, distmin;
   int scale;
   int i;
-  int contrast;
+  /*int contrast;*/
 
   if(!clist || !volstruct )
     {
@@ -434,7 +434,7 @@ VipT1HistoAnalysis *VipAnalyseCascadesRidge(SSCascade *clist, Vip1DScaleSpaceStr
   if(VipComputeAnalysedLoc( ana->white, scale+1 )==PB) return(PB);
   if(VipComputeAnalysedLoc( ana->gray, scale+1 )==PB) return(PB);
   PutUndersamplingRatio(ana,volstruct->undersampling_ratio);
-  contrast = ana->white->mean - ana->gray->mean;
+  /*contrast = ana->white->mean - ana->gray->mean;*/
   
   if(ana->white)
     {
@@ -461,7 +461,7 @@ VipT1HistoAnalysis *VipAnalyseCascades(SSCascade *clist, Vip1DScaleSpaceStruct *
   float r1, r2;
   VipT1HistoAnalysis *ana;
   int SPGRana;
-  int maxvolume = 0;
+  /*int maxvolume = 0;*/
 
   if(!clist || !volstruct)
     {
@@ -541,7 +541,7 @@ VipT1HistoAnalysis *VipAnalyseCascades(SSCascade *clist, Vip1DScaleSpaceStruct *
       return(PB);
     }
     
-  if( (c1->volume < c2->volume))
+  /*if( (c1->volume < c2->volume))
     {
       if( c2->volume < c3->volume )
 	{
@@ -560,7 +560,7 @@ VipT1HistoAnalysis *VipAnalyseCascades(SSCascade *clist, Vip1DScaleSpaceStruct *
       else
 	{
 	  maxvolume = c1->volume;
-	}
+	}*/
   
   printf("Main event scales: %d %d %d\n", c1->scale_event, c2->scale_event, c3->scale_event);
   printf("Main cascade volumes: %d %d %d\n", c1->volume, c2->volume, c3->volume);
@@ -920,12 +920,11 @@ SSCascade *clist, Vip1DScaleSpaceStruct *volstruct)
 {
   SSSingularity *slist;
   SSCascade *cascade[6], *ccsf, *cwhite;
-  int ncascade;
   int i;
   SSObject *temp;
   int left = 0;
   int missing_cascade5 = VFALSE;
-  int contrastGB;
+  /*int contrastGB;*/
   int sizewhite=0;
 
   if(!clist || !ana || !volstruct )
@@ -936,7 +935,6 @@ SSCascade *clist, Vip1DScaleSpaceStruct *volstruct)
     }
   
   slist = NULL;
-  ncascade = 0;
   
   for(i=0;i<6;i++) cascade[i]=NULL;
 
@@ -1098,9 +1096,9 @@ SSCascade *clist, Vip1DScaleSpaceStruct *volstruct)
       cwhite = cascade[4];
     }
 
-  if (cwhite!=NULL)
+  /*if (cwhite!=NULL)
     contrastGB = cwhite->D2ms->loc[0]-cascade[3]->D2ms->loc[0];
-  else contrastGB=10;
+  else contrastGB=10;*/
 
   if(cascade[0]!=NULL && cascade[0]->volume<100)
     {
@@ -1604,7 +1602,7 @@ SSCascade *clist, Vip1DScaleSpaceStruct *volstruct)
 /*---------------------------------------------------------------------------*/
 {
   SSSingularity *slist, *walker;
-  SSCascade *cwalker, *temp;
+  SSCascade *cwalker/*, *temp*/;
   int ncascade;
   int loc1, loc2; /*marseille PB*/
   int vol1, vol2;
@@ -1647,7 +1645,7 @@ SSCascade *clist, Vip1DScaleSpaceStruct *volstruct)
 	 && (cwalker->next->next->D2ms->loc[0])>loc2) /*additional check for noise mode*/
 	{
 	  printf("1\n");
-	  temp = cwalker->next;
+	  /*temp = cwalker->next;*/
 	  cwalker->next = cwalker->next->next;
 	  /*cwalker->next->next = temp;*/
 	  /*	  printf("Additional background mode test: %d/%d\n",loc1,loc2);
@@ -2300,12 +2298,13 @@ int VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float 
 int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios[5][5], int j)
 /*---------------------------------------------------------------------------*/
 {
+    (void)(ratio);
     float moyenne_gray_mean=0, moyenne_white_mean=0;
     float std_gray_mean=0, std_white_mean=0;
     float ratio_SigG1=0, ratio_SigG2=0;
     int i, l;
     int k = 0;
-    int ratio_min, best_ratio;
+    int ratio_min, best_ratio = 0;
     
     if(j==0) return(PB);
     

@@ -77,7 +77,7 @@ static int GetCutAlongTheLineBucket(
   char mode);
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
-static int VipGetNonZeroMaxZCoord( Volume *vol );
+/*static int VipGetNonZeroMaxZCoord( Volume *vol );*/
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 static int Usage();
@@ -1255,20 +1255,18 @@ static int GetCutAlongTheLineBucket(
   char mode)
 /*---------------------------------------------------------------------------*/
 {
+  (void)(template);
   Vip_S16BIT *ptr;
   int x,y,z;
   float input_point[3], output_point[3];
   int ox, oy, oz;
   VipOffsetStruct *vos;
-  Volume *bidon;
 
   if(!vol || ! tal || !buck)
     {
       VipPrintfError("Empty arg in GetCutAlongTheLineBucket");
       return(PB);
     }
-  bidon = template;
-  bidon = NULL;
   
   vos = VipGetOffsetStructure(vol);
   ptr = VipGetDataPtr_S16BIT(vol) + vos->oFirstPoint;
@@ -1497,12 +1495,12 @@ static int VipGetLabelsFromTemplate(
 
 
 /*---------------------------------------------------------------------------*/
-static int VipGetNonZeroMaxZCoord( Volume *vol )
+/*static int VipGetNonZeroMaxZCoord( Volume *vol )*/
 /*---------------------------------------------------------------------------*/
+#if 0
 {
     int iy, ix, iz;
     VipOffsetStruct *vos;
-    VipConnectivityStruct *vcs;
     Vip_S16BIT *ptr;
     
     if (VipVerifyAll(vol)==PB || VipTestType(vol,S16BIT)==PB)
@@ -1533,7 +1531,7 @@ static int VipGetNonZeroMaxZCoord( Volume *vol )
     }
     return(iz);
 }
-
+#endif
 
 /*---------------------------------------------------------------------------*/
 static int Usage()

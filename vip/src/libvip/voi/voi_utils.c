@@ -619,7 +619,8 @@ int   VipVoiComputeStat(
       mesCour        = VipVoiNextPtrMes( roi );
       offsetCour     = VipVoiNextPtrOffset( roi );
     }
-
+  mesCour = mesCour; // warning de compil...
+  paquetstatCour = paquetstatCour;
   roi->Etat |= VROI_STATED | VROI_RDY_FOREDIT | VROI_RDY_FORCORR;
   return(OK);
 }

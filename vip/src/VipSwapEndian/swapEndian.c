@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 		  VipPrintfError( "Cannot open file." );
 		  exit( EXIT_FAILURE );
 		}
-	      if ( fread( vol2, sizeof(int16_t), (size_t)lo, fic ) != lo )
+	      if ( fread( vol2, sizeof(int16_t), (size_t)lo, fic ) != (size_t)lo )
         {
           VipPrintfError( "Error reading file." );
           fclose( fic );
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 		  VipPrintfError( "Cannot open file." );
 		  exit( EXIT_FAILURE );
 		}
-	      if ( fread( vol4, sizeof(int32_t), (size_t)lo, fic ) != lo )
+	      if ( fread( vol4, sizeof(int32_t), (size_t)lo, fic ) != (size_t)lo )
         {
           VipPrintfError( "Error reading file." );
           fclose( fic );

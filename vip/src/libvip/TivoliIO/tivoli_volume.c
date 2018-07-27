@@ -4539,7 +4539,7 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptU8BIT, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptU8BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4561,7 +4561,7 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptS8BIT, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptS8BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4583,7 +4583,7 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptU16BIT, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptU16BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4607,7 +4607,7 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptS16BIT, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptS16BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4632,7 +4632,7 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptU32BIT, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptU32BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4668,7 +4668,7 @@ abort :
 		      }
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptS32BIT, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptS32BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4694,7 +4694,7 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptFLOAT, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptFLOAT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4718,7 +4718,7 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			if ( fread ( ptDOUBLE, bytesPerVoxel, nx, fileIma ) != nx )
+			if ( fread ( ptDOUBLE, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
 			{
 			  printfError( "reading  failure" );
 				goto abort;
@@ -4758,7 +4758,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptU8BIT, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptU8BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;
@@ -4781,7 +4781,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptS8BIT, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptS8BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;
@@ -4804,7 +4804,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptU16BIT, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptU16BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;
@@ -4827,7 +4827,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptS16BIT, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptS16BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;
@@ -4850,7 +4850,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptU32BIT, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptU32BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;
@@ -4873,7 +4873,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptS32BIT, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptS32BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;
@@ -4896,7 +4896,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptFLOAT, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptFLOAT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;
@@ -4919,7 +4919,7 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    if ( fread ( ptDOUBLE, bytesPerVoxel, dxroi, fileIma ) != dxroi )
+		    if ( fread ( ptDOUBLE, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
 				{
 				  printfError( "reading  failure" );
 					goto abort;

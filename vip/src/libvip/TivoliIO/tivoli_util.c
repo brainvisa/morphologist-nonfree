@@ -525,6 +525,7 @@ int getManicheanRep(
       else return(VFALSE);
     }
   }
+  return VFALSE;
 }
 
 

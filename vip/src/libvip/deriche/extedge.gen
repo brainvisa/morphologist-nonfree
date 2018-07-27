@@ -117,7 +117,7 @@ void VipExtedge_GENSTRING(
   VipOffsetStruct *vos;
   int ix, iy, iz;
   GENTYPE *ptrin, *ptrout, *ptr;
-  int oline, oslice, slicesize;
+  int oline, oslice;
   int offset;
   int xsize, ysize, zsize;
 
@@ -192,7 +192,6 @@ void VipExtedge_GENSTRING(
   if((mode==EXTEDGE3D_ALL) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_TOP) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
     {
 
-      slicesize = vos->oSlice;
       ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
       ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
       for( iy = ysize;iy--;)
@@ -319,7 +318,7 @@ void VipExtRayCorner_GENSTRING(
   VipOffsetStruct *vos;
   int ix, iy, iz;
   GENTYPE *ptrin, *ptrout, *ptr;
-  int oline, oslice, slicesize;
+  int oline, oslice;
   int offset;
   int xsize, ysize, zsize;
   int i;
@@ -409,7 +408,6 @@ for( iz = zsize;iz--;)
   if((mode==EXTEDGE3D_ALL) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_TOP) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
     {
 
-      slicesize = vos->oSlice;
       ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
       ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
       for( iy = ysize;iy--;)
@@ -551,7 +549,7 @@ void VipExtRay_GENSTRING(
   VipOffsetStruct *vos;
   int ix, iy, iz;
   GENTYPE *ptrin, *ptrout, *ptr;
-  int oline, oslice, slicesize;
+  int oline, oslice;
   int offset;
   int xsize, ysize, zsize;
   int i;
@@ -632,7 +630,6 @@ void VipExtRay_GENSTRING(
   if((mode==EXTEDGE3D_ALL) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_TOP) || (mode==EXTEDGE3D_ALL_EXCEPT_Z_BOTTOM))
     {
 
-      slicesize = vos->oSlice;
       ptrin = VipGetDataPtr_GENSTRING( vol ) + vos->oFirstPoint;
       ptrout = VipGetDataPtr_GENSTRING( newv ) + vos->oFirstPoint;
       for( iy = ysize;iy--;)

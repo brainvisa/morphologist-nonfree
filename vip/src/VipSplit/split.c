@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
   char *input = NULL;
   char output[VIP_NAME_MAXLEN] = "split";
   char outfile[128];
-  int readlib, writelib;
+  int readlib;
   int status;
   int flo=0;
 
@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
   int i, l;
 
   readlib = VIDA;
-  writelib = VIDA;
 
   /*loop on command line arguments*/
 

@@ -89,7 +89,7 @@ VipHisto *VipGetHistoSurface( VipHisto *hin, Volume *vol)
   float normalize;
   int ratio = 0,factor=0 ;
   RandomBox *rb;
-  int total, pourcentage;
+  int total/*, pourcentage*/;
   /*int i50;*/
   int **tab2D;
   int deriv[40000];
@@ -230,7 +230,7 @@ VipHisto *VipGetHistoSurface( VipHisto *hin, Volume *vol)
       hsurf->val[i] = deriv[i]+5000;
     }
   
-  pourcentage = hin->val[0];
+  /*pourcentage = hin->val[0];*/
   imax = 1;
   lemax = -100000;
   for(i=1;i<=hin->range_max-1;i++) 
@@ -427,7 +427,6 @@ VipHisto *VipGetEntropyForcedUndersampledHisto( VipHisto *hin, float entropy, in
 {
   VipHisto *hout;
   int i;
-  int newlength;
   int factor;
 
   if((!hin) || (!ratio))
@@ -436,7 +435,6 @@ VipHisto *VipGetEntropyForcedUndersampledHisto( VipHisto *hin, float entropy, in
       return(PB);
     }
 
-  newlength = hin->range_max - hin->range_min+1;
   for(factor=1;factor<14;factor++)
     {
       hout = VipCreateHisto(hin->range_min/factor,hin->range_max/factor+1);

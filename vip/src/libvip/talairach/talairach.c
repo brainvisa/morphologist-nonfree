@@ -261,7 +261,7 @@ void VipTalairachInverseTransformation(float *pt, VipTalairach *tal,
 void VipTalairachBox(Volume *vol, VipTalairach *tal)
 {
   float pt[3], res[3], minA[3], maxA[3], minS[3], maxS[3], minC[3], maxC[3];
-  float ptInter[3], pts[3], mA, mS, mC, ma, ms, mc, scale;
+  float ptInter[3], pts[3]/*, mA, mS, mC, ma, ms, mc,*/, scale;
   int xsize, ysize, zsize, i;
   long off_pbl, off_lbs, off_fp;
   Vip_S16BIT *imptr;
@@ -351,42 +351,42 @@ void VipTalairachBox(Volume *vol, VipTalairach *tal)
 
   /** Les points d'intersections obtenus sont en millimetres **/
   Vip3PlanesIntersection(tal, P_COR_1, P_SAG_0, P_AXI_1, ptInter);
-  ms = fabs(ptInter[0]);
+  /*ms = fabs(ptInter[0]);*/
   VipTalairachInverseTransformation(ptInter, tal, res);
   tal->MinSagittal.x = res[0]/tal->VoxelGeometry.x;
   tal->MinSagittal.y = res[1]/tal->VoxelGeometry.y;
   tal->MinSagittal.z = res[2]/tal->VoxelGeometry.x;
 
   Vip3PlanesIntersection(tal, P_COR_1, P_SAG_2, P_AXI_1, ptInter);
-  mS = fabs(ptInter[0]);
+  /*mS = fabs(ptInter[0]);*/
   VipTalairachInverseTransformation(ptInter, tal, res);
   tal->MaxSagittal.x = res[0]/tal->VoxelGeometry.x;
   tal->MaxSagittal.y = res[1]/tal->VoxelGeometry.y;
   tal->MaxSagittal.z = res[2]/tal->VoxelGeometry.x;
 
   Vip3PlanesIntersection(tal, P_COR_0, P_SAG_1, P_AXI_1, ptInter);
-  mc = fabs(ptInter[1]);
+  /*mc = fabs(ptInter[1]);*/
   VipTalairachInverseTransformation(ptInter, tal, res);
   tal->MinCoronal.x = res[0]/tal->VoxelGeometry.x;
   tal->MinCoronal.y = res[1]/tal->VoxelGeometry.y;
   tal->MinCoronal.z = res[2]/tal->VoxelGeometry.x;
 
   Vip3PlanesIntersection(tal, P_COR_3, P_SAG_1, P_AXI_1, ptInter);
-  mC = fabs(ptInter[1]);
+  /*mC = fabs(ptInter[1]);*/
   VipTalairachInverseTransformation(ptInter, tal, res);
   tal->MaxCoronal.x = res[0]/tal->VoxelGeometry.x;
   tal->MaxCoronal.y = res[1]/tal->VoxelGeometry.y;
   tal->MaxCoronal.z = res[2]/tal->VoxelGeometry.x;
 
   Vip3PlanesIntersection(tal, P_COR_1, P_SAG_1, P_AXI_0, ptInter);
-  ma = fabs(ptInter[2]);
+  /*ma = fabs(ptInter[2]);*/
   VipTalairachInverseTransformation(ptInter, tal, res);
   tal->MinAxial.x = res[0]/tal->VoxelGeometry.x;
   tal->MinAxial.y = res[1]/tal->VoxelGeometry.y;
   tal->MinAxial.z = res[2]/tal->VoxelGeometry.x;
 
   Vip3PlanesIntersection(tal, P_COR_1, P_SAG_1, P_AXI_2, ptInter);
-  mA = fabs(ptInter[2]);
+  /*mA = fabs(ptInter[2]);*/
   VipTalairachInverseTransformation(ptInter, tal, res);
   tal->MaxAxial.x = res[0]/tal->VoxelGeometry.x;
   tal->MaxAxial.y = res[1]/tal->VoxelGeometry.y;
@@ -765,11 +765,13 @@ int VipReadTalairachRefFile(char *filename, VipTalairach *tal)
     return(PB);
   }
   if (!strncmp(buf, "scale factors:", 14))
+  {
     if ( fscanf(theFile, "%f%f%f\n", &tal->Scale.x, &tal->Scale.y, &tal->Scale.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachRefFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach reference file corrupted (scale factors).");
@@ -810,13 +812,15 @@ int VipReadTalairachRefFile(char *filename, VipTalairach *tal)
     return(PB);
   }
   if (!strncmp(buf, "voxel geometry (mm)", 19))
+  {
     if ( fscanf(theFile, "%f%f%f\n", &tal->VoxelGeometry.x, &tal->VoxelGeometry.y,
 	              &tal->VoxelGeometry.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachRefFile : Corrupted file");
       return(PB);
     }
- else 
+  }
+  else 
     {
       VipPrintfError("Talairach reference file corrupted (voxel geometry).");
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachRefFile");
@@ -854,11 +858,13 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
     }
 
   if (!strcmp(buf, "CA"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->AC.x, &tal->AC.y, &tal->AC.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -872,11 +878,13 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "CP"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->PC.x, &tal->PC.y, &tal->PC.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -890,11 +898,13 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Pt_hemi"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->Hemi.x, &tal->Hemi.y, &tal->Hemi.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -908,12 +918,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Pt_cor_min"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->MinCoronal.x, &tal->MinCoronal.y, 
 	              &tal->MinCoronal.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -927,12 +939,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Pt_cor_max"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->MaxCoronal.x, &tal->MaxCoronal.y, 
 	              &tal->MaxCoronal.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -946,12 +960,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Pt_axi_min"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->MinAxial.x, &tal->MinAxial.y,
 	       &tal->MinAxial.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -965,12 +981,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Pt_axi_max"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->MaxAxial.x, &tal->MaxAxial.y,
 	              &tal->MaxAxial.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -984,12 +1002,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Pt_sag_min"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->MinSagittal.x, &tal->MinSagittal.y,
 	              &tal->MinSagittal.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -1003,12 +1023,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Pt_sag_max"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->MaxSagittal.x, &tal->MaxSagittal.y,
 	              &tal->MaxSagittal.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -1022,12 +1044,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Vec_hemi"))
+  {
     if ( fscanf(theFile, "%f%f%f",  &tal->Hemi_vector.x, &tal->Hemi_vector.y,
 	              &tal->Hemi_vector.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -1041,12 +1065,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Vec_CACP"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->ACPC_vector.x, &tal->ACPC_vector.y,
 	              &tal->ACPC_vector.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");
@@ -1060,12 +1086,14 @@ int VipReadTalairachTalFile(char *filename, VipTalairach *tal)
       return(PB);
     }
   if (!strcmp(buf, "Vec_autre"))
+  {
     if ( fscanf(theFile, "%f%f%f", &tal->Cross_vector.x, &tal->Cross_vector.y,
 	              &tal->Cross_vector.z) != 3 )
     {
       VipPrintfExit("(Vip_talairach.c)VipReadTalairachTalFile : Corrupted file");
       return(PB);
     }
+  }
   else 
     {
       VipPrintfError("Talairach information file corrupted.");

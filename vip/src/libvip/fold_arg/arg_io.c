@@ -1387,7 +1387,6 @@ int VipWriteGenericSSfile(
     SurfaceSimple *ssptr;
     Vip3DPoint_S16BIT *pptr;
     int i;
-    int count;
     char sep;
 
     sep = VipFileSeparator();
@@ -1413,7 +1412,6 @@ int VipWriteGenericSSfile(
     printf("Writing %s simple surfaces...\n",shortname);
 	
     ssptr = sslist->first_ss;
-    count = 1;
 
     fprintf(f,"*BEGIN NODE hull %d\n",10000); /*The generic library does not accept 0 index*/    
     fprintf(f,"name brain_hull\n");
