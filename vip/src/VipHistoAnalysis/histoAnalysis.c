@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
   /**/
   int u=0;
   int factor = 0;
-  /*VipHisto *historesamp = NULL;*/
+  VipHisto *historesamp = NULL;
   int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
   int j=0, l=0;
   float contrast = 0, ratio_GW = 0;
@@ -843,7 +843,8 @@ int main(int argc, char *argv[])
 
   if(mode=='i')
   {
-    /*historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);*/
+    historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &undersampling_factor, &factor, 0, 100);
+    historesamp = historesamp; /* compilation warning... */
     if(factor==0 && undersampling_factor==1) u = 1;
     else if (factor==1 && undersampling_factor==2) u = undersampling_factor/2;
     else
