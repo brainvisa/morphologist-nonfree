@@ -196,7 +196,7 @@ int VipWriteT1HistoAnalysis(VipT1HistoAnalysis *ana, char *name)
       VipPrintfExit("VipWriteT1HistoAnalysis");
       return(PB);
     }
-    filename = malloc( strlen(name) + 5 );
+    filename = VipMalloc( strlen(name) + 5, "VipWriteT1HistoAnalysis" );
     if( filename == NULL )
     {
       VipPrintfError("could not alloc memory for filename");
@@ -211,16 +211,16 @@ int VipWriteT1HistoAnalysis(VipT1HistoAnalysis *ana, char *name)
     f = fopen(filename,"w");
     if(f==PB)
     {
-      error = malloc( strlen( filename ) + 100 );
+      error = VipMalloc( strlen( filename ) + 100, "VipWriteT1HistoAnalysis" );
       sprintf(error,"Can not open file %s",filename);
       VipPrintfError(error);
       VipPrintfExit("VipWriteT1HistoAnalysis");
-      free( filename );
-      free( error );
+      VipFree( filename );
+      VipFree( error );
       return(PB);
     }
 
-    free( filename );
+    VipFree( filename );
 
     if (ana->sequence==MRI_T1_SPGR) fprintf(f,"sequence: standard T1-weighted SPGR\n");
     else if (ana->sequence==MRI_T1_IR) fprintf(f,"sequence: inversion recovery\n");
