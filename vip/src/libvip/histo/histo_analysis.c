@@ -180,35 +180,47 @@ int VipWriteT1HistoAnalysis(VipT1HistoAnalysis *ana, char *name)
 /*---------------------------------------------------------------------------*/
 {
     FILE *f;
-    char filename[256];
-    char error[300];
+    char *filename;
+    char *error;
     int i;
 
     if(ana==NULL)
-	{
-	    VipPrintfError("NULL analyse");
-	    VipPrintfExit("VipWriteT1HistoAnalysis");
-	    return(PB);
-	}
+    {
+      VipPrintfError("NULL analyse");
+      VipPrintfExit("VipWriteT1HistoAnalysis");
+      return(PB);
+    }
     if(name==NULL)
-	{
-	    VipPrintfError("NULL name");
-	    VipPrintfExit("VipWriteT1HistoAnalysis");
-	    return(PB);
-	}
-    strncpy(filename,name,245);
+    {
+      VipPrintfError("NULL name");
+      VipPrintfExit("VipWriteT1HistoAnalysis");
+      return(PB);
+    }
+    filename = malloc( strlen(name) + 5 );
+    if( filename == NULL )
+    {
+      VipPrintfError("could not alloc memory for filename");
+      VipPrintfExit("VipWriteT1HistoAnalysis");
+      return(PB);
+    }
+    strcpy(filename,name);
     if( strlen( filename ) < 4
         || strcmp( filename + strlen( filename ) - 4, ".han" ) != 0 )
     strcat(filename,".han");
 
     f = fopen(filename,"w");
     if(f==PB)
- 	{
-	    sprintf(error,"Can not open file %s",filename);
-	    VipPrintfError(error);
-	    VipPrintfExit("VipWriteT1HistoAnalysis");
-	    return(PB);
-	}
+    {
+      error = malloc( strlen( filename ) + 100 );
+      sprintf(error,"Can not open file %s",filename);
+      VipPrintfError(error);
+      VipPrintfExit("VipWriteT1HistoAnalysis");
+      free( filename );
+      free( error );
+      return(PB);
+    }
+
+    free( filename );
 
     if (ana->sequence==MRI_T1_SPGR) fprintf(f,"sequence: standard T1-weighted SPGR\n");
     else if (ana->sequence==MRI_T1_IR) fprintf(f,"sequence: inversion recovery\n");
