@@ -75,18 +75,26 @@ extern "C" {
 
 
 
-/*---------------------------------------------------------------------------*/
-extern VipT1HistoAnalysis *VipAnalyseCascadesRidge(SSCascade *clist, Vip1DScaleSpaceStruct *volstruct, float mean);
-/*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------*/
-extern VipHisto *VipGetHistoSurface( VipHisto *hin, Volume *vol);
-/*---------------------------------------------------------------*/
-/*---------------------------------------------------------------*/
-extern  VipHisto *VipGetForcedUndersampledHisto( VipHisto *hin, int *ratio );
+extern VipT1HistoAnalysis *VipAnalyseCascadesRidge(
+SSCascade *clist,
+Vip1DScaleSpaceStruct *volstruct,
+float mean);
 /*---------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
-  extern VipHisto *VipGetEntropyForcedUndersampledHisto( VipHisto *hin, float entropy, int *ratio );
+extern VipHisto *VipGetHistoSurface( VipHisto *hin, Volume *vol);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern  VipHisto *VipGetForcedUndersampledHisto(VipHisto *hin, int *ratio);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern VipHisto *VipGetEntropyForcedUndersampledHisto(
+VipHisto *hin,
+float entropy,
+int *ratio);
 /*---------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
@@ -94,86 +102,95 @@ extern int VipGetHistoEntropy(
 VipHisto *histo,
 float *entropo);
 /*---------------------------------------------------------------*/
+
 /*---------------------------------------------------------------*/
 extern int VipPourcentageLowerThanThreshold(Volume *vol, int lowthreshold, int pourcentage);
 /*---------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
-extern int VipCutRightFlatPartOfHisto( VipHisto *h, int cutvalue);
+extern int VipCutRightFlatPartOfHisto(VipHisto *h, int cutvalue);
 /*---------------------------------------------------------------*/
+
 /*---------------------------------------------------------------*/
 extern int VipTestHistoExists(char *name);
 /*---------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
-extern VipHisto *VipGetUndersampledHisto( VipHisto *hin, int *ratio );
+extern VipHisto *VipGetUndersampledHisto(VipHisto *hin, int *ratio);
 /*---------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
-extern VipHisto *VipGetPropUndersampledHisto( VipHisto *hin, int prop, int *ratio, int *power2, int threshold, int final_length );
-/*---------------------------------------------------------------*/
- 
-  /*---------------------------------------------------------------*/
-  extern VipHisto *VipGetCumulHisto( VipHisto *hin);
-  /*---------------------------------------------------------------*/
-
-  /*---------------------------------------------------------------*/
-  extern VipHisto *VipReadHisto(char *name);
-  /*---------------------------------------------------------------*/
-
-  /*---------------------------------------------------------------*/
-  extern int VipWriteHisto(VipHisto *histo, char *name, int mode);
-  /*---------------------------------------------------------------*/
-
-  /*---------------------------------------------------------------*/
-  extern VipHisto *VipGetLeftExtendedHisto( VipHisto *hin, int length );
-  /*---------------------------------------------------------------*/
-
- /*---------------------------------------------------------------*/
-  extern VipHisto *VipGetRightExtendedHisto( VipHisto *hin, int length );
-  /*---------------------------------------------------------------*/
-
-  /*---------------------------------------------------------------*/
-  extern VipHisto *VipCreateHisto(
-				  int minvalue,
-				  int maxvalue);
-  /*-------------------------------------------------------------*/
-  /*---------------------------------------------------------------*/
-  extern int VipFreeHisto(VipHisto *histo);
-  /*---------------------------------------------------------------*/
-
-  /*---------------------------------------------------------------*/
-  extern int VipSetHistoVal(
-			    VipHisto *histo,
-			    int greylevel,
-			    int value);
-  /*---------------------------------------------------------------*/
-
-  /*---------------------------------------------------------------*/
-  extern int VipGetHistoVal(
-			    VipHisto *histo,
-			    int greylevel,
-			    int *value);
-  /*---------------------------------------------------------------*/
-
-  /*---------------------------------------------------------------*/
-  extern int VipGetHistoMin(
-			    VipHisto *histo,
-			    int *min);
-  /*---------------------------------------------------------------*/
-
-/*---------------------------------------------------------------*/
-  extern int VipGetHistoMax(
-			    VipHisto *histo,
-			    int *max);
+extern VipHisto *VipGetPropUndersampledHisto(
+VipHisto *hin,
+int prop,
+int *ratio,
+int *power2,
+int threshold,
+int final_length);
 /*---------------------------------------------------------------*/
 
-  /*---------------------------------------------------------------*/
-  extern VipHisto *VipComputeVolumeHisto(Volume *vol);
-  /*---------------------------------------------------------------*/
+/*---------------------------------------------------------------*/
+extern VipHisto *VipGetCumulHisto(VipHisto *hin);
+/*---------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
-  extern VipHisto *VipComputeCleanedUpVolumeHisto(Volume *vol, Volume *discard);
+extern VipHisto *VipReadHisto(char *name);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern int VipWriteHisto(VipHisto *histo, char *name, int mode);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern VipHisto *VipGetLeftExtendedHisto(VipHisto *hin, int length);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern VipHisto *VipGetRightExtendedHisto(VipHisto *hin, int length);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern VipHisto *VipCreateHisto(
+int minvalue,
+int maxvalue);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern int VipFreeHisto(VipHisto *histo);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern int VipSetHistoVal(
+VipHisto *histo,
+int greylevel,
+int value);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern int VipGetHistoVal(
+VipHisto *histo,
+int greylevel,
+int *value);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern int VipGetHistoMin(
+VipHisto *histo,
+int *min);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern int VipGetHistoMax(
+VipHisto *histo,
+int *max);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern VipHisto *VipComputeVolumeHisto(Volume *vol);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern VipHisto *VipComputeCleanedUpVolumeHisto(Volume *vol, Volume *discard);
 /*---------------------------------------------------------------*/
 
 /*---------------------------------------------------------------*/
@@ -184,48 +201,64 @@ extern Volume *VipComputeMeanVolume(Volume *vol);
 extern Volume *VipComputeVarianceVolume(Volume *vol);
 /*---------------------------------------------------------------*/
 
-  /*---------------------------------------------------------------*/
-  extern VipHisto *VipCreateThreeGaussianSumHisto( 
-						   float m1,
-						   float s1,
-						   float h1,
-						   float m2,
-						   float s2,
-						   float h2,
-						   float m3,
-						   float s3,
-						   float h3
-						   );
-  /*---------------------------------------------------------------*/
+/*---------------------------------------------------------------*/
+extern VipHisto *VipCreateThreeGaussianSumHisto( 
+float m1,
+float s1,
+float h1,
+float m2,
+float s2,
+float h2,
+float m3,
+float s3,
+float h3);
+/*---------------------------------------------------------------*/
 
-  /*---------------------------------------------------------------*/
-  VipHisto *VipCreateForGaussianSumHisto( 
-					 float m1,
-					 float s1,
-					 float h1,
-					 float m2,
-					 float s2,
-					 float h2,
-					 float m3,
-					 float s3,
-					 float h3,
-					 float m4,
-					 float s4,
-					 float h4
-					 );
-  /*---------------------------------------------------------------*/
+/*---------------------------------------------------------------*/
+VipHisto *VipCreateForGaussianSumHisto( 
+float m1,
+float s1,
+float h1,
+float m2,
+float s2,
+float h2,
+float m3,
+float s3,
+float h3,
+float m4,
+float s4,
+float h4);
+/*---------------------------------------------------------------*/
 
-/*---------------------------------------------------------------------------*/
-extern int  VipComputeStatInRidgeVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
-/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------*/
+extern int  VipComputeStatInRidgeVolume(
+Volume *vol,
+Volume *thresholdedvol,
+float *mean,
+float *sigma,
+int robust);
+/*---------------------------------------------------------------*/
 
-/*---------------------------------------------------------------------------*/
-extern int VipComputeRobustStatInMaskVolume(Volume *vol, Volume *thresholdedvol, float *mean, float *sigma, int robust);
-/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------*/
+extern int VipComputeRobustStatInMaskVolume(
+Volume *vol,
+Volume *thresholdedvol,
+float *mean,
+float *sigma,
+int robust);
+/*---------------------------------------------------------------*/
 
-/*---------------------------------------------------------------------------*/
-extern int VipIterateToGetPropUndersampledRatio(VipHisto *histo, int *ratio, int ratios[5][5], int j);
-/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------*/
+extern int VipIterateToGetPropUndersampledRatio(
+VipHisto *histo,
+int *ratio,
+int ratios[5][5],
+int j);
+/*---------------------------------------------------------------*/
+
+/*---------------------------------------------------------------*/
+extern int VipGetOtsuThreshold(Volume *vol);
+/*---------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }

@@ -1415,3 +1415,58 @@ float *entropo)
   *entropo = (float)entropy / log(2.);
   return(OK);
 }
+
+
+/*---------------------------------------------------------------*/
+int VipGetOtsuThreshold(Volume *vol)
+/*---------------------------------------------------------------*/
+{
+    VipHisto *his;
+    int i;
+    double sum_intensity, sum_intensityB;
+    double mB, mF;
+    double varBetween, varMax;
+    int total_vox;
+    int wB, wF;
+    int th;
+    
+    // Histogram computation
+    his = VipComputeVolumeHisto(vol);
+    // Total number of voxels
+    total_vox = mVipVolSizeX(vol)*mVipVolSizeY(vol)*mVipVolSizeZ(vol);
+    
+    // Intensity sum
+    sum_intensity = 0.;
+    for(i=mVipHistoRangeMin(his);i<=mVipHistoRangeMax(his);i++)
+    {
+        sum_intensity += i*mVipHistoVal(his,i);
+    }
+    
+    sum_intensityB = 0.;
+    wB = 0;
+    wF = 0;
+    varMax = 0.;
+    for(i=mVipHistoRangeMin(his);i<=mVipHistoRangeMax(his);i++)
+    {
+        // Weight Background
+        wB += mVipHistoVal(his,i);
+        if(wB==0) continue;
+        // Weight Foreground
+        wF = total_vox - wB;
+        if(wF==0) break;
+        sum_intensityB += i*mVipHistoVal(his,i);
+        // Mean Background
+        mB = sum_intensityB/wB;
+        // Mean Foreground
+        mF = (sum_intensity - sum_intensityB)/wF;
+        // Inter_class variance
+        varBetween = (double)wB*(double)wF*(mB-mF)*(mB-mF);
+        if(varBetween>varMax)
+        {
+            varMax = varBetween;
+            th = i;
+        }
+    }
+    return(th);
+}
+
