@@ -204,7 +204,7 @@ VipHisto *VipGetHistoSurface( VipHisto *hin, Volume *vol)
       for(j=(i+1);j<=hin->range_max;j++) hsurf->val[i] += tab2D[i][j];
     }
  
-  free(tab2D);
+  VipFree(tab2D);
 
   normalize = mVipVolSizeX(noisy)*mVipVolSizeY(noisy)*mVipVolVoxSizeX(noisy)*mVipVolVoxSizeY(noisy)
     + mVipVolSizeX(noisy)*mVipVolSizeZ(noisy)*mVipVolVoxSizeX(noisy)*mVipVolVoxSizeZ(noisy) 
@@ -962,7 +962,7 @@ VipHisto *VipReadHisto(char *name)
 /*---------------------------------------------------------------*/
 {
   FILE *f;
-  char filename[512], error[512];
+  char *filename, *error;
   int i;
   int mode;
   int count;
@@ -975,37 +975,42 @@ VipHisto *VipReadHisto(char *name)
   int oldformat=VFALSE;
   
   if(name==NULL)
-    {
+  {
       VipPrintfError("NULL name in VipReadHisto!");
       VipPrintfExit("VipReadHisto");
       return(PB);
-    }
-  if(strlen(name)>256)
-    {
-      VipPrintfError("Strange histo name in VipReadHisto (length>256)!");
+  }
+  filename = VipMalloc( strlen(name) + 5, "VipReadHisto" );
+  if(filename == NULL)
+  {
+      VipPrintfError("could not alloc memory for filename");
       VipPrintfExit("VipReadHisto");
       return(PB);
-    }
-
+  }
   strcpy(filename,name);
   strcat(filename,".his");
   f = fopen(filename,"r");
   if(f==NULL)
-    {
+  {
       strcpy(filename,name);
       strcat(filename,".his_bin");
       f = fopen(filename,"r");
       if(f==NULL)
-	{
-	  sprintf(error,"Can not open file %s.his nor file %s.his_bin",name,name);
-	  VipPrintfError(error);
-	  VipPrintfExit("VipReadHisto");
-	  return(PB);
-	}
+      {
+          error = VipMalloc( strlen( filename ) + 100, "VipReadHisto" );
+          sprintf(error,"Can not open file %s.his nor file %s.his_bin",name,name);
+          VipPrintfError(error);
+          VipPrintfExit("VipReadHisto");
+          VipFree(filename);
+          VipFree(error);
+          return(PB);
+      }
       else mode = WRITE_HISTO_BINARY;
-    }
+  }
   else mode = WRITE_HISTO_ASCII;
-      
+  
+  VipFree(filename);
+  
   h = NULL;
   if(mode == WRITE_HISTO_ASCII)
     {
@@ -1080,70 +1085,78 @@ VipHisto *VipReadHisto(char *name)
 int VipTestHistoExists(char *name)
 /*---------------------------------------------------------------*/
 {
-  FILE *f;
-  char filename[512];
-  int mode;
-
-  if(name==NULL)
+    FILE *f;
+    char *filename;
+    int mode;
+    
+    if(name==NULL)
     {
-      VipPrintfError("NULL name in VipTestHistoExists!");
-      VipPrintfExit("VipTestHistoExists");
-      return(PB);
+        VipPrintfError("NULL name in VipTestHistoExists!");
+        VipPrintfExit("VipTestHistoExists");
+        return(PB);
     }
-  if(strlen(name)>256)
+    filename = VipMalloc( strlen(name) + 5, "VipTestHistoExists" );
+    if(filename == NULL)
     {
-      VipPrintfError("Strange histo name in VipTestHistoExists (length>256)!");
-      VipPrintfExit("VipTestHistoExists");
-      return(PB);
+        VipPrintfError("could not alloc memory for filename");
+        VipPrintfExit("VipTestHistoExists");
+        return(PB);
     }
-
-  strcpy(filename,name);
-  strcat(filename,".his");
-  f = fopen(filename,"r");
-  if(f==NULL)
+    strcpy(filename,name);
+    strcat(filename,".his");
+    f = fopen(filename,"r");
+    if(f==NULL)
     {
-      strcpy(filename,name);
-      strcat(filename,".his_bin");
-      f = fopen(filename,"r");
-      if(f==NULL)
-	{
-	  return(PB);
-	}
-      else mode = WRITE_HISTO_BINARY;
+        strcpy(filename,name);
+        strcat(filename,".his_bin");
+        f = fopen(filename,"r");
+        if(f==NULL)
+        {
+            return(PB);
+        }
+        else mode = WRITE_HISTO_BINARY;
     }
-  else mode = WRITE_HISTO_ASCII;
+    else mode = WRITE_HISTO_ASCII;
       
-  fclose(f);
-  return(mode);
-	  
+    fclose(f);
+    VipFree(filename);
+    return(mode);  
 }
+
 /*---------------------------------------------------------------*/
 int VipWriteHisto(VipHisto *histo, char *name, int mode)
 /*---------------------------------------------------------------*/
 {
   FILE *f;
-  char filename[512], error[512];
+  char *filename, *error;
   int i,j;
 
-  if(histo==NULL || name==NULL)
-    {
+  if(histo==NULL)
+  {
       VipPrintfError("NULL pointer in VipWriteHisto!");
       VipPrintfExit("VipWriteHisto");
       return(PB);
-    }
+  }
   if((mode!=WRITE_HISTO_ASCII)&&(mode!=WRITE_HISTO_BINARY))
-    {
-      VipPrintfError("Unkown mode in VipWriteHisto!");
+  {
+      VipPrintfError("Unknown mode in VipWriteHisto!");
       VipPrintfExit("VipWriteHisto");
       return(PB);
-    }
+  }
 
-  if(strlen(name)>256)
-    {
-      VipPrintfError("Strange histo name in VipWriteHisto (length>256)!");
+  if(name==NULL)
+  {
+      VipPrintfError("NULL name");
       VipPrintfExit("VipWriteHisto");
       return(PB);
-    }
+  }
+  filename = VipMalloc( strlen(name) + 5, "VipWriteHisto" );
+  if(filename == NULL)
+  {
+      VipPrintfError("could not alloc memory for filename");
+      VipPrintfExit("VipWriteHisto");
+      return(PB);
+  }
   strcpy(filename,name);
   if( strlen( filename ) >= 4
       && ( strcmp( filename + strlen( filename ) - 4, ".his" ) == 0
@@ -1151,14 +1164,18 @@ int VipWriteHisto(VipHisto *histo, char *name, int mode)
     filename[ strlen( filename ) - 4 ] = '\0';
   if(mode==WRITE_HISTO_ASCII) strcat(filename,".his");
   else strcat(filename,".his_bin");
+  
   f = fopen(filename,"w");
   if(f==NULL)
-    {
+  {
+      error = VipMalloc( strlen( filename ) + 100, "VipWriteHisto" );
       sprintf(error,"Can not open file %s",filename);
       VipPrintfError(error);
       VipPrintfExit("VipWriteHisto");
+      VipFree(filename);
+      VipFree(error);
       return(PB);
-    }
+  }
   if(mode==WRITE_HISTO_BINARY)
     {
       i = fwrite(histo->val+histo->range_min,sizeof(int),histo->range_max-histo->range_min+1,f);
@@ -1211,6 +1228,7 @@ int VipWriteHisto(VipHisto *histo, char *name, int mode)
       */
     }
   fclose(f);
+  VipFree(filename);
   return(OK);
 }
 

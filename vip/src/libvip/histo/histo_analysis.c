@@ -32,130 +32,145 @@ VipT1HistoAnalysis *VipReadT1HistoAnalysis(char *name)
 {
     VipT1HistoAnalysis *ana;
     FILE *f;
-    char filename[VIP_NAME_MAXLEN];
-    char error[2 * VIP_NAME_MAXLEN + 30];
+    char *filename;
+    char *error;
     char buf[256];
     int mean, sigma;
     int n_read;
 
     ana = VipCalloc(1,sizeof(VipT1HistoAnalysis),"VipAnalyseCascades");
     if(ana==PB)
-	{
-	    VipPrintfExit("VipReadT1HistoAnalysis");
-	    return(PB);
-	}
-
-    strncpy(filename,name,VIP_NAME_MAXLEN - 4);
+    {
+        VipPrintfExit("VipReadT1HistoAnalysis");
+        return(PB);
+    }
+    if(name==NULL)
+    {
+        VipPrintfError("NULL name");
+        VipPrintfExit("VipReadT1HistoAnalysis");
+        return(PB);
+    }
+    filename = VipMalloc( strlen(name) + 5, "VipReadT1HistoAnalysis" );
+    if(filename == NULL)
+    {
+        VipPrintfError("could not alloc memory for filename");
+        VipPrintfExit("VipReadT1HistoAnalysis");
+        return(PB);
+    }
+    strcpy(filename,name);
     if( strlen( filename ) < 4
         || strcmp( filename + strlen( filename ) - 4, ".han" ) != 0 )
       strcat(filename,".han");
 
     f = fopen(filename,"r");
     if(f==PB)
-	{
-	  strncpy(filename,name,VIP_NAME_MAXLEN - 4);
-	  strcat(filename,".ana");
+    {
+        strcpy(filename,name);
+        strcat(filename,".ana");
 
-	  f = fopen(filename,"r");
-
-	  if(f==PB)
-	    {
-	      sprintf(error,"Can not open file %s.han or %s.ana",name,name);
-	      VipPrintfError(error);
-	      VipPrintfExit("VipReadT1HistoAnalysis");
-	      return(PB);
-	    }
-	}
+        f = fopen(filename,"r");
+        if(f==PB)
+        {
+            error = VipMalloc( strlen( filename ) + 100, "VipReadT1HistoAnalysis" );
+            sprintf(error,"Can not open file %s.han or %s.ana",name,name);
+            VipPrintfError(error);
+            VipPrintfExit("VipReadT1HistoAnalysis");
+            VipFree(filename);
+            VipFree(error);
+            return(PB);
+        }
+    }
     fgets(buf, 255, f);
     if(strstr(buf,"SPGR")!=NULL)
-	ana->sequence = MRI_T1_SPGR;
+        ana->sequence = MRI_T1_SPGR;
     else if (strstr(buf,"inversion recovery")!=NULL)
-	ana->sequence = MRI_T1_IR;
+        ana->sequence = MRI_T1_IR;
     else if (strstr(buf,"unknown")!=NULL)
-	ana->sequence = MODE_RIDGE;
+        ana->sequence = MODE_RIDGE;
     else
-	{
-	    VipPrintfError("Unknown analyse format in file:");
-	    fprintf(stderr,"%s\n",filename);
-	    VipPrintfExit("VipReadT1HistoAnalysis");
-	    return(PB);
-	}
+    {
+        VipPrintfError("Unknown analyse format in file:");
+        fprintf(stderr,"%s\n",filename);
+        VipPrintfExit("VipReadT1HistoAnalysis");
+        return(PB);
+    }
     for(fgets(buf, 255, f);!feof(f);fgets(buf, 255, f))
-	{
-	    if(strstr(buf,"background")!=NULL)
-		{
-		    ana->background = VipAllocSSObject();
-		    if(ana->background==PB) return(PB);
-		    n_read = sscanf(buf,"%*s%*s%d",&mean);
-		    if(n_read != 1)
-			{
-			    sprintf(error,
-				    "Parsing error in 'background' line of file '%s', using mean = %d",
-				    filename, mean);
-			    VipPrintfWarning(error);
-			}
-		    ana->background->mean = mean;
-		}
-	    if(strstr(buf,"csf")!=NULL)
-		{
-		    ana->csf = VipAllocSSObject();
-		    if(ana->csf==PB) return(PB);
-		    n_read = sscanf(buf,"%*s%*s%d",&mean);
-		    if(n_read != 1)
-			{
-			    sprintf(error,
-				    "Parsing error in 'csf' line of file '%s', using mean = %d",
-				    filename, mean);
-			    VipPrintfWarning(error);
-			}
-		    ana->csf->mean = mean;
-		}
-	    if(strstr(buf,"gray")!=NULL)
-		{
-		    ana->gray = VipAllocSSObject();
-		    if(ana->gray==PB) return(PB);
-		    n_read = sscanf(buf,"%*s%*s%d%*s%d",&mean,&sigma);
-		    if(n_read != 2)
-			{
-			    sprintf(error,
-				    "Parsing error in 'gray' line of file '%s', using mean = %d, sigma = %d",
-				    filename, mean, sigma);
-			    VipPrintfWarning(error);
-			}
-		    ana->gray->mean = mean;
-		    ana->gray->sigma = sigma;
-		}
-	    if(strstr(buf,"white")!=NULL)
-		{
-		    ana->white = VipAllocSSObject();
-		    if(ana->white==PB) return(PB);
-		    n_read = sscanf(buf,"%*s%*s%d%*s%d",&mean,&sigma);
-		    if(n_read != 2)
-			{
-			    sprintf(error,
-				    "Parsing error in 'white' line of file '%s', using mean = %d, sigma = %d",
-				    filename, mean, sigma);
-			    VipPrintfWarning(error);
-			}
-		    ana->white->mean = mean;
-		    ana->white->sigma = sigma;
-		}
-	    if(strstr(buf,"brain")!=NULL)
-		{
-		    ana->brain = VipAllocSSObject();
-		    if(ana->brain==PB) return(PB);
-		    n_read = sscanf(buf,"%*s%*s%d%*s%d",&mean,&sigma);
-		    if(n_read != 2)
-			{
-			    sprintf(error,
-				    "Parsing error in 'brain' line of file '%s', using mean = %d, sigma = %d",
-				    filename, mean, sigma);
-			    VipPrintfWarning(error);
-			}
-		    ana->brain->mean = mean;
-		    ana->brain->sigma = sigma;
-		}
-	}
+    {
+        if(strstr(buf,"background")!=NULL)
+        {
+            ana->background = VipAllocSSObject();
+            if(ana->background==PB) return(PB);
+            n_read = sscanf(buf,"%*s%*s%d",&mean);
+            if(n_read != 1)
+            {
+                sprintf(error,
+                        "Parsing error in 'background' line of file '%s', using mean = %d",
+                        filename, mean);
+                VipPrintfWarning(error);
+            }
+            ana->background->mean = mean;
+        }
+        if(strstr(buf,"csf")!=NULL)
+        {
+            ana->csf = VipAllocSSObject();
+            if(ana->csf==PB) return(PB);
+            n_read = sscanf(buf,"%*s%*s%d",&mean);
+            if(n_read != 1)
+            {
+                sprintf(error,
+                        "Parsing error in 'csf' line of file '%s', using mean = %d",
+                        filename, mean);
+                VipPrintfWarning(error);
+            }
+            ana->csf->mean = mean;
+        }
+        if(strstr(buf,"gray")!=NULL)
+        {
+            ana->gray = VipAllocSSObject();
+            if(ana->gray==PB) return(PB);
+            n_read = sscanf(buf,"%*s%*s%d%*s%d",&mean,&sigma);
+            if(n_read != 2)
+            {
+                sprintf(error,
+                        "Parsing error in 'gray' line of file '%s', using mean = %d, sigma = %d",
+                        filename, mean, sigma);
+                VipPrintfWarning(error);
+            }
+            ana->gray->mean = mean;
+            ana->gray->sigma = sigma;
+        }
+        if(strstr(buf,"white")!=NULL)
+        {
+            ana->white = VipAllocSSObject();
+            if(ana->white==PB) return(PB);
+            n_read = sscanf(buf,"%*s%*s%d%*s%d",&mean,&sigma);
+            if(n_read != 2)
+            {
+                sprintf(error,
+                        "Parsing error in 'white' line of file '%s', using mean = %d, sigma = %d",
+                        filename, mean, sigma);
+                VipPrintfWarning(error);
+            }
+            ana->white->mean = mean;
+            ana->white->sigma = sigma;
+        }
+        if(strstr(buf,"brain")!=NULL)
+        {
+            ana->brain = VipAllocSSObject();
+            if(ana->brain==PB) return(PB);
+            n_read = sscanf(buf,"%*s%*s%d%*s%d",&mean,&sigma);
+            if(n_read != 2)
+            {
+                sprintf(error,
+                        "Parsing error in 'brain' line of file '%s', using mean = %d, sigma = %d",
+                        filename, mean, sigma);
+                VipPrintfWarning(error);
+            }
+            ana->brain->mean = mean;
+            ana->brain->sigma = sigma;
+        }
+    }
+    VipFree(filename);
     return(ana);
 
 }

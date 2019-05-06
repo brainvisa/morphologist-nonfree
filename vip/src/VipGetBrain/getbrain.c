@@ -69,10 +69,10 @@ int main(int argc, char *argv[])
     int vthreshold = 14;
     VipT1HistoAnalysis *ana;
     char mode = 'S';
-    char brainname[1024];
+    char brainname[VIP_NAME_MAXLEN];
     int brainflag = VFALSE;
     char brainwrite = 'y';
-    char closedname[256];
+    char closedname[VIP_NAME_MAXLEN];
     int closedflag = VFALSE;
     int gmean = -123;
     int gsigma = -123;
@@ -86,14 +86,14 @@ int main(int argc, char *argv[])
     char fillwhite = 'y';
     float closingsize = 10.;
     char stat = 'n';
-    char statfilename[1024];
-    char histofilename[256]="";
+    char statfilename[VIP_NAME_MAXLEN];
+    char histofilename[VIP_NAME_MAXLEN]="";
     FILE *statfile;
     int flag8bit = VFALSE; 
     int niterations = 1; 
     int Last = 3;
     int First = 1;
-    char pathoname[256]="";
+    char pathoname[VIP_NAME_MAXLEN]="";
     Volume *patho = NULL;
     char pathomode = 'e';
     int xCA=0, yCA=0, zCA=0; 
@@ -107,8 +107,8 @@ int main(int argc, char *argv[])
     char layeronly = 'n';
     /**/
     VipHisto *histo;
-    char histoname[1024];
-    char stripped_input[1024];
+    char histoname[VIP_NAME_MAXLEN];
+    char stripped_input[VIP_NAME_MAXLEN];
     char *root1, *root2;
     Volume *var = NULL;
     int Seuil_Gray_White = 0;
