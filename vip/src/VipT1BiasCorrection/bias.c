@@ -962,6 +962,7 @@ int main(int argc, char *argv[])
               tlow = 0.04*lemax;
             }
         }
+      if (writeedges==VTRUE) VipWriteVolume(edges, edgesname);
       thigh = 2*tlow;
       if(VipHysteresisThresholding(edges,connectivity,SAME_VOLUME,CONNEX_BINARY,tlow,thigh,HYSTE_NUMBER,1)==PB) return(VIP_CL_ERROR);
       VipInvertBinaryVolume(edges);
