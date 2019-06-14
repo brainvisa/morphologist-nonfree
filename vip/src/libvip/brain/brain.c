@@ -835,7 +835,7 @@ float P[3]
   /* Vip_S16BIT *vol_ptr, *edges_ptr, *var_ptr; */
   Vip_S16BIT *ptr/*, *voisin, *voisin26 */;
   int seuil = 0;
-  /* VipHisto *histo;
+  /* VipHisto *histo; */
   float ptPlanHemi[3];
   float d[3], pt = 0.;
   float mean=0;
