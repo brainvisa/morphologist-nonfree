@@ -58,45 +58,47 @@ char *filename)
 /*---------------------------------------------------------------------------*/
 
 {
-  char error[512];
-  FILE *f;
-  Vip_DOUBLE *ptr;
-  VipOffsetStruct *vos;
-  int ix, iy;
-  int xsize, ysize;
+    char *error;
+    FILE *f;
+    Vip_DOUBLE *ptr;
+    VipOffsetStruct *vos;
+    int ix, iy;
+    int xsize, ysize;
 
-  f = fopen(filename,"w");
-  if(!f)
+    f = fopen(filename,"w");
+    if(!f)
     {
-      sprintf(error,"Can not open %s for writing",filename);
-      VipPrintfError(error);
-      VipPrintfExit("VipConvertScaleSpaceToSplotFormat");
-      return(OK);
+        error = VipMalloc( strlen( filename ) + 100, "VipConvertScaleSpaceToSplotFormat" );
+        sprintf(error,"Can not open %s for writing",filename);
+        VipPrintfError(error);
+        VipPrintfExit("VipConvertScaleSpaceToSplotFormat");
+        VipFree(error);
+        return(PB);
     }
 
-  vos = VipGetOffsetStructure(vol);
+    vos = VipGetOffsetStructure(vol);
 
-  ptr = VipGetDataPtr_VDOUBLE(vol) + vos->oFirstPoint;
+    ptr = VipGetDataPtr_VDOUBLE(vol) + vos->oFirstPoint;
 
-  xsize = mVipVolSizeX(vol);
-  ysize = mVipVolSizeY(vol);
+    xsize = mVipVolSizeX(vol);
+    ysize = mVipVolSizeY(vol);
 
 
-  for ( iy = 0; iy < ysize; iy++ )             /* loop on lines */
+    for ( iy = 0; iy < ysize; iy++ )             /* loop on lines */
     {
-      for ( ix = 0; ix < xsize; ix++ )          /* loop on points */
-	{
-	  if((ix>=xmin)&&(ix<=xmax)&&(iy>=scalemin)&&(iy<=scalemax)&&(iy%10==0)&&(ix%2==0))
-	    fprintf(f,"%f\n",(float)*ptr);
-	  ptr++;
-	}
-      if((iy>=scalemin)&&(iy<=scalemax)&&(iy%10==0))   fprintf(f,"\n");
+        for ( ix = 0; ix < xsize; ix++ )          /* loop on points */
+        {
+            if((ix>=xmin)&&(ix<=xmax)&&(iy>=scalemin)&&(iy<=scalemax)&&(iy%10==0)&&(ix%2==0))
+                fprintf(f,"%f\n",(float)*ptr);
+            ptr++;
+        }
+        if((iy>=scalemin)&&(iy<=scalemax)&&(iy%10==0))   fprintf(f,"\n");
 
-      ptr += vos->oPointBetweenLine;  /*skip border points*/
+        ptr += vos->oPointBetweenLine;  /*skip border points*/
     }
 
-  fclose(f);
-  return(OK);
+    fclose(f);
+    return(OK);
 }
 /*---------------------------------------------------------------------------*/
 

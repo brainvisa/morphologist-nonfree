@@ -155,13 +155,13 @@ int main(int argc, char *argv[])
   int readlib, writelib;
   int compression = 0;
   int compressionset = VFALSE;
-  int tauto = VTRUE;
+  char tauto = 'c';
   float thbackground = 15;
   int thresholdlow = 15;
   int thresholdlowset = VFALSE;
   int thresholdhigh = 100000;
   int thresholdhighset = VFALSE;
-  /*float mult_factor = 10.;*/
+  int threshold_otsu;
   int nInc = 2;
   float Inc = 1.03;
   float Kentropy = 1.;
@@ -381,11 +381,12 @@ int main(int argc, char *argv[])
       else if (!strncmp (argv[i], "-tauto", 2)) 
         {
           if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-          if(argv[i][0]=='y') tauto = VTRUE;
-          else if(argv[i][0]=='n') tauto = VFALSE;
+          if(argv[i][0]=='c') tauto = 'c';
+          else if(argv[i][0]=='o') tauto = 'o';
+          else if(argv[i][0]=='n') tauto = 'n';
           else
             {
-              VipPrintfError("y/n choice!");
+              VipPrintfError("n/c/o choice!");
               VipPrintfExit("tauto: (commandline)VipBiasCorrection");
               return(VIP_CL_ERROR);
             }
@@ -654,36 +655,29 @@ int main(int argc, char *argv[])
   if (fieldtype==F2D_REGULARIZED_FIELD) printf("2D field regularization\n");
   if (fieldtype==F3D_REGULARIZED_FIELD) printf("3D field regularization\n");
   
-  /* PREPROCESSING: better estimation of histo
-     estimation of white matter crest line */
-  
-  /*decembre 04, Montreal, develop automatic definition
-    of threshold for tissues/background*/
-
+  /* Computing morpho math structural element size and
+     automatic definition of the last slice with brain information,
+     puting all the voxels intensities to zero after. */
+  vol = VipReadVolumeWithBorder(input,1);
   readlib = readlib; /* compilation warning... */
   
-  if(tauto==VTRUE)
+  if(mVipVolType(vol)==U8BIT)
   {
-      /*je plonge le volume ds un plus grand a cause des images normalisees,
-        a la SPM, avec la tete coupee. Il n'y a plus de contour sur les bords
-        et on chope trop de tissus avec extedge*/
-      vol = VipReadVolumeWithBorder(input,3);
-      
-      if(mVipVolType(vol)==U8BIT)
-      {
-          converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
-          if(converter==PB) return(VIP_CL_ERROR);
-          VipFreeVolume(vol);
-          vol = converter;
-      }
+      converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
+      if(converter==PB) return(VIP_CL_ERROR);
+      VipFreeVolume(vol);
+      vol = converter;
+  }
+  
+  little_opening_size = 0.1;
+  if(mVipVolVoxSizeX(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeX(vol)+0.1;
+  if(mVipVolVoxSizeY(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeY(vol)+0.1;
+  if(mVipVolVoxSizeZ(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(vol)+0.1;
+  printf("little_opening_size=%f\n", little_opening_size), fflush(stdout);
 
-      little_opening_size = 0.1;
-      if(mVipVolVoxSizeX(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeX(vol)+0.1;
-      if(mVipVolVoxSizeY(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeY(vol)+0.1;
-      if(mVipVolVoxSizeZ(vol)>little_opening_size) little_opening_size=mVipVolVoxSizeZ(vol)+0.1;
-      printf("little_opening_size=%f\n", little_opening_size), fflush(stdout);
-      
-      if(Last==3000 && point_filename!=NULL)
+  if(Last==3000)
+  {
+      if(point_filename!=NULL)
       {
           if(GetCommissureCoordinates(vol, point_filename, &tal,
                                       xCA, yCA, zCA, xCP, yCP, zCP,
@@ -699,16 +693,39 @@ int main(int argc, char *argv[])
           }
           else
           {
-              printf("Something went wrong during the reading of the commissure coordinates.\n");
+              printf("Something went wrong during the reading of the commissure coordinates, going further without deleting slices.\n");
               Last = 0;
           }
       }
       else
       {
-          printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
+          printf("Commissure Coordinates are necessary to delete automatically the last slides, going further without deleting slices.\n");
           Last = 0;
       }
-      printf("deleting last %d slices\n",Last);
+  }
+  VipFreeVolume(vol);
+  
+  /* PREPROCESSING: better estimation of histo
+     estimation of white matter crest line */
+  
+  /*decembre 04, Montreal, develop automatic definition
+    of threshold for tissues/background*/
+  if(tauto=='c')
+  {
+      /*je plonge le volume ds un plus grand a cause des images normalisees,
+        a la SPM, avec la tete coupee. Il n'y a plus de contour sur les bords
+        et on chope trop de tissus avec extedge*/
+      vol = VipReadVolumeWithBorder(input,3);
+      
+      if(mVipVolType(vol)==U8BIT)
+      {
+          converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
+          if(converter==PB) return(VIP_CL_ERROR);
+          flag8bit = VTRUE;
+          VipFreeVolume(vol);
+          vol = converter;
+      }
+//       printf("deleting last %d slices\n",Last);
       for(i=0; i<Last; i++)
           VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
       
@@ -843,9 +860,39 @@ int main(int argc, char *argv[])
       thresholdlowset=VTRUE;
       thresholdlow = (int)(mean+2.*sigma+0.5);
       printf("Global threshold background/tissue: %d\n", thresholdlow);
-      mask = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, thresholdlow, GREYLEVEL_RESULT);//GREATER_THAN ou GREATER_OR_EQUAL_TO ?
-      //Peut etre rajouter un filtre pour enlever des voxels de bruit se baladant ?
+      mask = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, thresholdlow, GREYLEVEL_RESULT);
     }
+  else if (tauto=='o')
+  {
+      /*-----Determination of the background mask-----*/
+      printf("Determination of the background mask...\n");
+      vol = VipReadVolumeWithBorder(input,1);
+      if(vol==NULL) return(VIP_CL_ERROR);
+      
+      if(mVipVolType(vol)==U8BIT)
+      {
+          converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
+          if(converter==PB) return(VIP_CL_ERROR);
+          flag8bit = VTRUE;
+          VipFreeVolume(vol);
+          vol = converter;
+      }
+//       printf("deleting last %d slices\n",Last);
+      for(i=0; i<Last; i++)
+          VipPutOneSliceTwoZero(vol, mVipVolSizeZ(vol)-i-1);
+      
+      threshold_otsu = VipGetOtsuThreshold(vol);
+      printf("Tissue/background Otsu threshold: %d\n", threshold_otsu);
+      thresholdedvol = VipCreateSingleThresholdedVolume(vol, GREATER_OR_EQUAL_TO, 0.9*threshold_otsu, BINARY_RESULT);
+      if (VipConnexVolumeFilter(thresholdedvol, CONNECTIVITY_26, -1, CONNEX_BINARY)==PB) return(PB);
+      VipCustomizedChamferClosing(thresholdedvol , 2.*little_opening_size, 3, 3, 3, VIP_USUAL_DISTMAP_MULTFACT, FRONT_PROPAGATION);
+      if (VipExtRay(thresholdedvol, EXTEDGE2D_ALL_EXCEPT_Y_TOP, SAME_VOLUME)==PB) return(VIP_CL_ERROR);
+      VipCustomizedChamferOpening(thresholdedvol , 2.*little_opening_size, 3, 3, 3, VIP_USUAL_DISTMAP_MULTFACT, FRONT_PROPAGATION);
+      
+      mask = VipCopyVolume(vol,"mask");
+      VipMerge(mask, thresholdedvol, VIP_MERGE_ONE_TO_ONE, 255, 0);
+      VipFreeVolume(thresholdedvol);
+  }
   
   if (variance_threshold!=-1 || variance_pourcentage!=-1)
     {
@@ -884,35 +931,6 @@ int main(int argc, char *argv[])
       VipFreeVolume(vol);
       vol = converter;
   }
-  
-  if(tauto==VFALSE)
-  {
-      if(Last==3000 && point_filename!=NULL)
-      {
-          if(GetCommissureCoordinates(vol, point_filename, &tal,
-                                      xCA, yCA, zCA, xCP, yCP, zCP,
-                                      xP, yP, zP, talset)!=PB)
-          {
-              coord = &tal;
-              xCA = (int)(coord->AC.x); yCA = (int)(coord->AC.y); zCA = (int)(coord->AC.z);
-              xCP = (int)(coord->PC.x); yCP = (int)(coord->PC.y); zCP = (int)(coord->PC.z);
-              xP = (int)(coord->Hemi.x); yP = (int)(coord->Hemi.y); zP = (int)(coord->Hemi.z);
-
-              Last = (int)(mVipVolSizeZ(vol) - ((2*zCP-zCA) + (75/mVipVolVoxSizeZ(vol))));
-              if(Last<0) Last = 0;
-          }
-          else
-          {
-              printf("Something went wrong during the reading of the commissure coordinates.\n");
-              Last = 0;
-          }
-      }
-      else
-      {
-          printf("Commissure Coordinates are necessary to delete automatically the last slides\n");
-          Last = 0;
-      }
-  }
   printf("Deleting last %d slices\n", Last);
   for(i=0; i<Last; i++) VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
   
@@ -941,6 +959,7 @@ int main(int argc, char *argv[])
               tlow = 0.04*lemax;
             }
         }
+      if (writeedges==VTRUE) VipWriteVolume(edges, edgesname);
       thigh = 2*tlow;
       if(VipHysteresisThresholding(edges,connectivity,SAME_VOLUME,CONNEX_BINARY,tlow,thigh,HYSTE_NUMBER,1)==PB) return(VIP_CL_ERROR);
       VipInvertBinaryVolume(edges);
@@ -1383,7 +1402,7 @@ static int Usage()
   (void)fprintf(stderr,"        [-Ko[ffset] {float  (default:0.5)}]\n");
   (void)fprintf(stderr,"        [-Kc[rest] {float  (default:20.)}]\n");
   (void)fprintf(stderr,"        [-c[ompression] {int [0,14]  (default:auto)}]\n");
-  (void)fprintf(stderr,"        [-t[auto] {char: y/n default:y}]\n");
+  (void)fprintf(stderr,"        [-t[auto] {char: n, c or o (default:c)}]\n");
   (void)fprintf(stderr,"        [-tl[ow] {int (default:3*2^compression)}]\n");
   (void)fprintf(stderr,"        [-th[igh] {int (default:not used)}]\n");
   (void)fprintf(stderr,"        [-e[dges] {char (default:not used, n/2/3)}]\n");
@@ -1456,7 +1475,11 @@ static int Help()
   (void)printf("Weight of the voxel in the white ridge volume\n");
   (void)printf("        [-c[ompression] {int [0,14]  (default:auto)}]\n");
   (void)printf("The number of bits which are discarted during the volume entropy computation (= /2^compression))\n");
-  (void)printf("        [-t[auto] {char: y/n default:n}]\n");
+  (void)printf("        [-t[auto] {char: n, c or o (default:c)}]\n");
+  (void)printf("Automatic estimation of the background intensity threshold\n");
+  (void)printf("n: no estimation, default threshold at 15\n");
+  (void)printf("c: 2004 version of the threshold estimation using the corners of the image\n");
+  (void)printf("o: 2019 version of the threshold estimation using the otsu threshold\n");
   (void)printf("        [-tl[ow] {int (default:3*2^compression)}]\n");
   (void)printf("        [-th[igh] {int (default:not used)}]\n");
   (void)printf("        [-e[dges] {int (default:not used, else n/2/3)}]\n");

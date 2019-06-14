@@ -836,7 +836,6 @@ float P[3]
   Vip_S16BIT *ptr/*, *voisin, *voisin26 */;
   int seuil = 0;
   /* VipHisto *histo;
-  char histoname[1024]; */
   float ptPlanHemi[3];
   float d[3], pt = 0.;
   float mean=0;

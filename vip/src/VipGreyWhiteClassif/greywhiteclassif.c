@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   float pt = 0.;
   VipTalairach tal, *coord=NULL;
   char *edgesname = NULL;
-  char pathoname[256]="";
+  char pathoname[VIP_NAME_MAXLEN]="";
   Volume *patho = NULL;
   char pathomode = 'e';
   int random_seed = time(NULL);

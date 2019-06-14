@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
   int borderwidth = 1;
   int readlib, writelib;
   int threshold = -1;
+  int threshmode = 0;
   int nguillotine = 3;
   int i;
   float closingsize = 4.;
@@ -100,12 +101,21 @@ int main(int argc, char *argv[])
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  closingsize = atof(argv[i]);
 	}
-      else if (!strncmp (argv[i], "-threshold", 2)) 
+      else if (!strncmp (argv[i], "-threshmode", 10))
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          if( strncmp( argv[i], "abs", 3 ) == 0 )
+            threshmode = 1;
+          else if( strncmp( argv[i], "grey", 4 ) == 0 )
+            threshmode = 2;
+          else  return(Usage());
+        }
+      else if (!strncmp (argv[i], "-threshold", 2))
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  threshold = atoi(argv[i]);
 	}
-      else if (!strncmp (argv[i], "-nguillotine", 2)) 
+      else if (!strncmp (argv[i], "-nguillotine", 2))
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  nguillotine = atoi(argv[i]);
@@ -137,6 +147,13 @@ int main(int argc, char *argv[])
       else return(Usage());
     }
 
+  if( threshmode != 0 && threshold == -1 )
+  {
+    printf( "threshold should be specified when threshmode is not the "
+            "default\n" );
+    return Usage();
+  }
+
   /*check that all required arguments have been given*/
 
   if (input==NULL)
@@ -166,7 +183,7 @@ int main(int argc, char *argv[])
 
   /*compute seed*/
 
-  if(threshold==-1)
+  if( threshold==-1 || threshmode == 2 )
     {
       if (histofilename!=NULL)
       {
@@ -197,8 +214,11 @@ int main(int argc, char *argv[])
 	   printf("Histogram analysis problem, sorry...\n");
 	   return(VIP_CL_ERROR);
 	 }
-       }
-      threshold = ana->gray->mean - 3*ana->gray->left_sigma;
+      }
+      if( threshmode == 0 )
+        threshold = ana->gray->mean - 3*ana->gray->left_sigma;
+      else
+        threshold = (int) ana->gray->mean * threshold / 100;
     
     }
   printf("Used threshold: %d\n", threshold);
@@ -304,12 +324,12 @@ static int Usage()
   (void)fprintf(stderr,"Usage: VipGetHead\n");
   (void)fprintf(stderr,"        -i[nput] {MRI image name}\n");
   (void)fprintf(stderr,"        [-h[orn]] {image to be removed}\n");
-  (void)fprintf(stderr,"        [-t[hreshold] {algo t: int (default : not used)}]\n");
+  (void)fprintf(stderr,"        [-t[hreshold] {int (default : not used)}]\n");
+  (void)fprintf(stderr,"        [-threshmode {abs (absolute), grey (\% of grey level peak), default: use grey peak - 3 sigma}]\n");
   (void)fprintf(stderr,"        [-o[utput] {image name (default:\"head\")}]\n");
   (void)fprintf(stderr,"        [-c[losing] {float (mm) closing size for f mode (default: 4)}]\n");
   (void)fprintf(stderr,"        [-n[guillotine] {int (default : 3)}]\n");
   (void)fprintf(stderr,"        [-hn[ame] {histo analysis, default:input )}]\n");
-  (void)printf("read when -a r is set, this file has the .han extension (VipHistoAnalysis)\n");
   (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-he[lp]\n");
