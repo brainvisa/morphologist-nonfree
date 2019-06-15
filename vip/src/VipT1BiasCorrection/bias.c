@@ -721,7 +721,6 @@ int main(int argc, char *argv[])
       {
           converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
           if(converter==PB) return(VIP_CL_ERROR);
-          flag8bit = VTRUE;
           VipFreeVolume(vol);
           vol = converter;
       }
@@ -873,7 +872,6 @@ int main(int argc, char *argv[])
       {
           converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
           if(converter==PB) return(VIP_CL_ERROR);
-          flag8bit = VTRUE;
           VipFreeVolume(vol);
           vol = converter;
       }
