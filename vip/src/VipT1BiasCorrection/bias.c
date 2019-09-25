@@ -1350,9 +1350,8 @@ int main(int argc, char *argv[])
       VipComputeUnbiasedVolume(fullresult,vol);
       
       VipFreeVolume(fullresult);
-      
-      if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
   }
+  if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
   /*
   compressed = VipComputeCompressedVolume( vol, compression);
   gradient = VipComputeCrestGrad(white_crest, compressed);
