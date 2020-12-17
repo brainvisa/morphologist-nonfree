@@ -23,7 +23,7 @@ int ReadInt ( int *res, FILE *stream) {
 
 
 int ReadDouble ( double *res, FILE *stream) {
-  char buf[50];
+  char buf[100];
   errno = 0;
   
   if (fgets (buf, 100, stream) == NULL) {return 1;}

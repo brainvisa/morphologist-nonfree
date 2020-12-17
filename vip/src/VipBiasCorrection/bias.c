@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(compressed);
   VIP_DEC_VOLUME(result);
   VIP_DEC_VOLUME(fullresult);    
-  int flag8bit = VFALSE;
   char *input = NULL;
   char fieldname[VIP_NAME_MAXLEN] = "field";
   int writefield = VTRUE;
@@ -95,7 +94,7 @@ int main(int argc, char *argv[])
   int readlib, writelib;
   int compression = 0;
   int compressionset = VFALSE;
-  int tauto = VFALSE;
+  /*int tauto = VFALSE;*/
   int thresholdlow = 15;
   int thresholdlowset = VFALSE;
   int thresholdhigh = 100000;
@@ -232,6 +231,7 @@ int main(int argc, char *argv[])
 	  thresholdhigh = atoi(argv[i]);
 	  thresholdhighset = VTRUE;
 	}
+  /*
       else if (!strncmp (argv[i], "-tauto", 2)) 
         {
           if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
               VipPrintfExit("tauto: (commandline)VipBiasCorrection");
               return(VIP_CL_ERROR);
             }
-        }
+        }*/
       else if (!strncmp (argv[i], "-vtariance", 3)) 
         {
           if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -356,6 +356,7 @@ int main(int argc, char *argv[])
       return(VIP_CL_ERROR);
     }
 
+  readlib = readlib; /* compilation warning... */
   vol = VipReadVolumeWithBorder(input,0);
 
   if(vol==NULL) return(VIP_CL_ERROR);
@@ -364,7 +365,6 @@ int main(int argc, char *argv[])
       {
 	  converter = VipTypeConversionToS16BIT(vol,RAW_TYPE_CONVERSION);
 	  if(converter==PB) return(VIP_CL_ERROR);
-	  flag8bit = VTRUE;
 	  VipFreeVolume(vol);
 	  vol = converter;
       }
@@ -501,6 +501,7 @@ int main(int argc, char *argv[])
 
   VipFreeVolume(fullresult);
 
+  writelib = writelib; /* compilation warning... */
   if(VipWriteVolume(vol,output)==PB) return(VIP_CL_ERROR);
 
   return(0);

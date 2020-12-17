@@ -56,32 +56,31 @@ int main(int argc, char *argv[])
     VIP_DEC_VOLUME(vol);
     VIP_DEC_VOLUME(mask);
     VIP_DEC_VOLUME(classif);
-    VIP_DEC_VOLUME(edges);
+    /*VIP_DEC_VOLUME(edges);*/
     VIP_DEC_VOLUME(hemi);
     VIP_DEC_VOLUME(white);
     VIP_DEC_VOLUME(csf);
-    VIP_DEC_VOLUME(outside);
+    /*VIP_DEC_VOLUME(outside);*/
     VIP_DEC_VOLUME(copy);
     VIP_DEC_VOLUME(copy2);
     VIP_DEC_VOLUME(copy3);
-    VIP_DEC_VOLUME(copy4);
-    VIP_DEC_VOLUME(variance);
-    VIP_DEC_VOLUME(deriche);
+    /*VIP_DEC_VOLUME(copy4);*/
+    /*VIP_DEC_VOLUME(variance);*/
+    /*VIP_DEC_VOLUME(deriche);*/
     VIP_DEC_VOLUME(vent_rh);
     VIP_DEC_VOLUME(vent_lh);
-    VIP_DEC_VOLUME(gaussian);
-    VIP_DEC_VOLUME(meancurv);
-    VIP_DEC_VOLUME(mc);
-    VIP_DEC_VOLUME(csfinwhite);
+    /*VIP_DEC_VOLUME(gaussian);*/
+    /*VIP_DEC_VOLUME(meancurv);*/
+    /*VIP_DEC_VOLUME(mc);*/
+    /*VIP_DEC_VOLUME(csfinwhite);*/
     char *input = NULL;
     char *maskname = NULL;
     char output[VIP_NAME_MAXLEN]="csf";
     VipT1HistoAnalysis *hana = NULL;
     char *hananame = NULL;
-    VipHisto *histo;
     char point_filename[VIP_NAME_MAXLEN]="";
     VipOffsetStruct *vos;
-    Vip_S16BIT *ptr, *ptr_var;
+    Vip_S16BIT *ptr/*, *ptr_var*/;
     int ix, iy, iz;
     int i;
     float little_opening_size;
@@ -309,7 +308,7 @@ int main(int argc, char *argv[])
     copy3 = VipCopyVolume(copy, "brain"); //TEST
     if (VipClosing(copy, CHAMFER_BALL_3D, 20.)==PB) return(PB);
     VipWriteVolume(copy, "brain_cl");
-    outside = VipCopyVolume(copy, "outside");
+    /*outside = VipCopyVolume(copy, "outside");*/
     if (VipExtRay(copy3, EXTEDGE2D_ALL_EXCEPT_Y_TOP, SAME_VOLUME)==PB) return(VIP_CL_ERROR); //TEST
     VipWriteVolume(copy3, "brain_ext"); //TEST
     VipFreeVolume(copy3); //TEST
@@ -387,7 +386,7 @@ int main(int argc, char *argv[])
     VipWriteVolume(copy3, "brain_cl_er");
     VipMaskVolume(copy2, copy3);
     VipWriteVolume(copy2, "extray");
-    csfinwhite = VipCopyVolume(copy2, "extray_white");
+    /*csfinwhite = VipCopyVolume(copy2, "extray_white");*/
     VipFreeVolume(copy);
     VipFreeVolume(copy3);
 //     copy3 = VipCopyVolume(copy2, "vent_av");
@@ -639,17 +638,6 @@ int main(int argc, char *argv[])
     printf("mean: %f, sigma: %f\n", mean, sigma), fflush(stdout);
     classif = VipCSFGrayWhiteFatClassificationRegularisationForRobustApproach(vol, hana, NO, 1, (int)(mean+sigma), (int)(mean+2*sigma), hana->white->mean+4*hana->white->sigma, hana->white->mean+10*hana->white->sigma, 0.5*hana->gray->mean + 0.5*hana->white->mean);
     VipWriteVolume(classif, "classif_ap");
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     /*writing of the outputs*/
     printf("-------------------------\n");

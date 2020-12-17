@@ -107,8 +107,11 @@ int VipMkdir( const char *dirname )
 void VipBasename( const char* orig, char* dest )
 /*-------------------------------------------------------------------------*/
 {
-  const char *root1, *root2;
+  const char *root1;
+#ifdef _WIN32
+  const char *root2;
   root2 = orig;
+#endif
   root1 = strrchr( orig, '/' );
 #ifdef _WIN32
   root2 = strrchr( orig, '\\' );
@@ -127,8 +130,11 @@ void VipBasename( const char* orig, char* dest )
 void VipDirname( const char* orig, char* dest )
 /*-------------------------------------------------------------------------*/
 {
-  const char *root1, *root2;
+  const char *root1;
+#ifdef _WIN32
+  const char *root2;
   root2 = orig;
+#endif
   root1 = strrchr( orig, '/' );
 #ifdef _WIN32
   root2 = strrchr( orig, '\\' );

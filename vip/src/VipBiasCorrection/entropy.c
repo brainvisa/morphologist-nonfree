@@ -427,11 +427,10 @@ Volume *init_field, float *delta_entropy, float RegulZTuning)
   float m2;
   double total_square, total_average;
   double new_total_square;
-  double total_squareG, total_averageG, init_diff_average=0. , new_diff_average=0.;
-  int diff_sign;
-  double new_total_squareG, new_total_averageG;
+  double total_squareG, total_averageG;
+  double new_total_averageG;
   double total_squareW, total_averageW;
-  double vW, vG, sW, sG, newsW, newsG; 
+  double vW, sW, newsW; 
   double new_total_squareW, new_total_averageW;
   double init_sd, init_sdG, init_sdW;
   float newfield;
@@ -444,7 +443,6 @@ Volume *init_field, float *delta_entropy, float RegulZTuning)
   VipConnectivityStruct *vcs=NULL;
   int icon;
   double diff;
-  int fieldsize;
   double T;
   int algo=ANNEALING;
   int compteur;
@@ -747,7 +745,6 @@ Volume *init_field, float *delta_entropy, float RegulZTuning)
   UpdateHistoFromField(vol,hcurrent,field,xundersampling,yundersampling,zundersampling);
 
   VipGetHistoEntropy(hcurrent,&entropy);
-  fieldsize = mVipVolSizeX(field)*mVipVolSizeY(field)*mVipVolSizeZ(field);
   Kentropy *= entropy_weight;
   U = Kentropy*entropy;
 
@@ -824,11 +821,8 @@ total_average denotes the average including field (with averaging) */
     }
   if (mode==GEOMETRY)
     {
-      init_diff_average = total_averageW - total_averageG;
       vW = total_squareW / (volsizeW-1);
-      vG = total_squareG / (volsizeG-1);
       sW = sqrt(vW);
-      sG = sqrt(vG);
       OG = sW*sW*0.01;
       OG *= Koffset;
       U += OG;
@@ -1010,8 +1004,6 @@ total_average denotes the average including field (with averaging) */
                             new_total_averageG = total_averageG + diff / volsizeG;
                             diff = diff*diff/volsizeG - 2*new_total_averageG*diff;
                             diff += (newfield*newfield - *field_ptr * *field_ptr) * *squareG_ptr;
-                            new_total_squareG = total_squareG + diff;
-                            newsG = sqrt(new_total_squareG/(volsizeG-1));
                             
                             diff =  (newfield - *field_ptr)* *averageW_ptr;
                             new_total_averageW  = total_averageW + diff / volsizeW;
@@ -1020,10 +1012,6 @@ total_average denotes the average including field (with averaging) */
                             new_total_squareW = total_squareW + diff;
                             newsW = sqrt(new_total_squareW/(volsizeW-1));
                             
-                            new_diff_average = new_total_averageW-new_total_averageG;
-                            if (new_diff_average>init_diff_average) diff_sign = -1;
-                            else diff_sign = 1;
-
                             deltaOG[i] = Koffset*newsW*newsW*0.01 - OG;
                             deltaU[i] += deltaOG[i];
                           }

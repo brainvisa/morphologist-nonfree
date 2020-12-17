@@ -3712,7 +3712,11 @@ disappear in the future.
                           filenameDim );
           goto abort;
         }
-	(void) fgets ( str, 1023, fileDim );	/*  read the first line  */
+	if ( !fgets ( str, 1023, fileDim ) )	/*  read the first line  */
+	{
+	  printfError( "reading  failure" );
+		goto abort;
+	}
 	c = str;
 	/* verify that first line consists: 0..9, spc and tab */
 	while ( *c != '\n' )
@@ -4446,20 +4450,36 @@ abort :
 
     else		/* other formats: xv, old IMA */
       {
-	fscanf ( fileIma, "%c%c\n%c", &charP, &char5, &charD );
+	if ( fscanf ( fileIma, "%c%c\n%c", &charP, &char5, &charD ) != 3 )
+	{
+	  printfError( "reading  failure" );
+		goto abort;
+	}
 	if ( charP == 'P' && char5 == '5' && charD == '#' )
 	  /* xv header for a 2D PBM(raw)-Greyscale image */
 	  {
 	    do
-	      fscanf ( fileIma, "%c", &charD );
+	      if ( fscanf ( fileIma, "%c", &charD ) != 1 )
+				{
+			    printfError( "reading  failure" );
+				  goto abort;
+			  }
 	    while ( charD != '\n' );			
-	    fscanf ( fileIma, "%d%d\n", &nx, &ny );
+	    if ( fscanf ( fileIma, "%d%d\n", &nx, &ny ) != 2 )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 	    supLevel = 0;
 	    charD = '0';
 	    do
 	      {
 		supLevel = supLevel * 10 + (int)(charD - '0');
-		fscanf ( fileIma, "%c", &charD );
+		if ( fscanf ( fileIma, "%c", &charD ) != 1 )
+		{
+		  printfError( "reading  failure" );
+			goto abort;
+		}
 	      }
 	    while ( charD != '\n' );
 	    nz = 1;
@@ -4519,7 +4539,11 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptU8BIT, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptU8BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			ptU8BIT += oL;
 		      }
 		    ptU8BIT += oLbS;
@@ -4537,7 +4561,11 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptS8BIT, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptS8BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			ptS8BIT += oL;
 		      }
 		    ptS8BIT += oLbS;
@@ -4555,7 +4583,11 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptU16BIT, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptU16BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			if(newVolume->shfj->byte_swapping_actif==VTRUE)
 			  VipByteSwapping_U16BIT( ptU16BIT, bytesPerVoxel, nx);
 			ptU16BIT += oL;
@@ -4575,7 +4607,11 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptS16BIT, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptS16BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			if(newVolume->shfj->byte_swapping_actif==VTRUE)
 			  VipByteSwapping_S16BIT( ptS16BIT, bytesPerVoxel, nx);
 			ptS16BIT += oL;
@@ -4596,7 +4632,11 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptU32BIT, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptU32BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			if(newVolume->shfj->byte_swapping_actif==VTRUE) 
 			  /*truande a cause de la suppression du 32BIT, j'espere que ca marche...*/
 			  VipByteSwapping_S32BIT( (Vip_S32BIT *)ptU32BIT, bytesPerVoxel, nx);
@@ -4628,7 +4668,11 @@ abort :
 		      }
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptS32BIT, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptS32BIT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			if(newVolume->shfj->byte_swapping_actif==VTRUE)
 			  VipByteSwapping_S32BIT( ptS32BIT, bytesPerVoxel, nx);
 			ptS32BIT += oL;
@@ -4650,7 +4694,11 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptFLOAT, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptFLOAT, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			if(newVolume->shfj->byte_swapping_actif==VTRUE)
 			  VipByteSwapping_VFLOAT( ptFLOAT, bytesPerVoxel, nx);
 			ptFLOAT += oL;
@@ -4670,7 +4718,11 @@ abort :
 		  {
 		    for ( iy = 0; iy < ny; iy++ )
 		      {
-			fread ( ptDOUBLE, bytesPerVoxel, nx, fileIma );
+			if ( fread ( ptDOUBLE, bytesPerVoxel, nx, fileIma ) != (size_t)nx )
+			{
+			  printfError( "reading  failure" );
+				goto abort;
+			}
 			if(newVolume->shfj->byte_swapping_actif==VTRUE)
 			  VipByteSwapping_VDOUBLE( ptDOUBLE, bytesPerVoxel, nx);
 			ptDOUBLE += oL;
@@ -4706,7 +4758,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptU8BIT, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptU8BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptU8BIT += oL;
 		  }
@@ -4725,7 +4781,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptS8BIT, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptS8BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptS8BIT += oL;
 		  }
@@ -4744,7 +4804,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptU16BIT, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptU16BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptU16BIT += oL;
 		  }
@@ -4763,7 +4827,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptS16BIT, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptS16BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptS16BIT += oL;
 		  }
@@ -4782,7 +4850,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptU32BIT, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptU32BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptU32BIT += oL;
 		  }
@@ -4801,7 +4873,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptS32BIT, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptS32BIT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptS32BIT += oL;
 		  }
@@ -4820,7 +4896,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptFLOAT, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptFLOAT, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptFLOAT += oL;
 		  }
@@ -4839,7 +4919,11 @@ abort :
 		for ( iy = 0; iy < dyroi; iy++ )
 		  {
 		    fseek( fileIma, roi.x1, SEEK_CUR );
-		    fread ( ptDOUBLE, bytesPerVoxel, dxroi, fileIma );
+		    if ( fread ( ptDOUBLE, bytesPerVoxel, dxroi, fileIma ) != (size_t)dxroi )
+				{
+				  printfError( "reading  failure" );
+					goto abort;
+				}
 		    fseek( fileIma, offset1, SEEK_CUR );
 		    ptDOUBLE += oL;
 		  }

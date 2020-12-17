@@ -129,11 +129,10 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(gradient);
   VIP_DEC_VOLUME(extrema);
   VIP_DEC_VOLUME(variance);
-  VIP_DEC_VOLUME(classif);
-  VIP_DEC_VOLUME(copyvol);
-  VIP_DEC_VOLUME(copyvol2);
-  VIP_DEC_VOLUME(bias);
-  int flag8bit = VFALSE;
+  /*VIP_DEC_VOLUME(classif);*/
+  /*VIP_DEC_VOLUME(copyvol);*/
+  /*VIP_DEC_VOLUME(copyvol2);*/
+  /*VIP_DEC_VOLUME(bias);*/
   char *input = NULL;
   char fieldname[VIP_NAME_MAXLEN] = "biasfield";
   int writefield = VFALSE;
@@ -163,7 +162,6 @@ int main(int argc, char *argv[])
   int thresholdhigh = 100000;
   int thresholdhighset = VFALSE;
   int threshold_otsu;
-  float mult_factor = 10.;
   int nInc = 2;
   float Inc = 1.03;
   float Kentropy = 1.;
@@ -201,17 +199,17 @@ int main(int argc, char *argv[])
   int talset = VFALSE;
   VipTalairach tal, *coord = NULL;
   int docorrection = VTRUE;
-  VipHisto *shorthisto, *historesamp = NULL;
-  Vip1DScaleSpaceStruct *volstruct;
-  SSSingularity *slist = NULL;
-  SSCascade *clist = NULL, *chigh;
-  VipT1HistoAnalysis *ana = 0;
-  int undersampling_factor = 0;
-  int factor;
-  int n, u;
-  int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};
-  int j = 0, k = 0, l = 0;
-  float contrast = 0, ratio_GW = 0;
+  /*VipHisto *shorthisto, *historesamp = NULL;*/
+  /*Vip1DScaleSpaceStruct *volstruct;*/
+  /*SSSingularity *slist = NULL;*/
+  /*SSCascade *clist = NULL, *chigh;*/
+  /*VipT1HistoAnalysis *ana = 0;*/
+  /*int undersampling_factor = 0;*/
+  /*int factor;*/
+  /*int n, u;*/
+  /* int undersampling_factor_possible[5][5] = {{0},{0},{0},{0},{0}};*/
+  /*int j = 0, k = 0, l = 0;*/
+  /* float contrast = 0, ratio_GW = 0;*/
   float little_opening_size;
   int random_seed = time(NULL);
 // extend cases T1/T2, human/macaca >
@@ -661,11 +659,11 @@ int main(int argc, char *argv[])
      automatic definition of the last slice with brain information,
      puting all the voxels intensities to zero after. */
   vol = VipReadVolumeWithBorder(input,1);
+  readlib = readlib; /* compilation warning... */
   if(mVipVolType(vol)==U8BIT)
   {
       converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
       if(converter==PB) return(VIP_CL_ERROR);
-      flag8bit = VTRUE;
       VipFreeVolume(vol);
       vol = converter;
   }
@@ -722,10 +720,10 @@ int main(int argc, char *argv[])
       {
           converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
           if(converter==PB) return(VIP_CL_ERROR);
-          flag8bit = VTRUE;
           VipFreeVolume(vol);
           vol = converter;
       }
+//       printf("deleting last %d slices\n",Last);
 //       printf("deleting last %d slices\n",Last);
       for(i=0; i<Last; i++)
           VipPutOneSliceTwoZero(vol,mVipVolSizeZ(vol)-i-1);
@@ -874,7 +872,6 @@ int main(int argc, char *argv[])
       {
           converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
           if(converter==PB) return(VIP_CL_ERROR);
-          flag8bit = VTRUE;
           VipFreeVolume(vol);
           vol = converter;
       }
@@ -893,6 +890,7 @@ int main(int argc, char *argv[])
       mask = VipCopyVolume(vol,"mask");
       VipMerge(mask, thresholdedvol, VIP_MERGE_ONE_TO_ONE, 255, 0);
       VipFreeVolume(thresholdedvol);
+      VipFreeVolume(thresholdedvol);
   }
   
   if (variance_threshold!=-1 || variance_pourcentage!=-1)
@@ -904,7 +902,6 @@ int main(int argc, char *argv[])
           {
               converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
               if(converter==PB) return(VIP_CL_ERROR);
-              flag8bit = VTRUE;
               VipFreeVolume(vol);
               vol = converter;
           }
@@ -930,7 +927,6 @@ int main(int argc, char *argv[])
   {
       converter = VipTypeConversionToS16BIT(vol, RAW_TYPE_CONVERSION);
       if(converter==PB) return(VIP_CL_ERROR);
-      flag8bit = VTRUE;
       VipFreeVolume(vol);
       vol = converter;
   }
@@ -1344,6 +1340,7 @@ int main(int argc, char *argv[])
 	  if(VipWriteVolume(fullresult,fieldname)==PB) return(VIP_CL_ERROR);
       }
 
+  writelib = writelib; /* compilation warning ... */
   if(docorrection==VTRUE)
   {
       printf("Correcting volume...\n");

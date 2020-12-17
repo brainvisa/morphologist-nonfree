@@ -78,7 +78,7 @@ static void			PreVipPrintfExitInFunction( char *fname);
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
-static void PreVipPrintfWarning (char *s);
+/* static void PreVipPrintfWarning (char *s); */
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
@@ -123,7 +123,7 @@ int filecat( const char ** infile,
              const char *  outfile_mode)
 {
     FILE *fs, *ft;
-    char * m;
+    const char * m;
     char ch;
     int i;
     
@@ -196,7 +196,6 @@ int main(int argc, char *argv[])
     char *bufferptr;
     int prototype_count;
     int body_count;
-    char command[BUFFER_MAXLENGTH];
 #ifdef _WIN32
     char dirinclude_name[BUFFER_MAXLENGTH]=".\\";
 #else
@@ -305,8 +304,13 @@ int main(int argc, char *argv[])
         temp_file[i] = NULL;
     }
 
-    for(fgets(buffer, BUFFER_MAXLENGTH, gen_file);!feof(gen_file);
-        fgets(buffer, BUFFER_MAXLENGTH, gen_file),count++)
+    if ( !fgets(buffer, BUFFER_MAXLENGTH, gen_file) )
+    {
+        sprintf(error,"File %s is corrupted\n",statich_filename);
+        PreVipPrintfExit(error);
+    }
+
+    for(;!feof(gen_file);count++)
     {
         if(*buffer=='#')
         {
@@ -366,7 +370,7 @@ int main(int argc, char *argv[])
                                 ++file_count;
                             }
                         }
-                        filecat( (char**)&files[0], file_count, externh_filename, NULL );
+                        filecat( (const char**)&files[0], file_count, externh_filename, NULL );
                     }
                     
                     if(((n_type_list==1)&&(extern_static_flag[0]==STATIC))||(n_type_list==2))
@@ -381,7 +385,7 @@ int main(int argc, char *argv[])
                                 ++file_count;
                             }
                         }
-                        filecat( (char**)&files[0], file_count, statich_filename, NULL );
+                        filecat( (const char**)&files[0], file_count, statich_filename, NULL );
                     }
                     if(n_type_list==1)
                     {
@@ -546,7 +550,7 @@ int main(int argc, char *argv[])
                         }
                         (void)fclose(c_file);
 
-                        filecat( (char**)&files[0], func_ntype, c_filename, NULL );
+                        filecat( (const char**)&files[0], func_ntype, c_filename, NULL );
                     
                         c_file = fopen(c_filename,"a");
                         if(debug_file==TRUE) printf("fopen %s a\n",c_filename);
@@ -1008,7 +1012,7 @@ int main(int argc, char *argv[])
                                     ++file_count;
                                 }
                             }
-                            filecat( (char**)&files[0], file_count, externh_filename, NULL );
+                            filecat( (const char**)&files[0], file_count, externh_filename, NULL );
                         }
 
                         if(((n_type_list==1)&&(extern_static_flag[0]==STATIC))||(n_type_list==2))
@@ -1023,7 +1027,7 @@ int main(int argc, char *argv[])
                                     ++file_count;
                                 }
                             }
-                            filecat( (char**)&files[0], file_count, statich_filename, NULL );
+                            filecat( (const char**)&files[0], file_count, statich_filename, NULL );
                         }
                         if(n_type_list==1)
                         {
@@ -1280,7 +1284,7 @@ int main(int argc, char *argv[])
 
                             }
                             (void)fclose(c_file);
-                            filecat( (char**)&files[0], func_ntype, c_filename, NULL );
+                            filecat( (const char**)&files[0], func_ntype, c_filename, NULL );
                             
                             c_file = fopen(c_filename,"a");
                             if(!c_file)
@@ -1328,6 +1332,12 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+        }
+
+        if ( !fgets(buffer, BUFFER_MAXLENGTH, gen_file) && !feof(gen_file) )
+        {
+          sprintf(error,"File %s is corrupted\n",statich_filename);
+          PreVipPrintfExit(error);
         }
     }
 
@@ -1501,9 +1511,9 @@ static void PreVipPrintfError ( char *s )
 }
 
 /*----------------------------------------------------------------------------*/
-static void PreVipPrintfWarning ( char *s )
+/* static void PreVipPrintfWarning ( char *s ) */
 /*----------------------------------------------------------------------------*/
-{
+/* {
   (void) fflush ( stdout );
   (void) fprintf ( stderr, "\n------------------------------" );
   (void) fprintf ( stderr, "\n! VIP Preprocessing Warning" );
@@ -1512,3 +1522,4 @@ static void PreVipPrintfWarning ( char *s )
   (void) fprintf( stderr, "\n------------------------------\n" );
   (void) fflush ( stderr );
 }
+*/

@@ -605,7 +605,7 @@ int VipComputeWatershedVoronoi(
 { 
   VipIntBucket *buck, *nextbuck;
   VipConnectivityStruct *vcs ;
-  int loop, count;
+  int count;
   Vip_S16BIT *vfirst, *lfirst, *lptr, *vptr, *voisin, *vvptr;
   int *available_level;
   int *buckptr;
@@ -693,7 +693,6 @@ int VipComputeWatershedVoronoi(
   vfirst = VipGetDataPtr_S16BIT(vol);
   lfirst = VipGetDataPtr_S16BIT(label);
 
-  loop=0;
   count = 1;
 
   waterlevel = VipGetVolumeMax(vol);

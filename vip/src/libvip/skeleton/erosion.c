@@ -70,7 +70,6 @@ int VipHomotopicErosionFromInsideSnake( Volume *vol, Volume *graylevel, int nb_i
   float deltaU;
   int icon;
   int totalcount;
-  int valeur;
 
   if (VipVerifyAll(vol)==PB)
     {
@@ -224,7 +223,6 @@ int VipHomotopicGeodesicErosionFromOutside( Volume *vol, int nb_iteration,
   int *buckptr;
   int i;
   int totalcount;
-  int valeur;
 
   if (VipVerifyAll(vol)==PB)
     {
@@ -331,11 +329,9 @@ int VipHomotopicErosionFromInside( Volume *vol, Volume *graylevel, int nb_iterat
   Topology26Neighborhood *topo26;
   VipConnectivityStruct *vcs6;
   int loop, count, totalcount;
-  Vip_S16BIT *first, *ptr, *gfirst, *gptr, *voisin;
+  Vip_S16BIT *first, *ptr, *gfirst, *gptr;
   int *buckptr;
   int i;
-  int icon;
-  int valeur;
 
   if (VipVerifyAll(vol)==PB)
     {
@@ -593,6 +589,7 @@ int VipFillNextFrontFromOldFrontForErosion(
   int inside)
 /*-------------------------------------------------------------------------*/
 {
+    (void)(inside);
     int *buckptr, *dirptr;
     Vip_S16BIT *ptr, *ptr_neighbor;
     int i, dir2;
@@ -662,10 +659,10 @@ VipHomotopicWellComposedErosionFromOutside (Volume * vol,
   VipIntBucket *buck, *nextbuck;
   VipConnectivityStruct *vcs6;
   VipOffsetStruct *vos;
-  unsigned int loop, count, count2, totalcount;
+  unsigned int count, count2, totalcount;
   Vip_S16BIT *first, *ptr;
   int *buckptr;
-  int i;
+  int i, loop;
   int ret = PB;
 
   if (VipVerifyAll (vol) == PB)

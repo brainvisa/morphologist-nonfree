@@ -437,7 +437,6 @@ Volume *VipComputeT1BiasFieldOneGrid(int mode, int dumb, Volume *vol, Volume *cr
   VipConnectivityStruct *vcs=NULL;
   int icon;
   double diff;
-  int fieldsize;
   double T;
   int algo=ANNEALING;
   int compteur;
@@ -736,7 +735,6 @@ Volume *VipComputeT1BiasFieldOneGrid(int mode, int dumb, Volume *vol, Volume *cr
   UpdateHistoFromField(vol,hcurrent,field,xundersampling,yundersampling,zundersampling);
 
   VipGetHistoEntropy(hcurrent,&entropy);
-  fieldsize = mVipVolSizeX(field)*mVipVolSizeY(field)*mVipVolSizeZ(field);
   Kentropy *= entropy_weight;
   U = Kentropy*entropy;
 

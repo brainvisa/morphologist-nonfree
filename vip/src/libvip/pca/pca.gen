@@ -166,12 +166,24 @@ Pca_GENSTRING *VipReadPCADataFile_GENSTRING(
   case VFLOAT:
     for (i=0; i<nb_tests; i++)
       for (j=0; j<nb_var; j++)
-        fscanf(file, "%f", (float *)&dataptr[i][j]);
+        if ( fscanf(file, "%f", (float *)&dataptr[i][j]) != 1 )
+        {
+          VipPrintfError("Error while reading item");
+          VipPrintfExit("(Vip_pca.c)VipReadPCADataFile");
+          fclose( file );
+          return((Pca_GENSTRING *)NULL);
+        }
     break;
   case VDOUBLE:
     for (i=0; i<nb_tests; i++)
       for (j=0; j<nb_var; j++)
-        fscanf(file, "%lf", (double *)&dataptr[i][j]);
+        if ( fscanf(file, "%lf", (double *)&dataptr[i][j]) != 1 )
+        {
+          VipPrintfError("Error while reading item");
+          VipPrintfExit("(Vip_pca.c)VipReadPCADataFile");
+          fclose( file );
+          return((Pca_GENSTRING *)NULL);
+        }
     break;
   }
 
@@ -505,7 +517,7 @@ void VipPrintStreamPCA_GENSTRING(
   matrixptr = VipGetMatrixPtr_GENSTRING(matrix);
 
   fprintf(stream, "\n");
-  fprintf(stream, text);
+  fprintf(stream, "%s", text);
   fprintf(stream, "\n");
   for (i=0; i<nx; i++)
     { 

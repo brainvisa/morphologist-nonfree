@@ -25,15 +25,13 @@
 
 Volume *VipSumFrame_VFLOAT(Volume *vol, int from , int to)
 {
+  (void)(from);
+  (void)(to);
   VipOffsetStruct              *vos, *vis;
   int                          ix, iy, iz, it;
   Vip_FLOAT                   *iptr;
   Vip_FLOAT                    *optr;
   VIP_DEC_VOLUME(           volout);
-  int bidon; /*compilation warning (mais ca doit etre un oubli, je prefere pas toucher*/
-  bidon = from;
-  bidon = to;
-  bidon = 0;
  
   volout = VipCreate3DVolume (
 			      mVipVolSizeX(vol),
@@ -86,16 +84,13 @@ Volume *VipSumFrame_VFLOAT(Volume *vol, int from , int to)
 
 Volume *VipSumFrame_S16BIT(Volume *vol, int from , int to)
 {
+  (void)(from);
+  (void)(to);
   VipOffsetStruct              *vos, *vis;
   int                          ix, iy, iz, it;
   Vip_S16BIT                   *iptr;
   Vip_FLOAT                    *optr;
   VIP_DEC_VOLUME(           volout);
-  int bidon; /*compilation warning (mais ca doit etre un oubli, je prefere pas toucher*/
-  bidon = from;
-  bidon = to;
-  bidon = 0;
-
  
   volout = VipCreate3DVolume (
 			      mVipVolSizeX(vol),

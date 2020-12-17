@@ -48,7 +48,9 @@
 
 
 /* local functions: declarations */ 
+#ifdef VIDA_LIB
 static char *imaFile(const char *filename);
+#endif
 /*static char *hdrFile(const char *filename);
 static char *infoFile(const char *filename);
 */
@@ -64,10 +66,10 @@ int VipGetVmdtype(const char*);
  *==========================*/
 
 
+#ifdef VIDA_LIB
 /*----------------------------------------------------------------------------*/
 static
 char *imaFile ( const char *filename )
-
 /*----------------------------------------------------------------------------*/
 /* Creates a filename ending on '.vimg' */
 {
@@ -105,7 +107,7 @@ char *imaFile ( const char *filename )
   return ( filenameIma );
   
 }
-
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*static
@@ -262,6 +264,7 @@ Volume *ReadVidaVolumeDim
    return ( vol );
 
 #else
+  (void)(filename);
   char message[VIP_NAME_MAXLEN];
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \
@@ -320,6 +323,7 @@ Volume *ReadVidaVolumeDim
      }
 
 #else
+  (void)(filename);
   char message[VIP_NAME_MAXLEN];
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \
@@ -490,9 +494,9 @@ abort:
    VipPrintfExit ( "(volume)VipReadVidaVolume" );
    return ( NULL );
 #else
+  (void)(filename);
+  (void)(borderWidth);
   char message[VIP_NAME_MAXLEN];
-
-
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \
           compatible (use #define VIDA_LIB)");
@@ -655,6 +659,8 @@ abort:
    return ( NULL );
 
 #else
+  (void)(filename);
+  (void)(borderWidth);
   char message[VIP_NAME_MAXLEN];
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \
@@ -816,6 +822,9 @@ abort:
    return ( NULL );
 
 #else
+  (void)(filename);
+  (void)(fr1);
+  (void)(fr2);
   char message[VIP_NAME_MAXLEN];
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \
@@ -968,6 +977,9 @@ abort:
    return ( NULL );
 
 #else
+  (void)(filename);
+  (void)(fr1);
+  (void)(fr2);
   char message[VIP_NAME_MAXLEN];
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \
@@ -1145,6 +1157,8 @@ abort:
    return(OK);
 
 #else
+  (void)(volume);
+  (void)(ima_name);
   char message[VIP_NAME_MAXLEN];
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \
@@ -1307,6 +1321,8 @@ abort:
    return(OK);
 
 #else
+  (void)(volume);
+  (void)(ima_name);
    char message[VIP_NAME_MAXLEN];
 
   sprintf(message,"Your Vip version has not been compiled to be Vida\n \

@@ -357,7 +357,7 @@ Vip1DScaleSpaceStruct *VipCompute1DScaleSpaceStructFromHisto(
 {
   Vip1DScaleSpaceStruct *monster;
   VipHisto *histo, *historesamp=NULL, *newhisto;
-  int resampflag = VFALSE;
+  /*int resampflag = VFALSE;*/
   int factor;
 
   if(shorthisto==NULL)
@@ -396,7 +396,7 @@ Vip1DScaleSpaceStruct *VipCompute1DScaleSpaceStructFromHisto(
 
   monster->undersampling_ratio=undersampling_factor;
 
-  resampflag = VTRUE;
+  /*resampflag = VTRUE;*/
   historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &(monster->undersampling_ratio), &factor, 0, 100);
   if (factor>=1) printf("Undersampling histogram... (factor %d )\n",monster->undersampling_ratio);
   if(historesamp==PB) return(PB);
@@ -527,20 +527,20 @@ Vip1DScaleSpaceStruct *VipCompute1DScaleSpaceStructUntilLastCascade(
 {
   Vip1DScaleSpaceStruct *monster;
   VipHisto *histo, *historesamp=NULL, *newhisto;
-  int resampflag = VFALSE;
-  int iter, itermaxestim, iterinc;
+  /*int resampflag = VFALSE;*/
+  int iter, itermaxestim;
   double *ss,*ssp1,*d1=NULL,*d2=NULL,*d3=NULL,*d4=NULL,*d5=NULL,*ssptr;
   int i;
   int dim;
-  Vip_S8BIT *e_ssptr, *e_d1ptr, *e_d2ptr, *e_d3ptr=NULL, *e_d4ptr=NULL;
-  int ne_ssp, ne_ssm, ne_d1p, ne_d1m, ne_d2p, ne_d2m, ne_d3p, ne_d3m, ne_d4p, ne_d4m;
+  Vip_S8BIT /* *e_ssptr,*/ *e_d1ptr, *e_d2ptr, *e_d3ptr=NULL, *e_d4ptr=NULL;
+  int /*ne_ssp, ne_ssm,*/ ne_d1p, ne_d1m, ne_d2p, ne_d2m, ne_d3p, ne_d3m, ne_d4p, ne_d4m;
   int rebours;
   int factor;
 
   /* to prevent warning linked to comments*/
   d3 = d4 = d5 = d1;
-  ne_ssm = ne_ssp = 0;
-  e_ssptr = NULL;
+  /*ne_ssm = ne_ssp = 0;*/
+  /*e_ssptr = NULL;*/
 
   if(shorthisto==NULL)
     {
@@ -572,7 +572,7 @@ Vip1DScaleSpaceStruct *VipCompute1DScaleSpaceStructUntilLastCascade(
 
   monster->undersampling_ratio = undersampling_factor;
 
-  resampflag = VTRUE;
+  /*resampflag = VTRUE;*/
   
   historesamp = VipGetPropUndersampledHisto(shorthisto, 95, &(monster->undersampling_ratio), &factor, 0, 100);
   if (factor>=1) printf("Undersampling histogram... (factor %d )\n",monster->undersampling_ratio);
@@ -635,7 +635,6 @@ Vip1DScaleSpaceStruct *VipCompute1DScaleSpaceStructUntilLastCascade(
   if(d5==PB) return(PB);
   */
   itermaxestim = 25000;
-  iterinc = 5000;
 
   /* in fact, we do not use 0-order extrema
   monster->ss_e = VipCreate3DVolume(dim,itermaxestim+1,1,1.,1.,1.,S8BIT,"ss_extrema",0);

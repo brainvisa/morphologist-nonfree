@@ -51,7 +51,7 @@ int VipWriteCylinder(float x1, float y1, float z1,
     int n,l;
     int npoints, cpoints;
     int ntriangles, ctriangles;
-    float clength, maxlength;
+    float clength;
     double norm;
 
     if(name==NULL)
@@ -86,7 +86,6 @@ int VipWriteCylinder(float x1, float y1, float z1,
     G.g3D.y = (y2-y1)/norm;
     G.g3D.z = (z2-z1)/norm;
 
-    maxlength = 2.;
     n = 20;
     l = 40;
     clength = norm;
@@ -146,7 +145,7 @@ int VipWriteHatCylinder(float x1, float y1, float z1,
     int n,l;
     int npoints, cpoints;
     int ntriangles, ctriangles;
-    float clength, maxlength;
+    float clength;
     double norm;
 
     if(name==NULL)
@@ -181,7 +180,6 @@ int VipWriteHatCylinder(float x1, float y1, float z1,
     G.g3D.y = (y2-y1)/norm;
     G.g3D.z = (z2-z1)/norm;
 
-    maxlength = 2.;
     n = 20;
     l = 40;
     clength = norm;

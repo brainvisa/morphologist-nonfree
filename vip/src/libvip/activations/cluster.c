@@ -286,7 +286,11 @@ int VipComputeLabelledClusterTmtkTriangulation( Volume *labeling, char *name)
 	    sprintf(command,"AimsMeshBrain -i \"%s\" -o " 
                     "\"%s.data/Tmtk/%s-tmt%d\"",
 		    tempimagename,name,name,index);
-	    system(command);
+	    if ( system(command) < 0 )
+		{
+	      VipPrintfExit("System command failure");
+          return(PB);
+		}
             sprintf( command, "%s.ima", tempimagename );
             VipUnlink( command );
             sprintf( command, "%s.dim", tempimagename );

@@ -244,7 +244,7 @@ int VipCopyFile( const char* src, const char* dst, int flags )
           if( flags & VipPreserve )
             {
               lstat( src, &s );
-              lchown( dst, s.st_uid, s.st_gid );
+              code = lchown( dst, s.st_uid, s.st_gid );
             }
 #endif
           return code;
@@ -284,7 +284,7 @@ int VipCopyFile( const char* src, const char* dst, int flags )
           fstat( fileno( fi ), &s );
           chmod( dst, s.st_mode );
 #ifndef _WIN32
-          chown( dst, s.st_uid, s.st_gid );
+          code = chown( dst, s.st_uid, s.st_gid );
 #endif
           tb.actime = s.st_atime;
           tb.modtime = s.st_mtime;
@@ -340,7 +340,7 @@ int VipCopyFileOrDir( const char* src, const char* dst, int flags )
             stat( src, &s );
             chmod( dst, s.st_mode );
 #ifndef _WIN32
-            chown( dst, s.st_uid, s.st_gid );
+            code = chown( dst, s.st_uid, s.st_gid );
 #endif
             tb.actime = s.st_atime;
             tb.modtime = s.st_mtime;

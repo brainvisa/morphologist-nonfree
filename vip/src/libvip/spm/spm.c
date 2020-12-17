@@ -40,9 +40,9 @@ Volume *ReadAnalyzeHeader(char *name, int borderWidth)
     short center[5]; /*centre selon SPM*/
     int typecode;
     int flag_byteswap;
-    int sz;
     int type;
 
+    memset( center, 0, 5 * sizeof( short ) );
     strcpy (header_name, name);
     header_name[495]='\0';
     strcat (header_name, ".hdr");
@@ -84,35 +84,27 @@ Volume *ReadAnalyzeHeader(char *name, int borderWidth)
       {
       case 2:
 	type = U8BIT;
-	sz = 8;
 	break;
       case 4:
 	type = S16BIT;
-	sz = 16;
 	break;
       case 8:
 	type = S32BIT;
-	sz = 32;
 	break;
       case 16:
 	type = VFLOAT;
-	sz = 32;
 	break;
       case 64:
 	type = VDOUBLE;
-	sz = 64;
 	break;
       case 130:
 	type = S8BIT;
-	sz = 8;
 	break;
       case 132:
 	type = U16BIT;
-	sz = 16;
 	break;
       case 136:
 	type = U32BIT;
-	sz = 32;
 	break;
       default:
 	VipPrintfError("unrecognized type code - choosing type from bits/voxel\n");

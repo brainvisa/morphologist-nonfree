@@ -36,6 +36,7 @@ static int PutBoundingBoxInRightVol(Volume *object, Volume *bbox, int val, int i
 Pyramid *VipCreateBoundingBoxLabelPyramid(Pyramid *pdata, int nlevel, int object, int inside, int outside)
 /*--------------------------------------------------------------------*/
 {
+	(void)(nlevel);
     Pyramid *pyrlab;
     int forbiden = -77;
 

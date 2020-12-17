@@ -339,9 +339,6 @@ int VipHomotopicInsideDilation( Volume *vol, Volume *graylevel, int nb_iteration
     Vip_S16BIT *first, *ptr, *gptr, *gfirst;
     int *buckptr;
     int i, m;
-    int max, min;
-    float interval;
-
 
     if (VipVerifyAll(vol)==PB)
         {
@@ -720,6 +717,8 @@ static float deltaFoetusGPotentialWtoG( int glevel,float KG,float mG,
                                         float KW,float mW,float sigmaW)
 /*---------------------------------------------------------------------------*/
 {
+    (void)(mG);
+    (void)(sigmaG);
     float potG, potW;
 
     /*
@@ -1107,10 +1106,10 @@ VipHomotopicWellComposedDilationTowardInside (Volume * vol,
   VipIntBucket *buck, *nextbuck;
   VipConnectivityStruct *vcs6;
   VipOffsetStruct *vos;
-  unsigned int loop, count, totalcount;
+  unsigned int count, totalcount;
   Vip_S16BIT *first, *ptr;
   int *buckptr;
-  int i;
+  int i, loop;
   int ret = PB;
 
   if (VipVerifyAll (vol) == PB)

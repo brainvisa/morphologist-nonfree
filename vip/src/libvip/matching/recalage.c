@@ -179,6 +179,8 @@ int VipDumbMainRegistration( Surface *surf, Volume *ref, VipDeplacement *dep,
 	}
     }
 
+  best = best; // to remove compilation warning
+
   return(OK);
 }
 
@@ -187,7 +189,7 @@ int VipDumbMain2DRegistration( Surface *surf, Volume *ref,
 			       VipDeplacement *dep, float incredef, 
 			       float precidef )
 {
-  double best;
+  double best = 0.0;
   VipDeplacement bestdep;
   int flag;
   float increment, precision;
@@ -216,6 +218,8 @@ int VipDumbMain2DRegistration( Surface *surf, Volume *ref,
 	  else flag=VFALSE;
 	}
     }
+
+  best = best; // to remove compilation warning
 
   return(OK);
 }

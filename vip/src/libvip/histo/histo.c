@@ -89,7 +89,7 @@ VipHisto *VipGetHistoSurface( VipHisto *hin, Volume *vol)
   float normalize;
   int ratio = 0,factor=0 ;
   RandomBox *rb;
-  int total, pourcentage;
+  int total/*, pourcentage*/;
   /*int i50;*/
   int **tab2D;
   int deriv[40000];
@@ -230,7 +230,7 @@ VipHisto *VipGetHistoSurface( VipHisto *hin, Volume *vol)
       hsurf->val[i] = deriv[i]+5000;
     }
   
-  pourcentage = hin->val[0];
+  /*pourcentage = hin->val[0];*/
   imax = 1;
   lemax = -100000;
   for(i=1;i<=hin->range_max-1;i++) 
@@ -427,7 +427,6 @@ VipHisto *VipGetEntropyForcedUndersampledHisto( VipHisto *hin, float entropy, in
 {
   VipHisto *hout;
   int i;
-  int newlength;
   int factor;
 
   if((!hin) || (!ratio))
@@ -436,7 +435,6 @@ VipHisto *VipGetEntropyForcedUndersampledHisto( VipHisto *hin, float entropy, in
       return(PB);
     }
 
-  newlength = hin->range_max - hin->range_min+1;
   for(factor=1;factor<14;factor++)
     {
       hout = VipCreateHisto(hin->range_min/factor,hin->range_max/factor+1);
@@ -1015,7 +1013,11 @@ VipHisto *VipReadHisto(char *name)
   if(mode == WRITE_HISTO_ASCII)
     {
 	/*test old format versus new format*/
-	fgets(line, 256, f);
+	if ( !fgets(line, 256, f) )
+  {
+    VipPrintfExit("VipReadHisto : Corrupted file");
+	  return(PB);
+  }
 	i = sscanf(line,"%d%d",&test1,&test2);
 	if(i!=2) oldformat=VTRUE;
 	rewind(f);
@@ -1047,7 +1049,12 @@ VipHisto *VipReadHisto(char *name)
 	    {
 		rangemin = 10000000;
 		rangemax = -10000000;
-		for(fgets(line, 256, f);!feof(f);fgets(line, 256, f))
+    if ( !fgets(line, 256, f) )
+    {
+      VipPrintfExit("VipReadHisto : Corrupted file");
+	    return(PB);
+    }
+		while(!feof(f))
 		    {
 			i = sscanf(line,"%d%d",&test1,&test2);
 			if(i!=2) 
@@ -1059,16 +1066,31 @@ VipHisto *VipReadHisto(char *name)
 				if(test1>rangemax) rangemax=test1;
 				if(test1<rangemin) rangemin=test1;
 			    }
+      if ( !fgets(line, 256, f) && !feof(f) )
+      {
+        VipPrintfExit("VipReadHisto : Corrupted file");
+	      return(PB);
+      }
 		    }
 		rewind(f);
 		h = VipCreateHisto(rangemin,rangemax);
-		for(fgets(line, 256, f);!feof(f);fgets(line, 256, f))
+    if ( !fgets(line, 256, f) )
+    {
+      VipPrintfExit("VipReadHisto : Corrupted file");
+	    return(PB);
+    }
+		while(!feof(f))
 		    {
 			i = sscanf(line,"%d%d",&test1,&test2);
 			if(i==2)
 			    {
 				mVipHistoVal(h,test1)=test2;
 			    }
+      if ( !fgets(line, 256, f) && !feof(f) )
+      {
+        VipPrintfExit("VipReadHisto : Corrupted file");
+	      return(PB);
+      }
 		    }
 	    }
     }

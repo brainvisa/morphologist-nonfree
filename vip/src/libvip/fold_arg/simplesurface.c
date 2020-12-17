@@ -631,7 +631,7 @@ static int NewSSVoronoiAndRecoverSmallOldSS( Vip3DBucket_S16BIT *bucklist,
     int has_moved[10000]; /*max number of bucket*/
     int current_bucket=0;
     int global_has_moved = VTRUE;
-    int n_remaining_point;
+    /*int n_remaining_point;*/
     int totalfill;
 			  
     if (VipVerifyAll(vol)==PB || bucklist==PB)
@@ -792,8 +792,8 @@ static int NewSSVoronoiAndRecoverSmallOldSS( Vip3DBucket_S16BIT *bucklist,
 	}
     bptr2->next = bucklist;
 
-    n_remaining_point = VipGetNumberLabelPoints(vol, FORBIDEN_JUNCTION);
-    /*    printf("%d forbidden have not been touched by the ss-connectivity based dilation\n",n_remaining_point);*/
+    /*n_remaining_point = VipGetNumberLabelPoints(vol, FORBIDEN_JUNCTION);
+    printf("%d forbidden have not been touched by the ss-connectivity based dilation\n",n_remaining_point);*/
 
     VipFreeTopology26Neighborhood(topo26);
     VipFreeConnectivityStruct(vcs);
@@ -1075,7 +1075,6 @@ Volume *voronoi)
     VipOffsetStruct *vos, *vvos;
     int *sizebuf;
     int temp;
-    int BORNESUP;
     int x, y, z;
     Vip3DBucket_S16BIT *current;
 
@@ -1104,8 +1103,6 @@ Volume *voronoi)
     if(!sizebuf) return(PB);
 
     for(i=0;i<=ss_list->n_ss;i++) sizebuf[i] = 0;
-
-    BORNESUP = HULL_SURFACE + 10*(ss_list->n_ss+1);
 
     squel_ptr = VipGetDataPtr_S16BIT(squel);
     voronoi_ptr = VipGetDataPtr_S16BIT(voronoi);

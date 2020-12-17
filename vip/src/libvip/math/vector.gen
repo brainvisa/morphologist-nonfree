@@ -241,6 +241,7 @@ VipVector_GENSTRING *VipReadVector_GENSTRING(char *filename, size_t dim)
   if (!vector)
   { VipPrintfError("Error while allocating vector");
     VipPrintfExit("(Vip_vector.c)VipReadVector");
+    fclose(file);
     return((VipVector_GENSTRING *)NULL);
   }
 
@@ -248,32 +249,80 @@ VipVector_GENSTRING *VipReadVector_GENSTRING(char *filename, size_t dim)
 
   switch(type)
   { case U8BIT : for (i=0; i<dim; i++)  
-                 { fscanf(file, "%d", &temp);
+                 { if ( fscanf(file, "%d", &temp) != 1 )
+                   {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                    vecptr[i] = (unsigned char)temp;
                  }
                  break;
     case S8BIT : for (i=0; i<dim; i++)  
-                 { fscanf(file, "%d", &temp);
+                 { if ( fscanf(file, "%d", &temp) != 1 )
+                   {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                    vecptr[i] = (char)temp;
                  }
                  break;
     case U16BIT : for (i=0; i<dim; i++)
-                    fscanf(file, "%hu",(unsigned short*)&vecptr[i]);
+                    if ( fscanf(file, "%hu",(unsigned short*)&vecptr[i]) != 1 )
+                    {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                   break;
     case S16BIT : for (i=0; i<dim; i++)
-                    fscanf(file, "%hd",(short*) &vecptr[i]);
+                    if ( fscanf(file, "%hd",(short*) &vecptr[i]) != 1 )
+                    {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                   break;
     case U32BIT : for (i=0; i<dim; i++)
-                    fscanf(file, "%lu",(unsigned long*)&vecptr[i]);
+                    if ( fscanf(file, "%lu",(unsigned long*)&vecptr[i]) != 1 )
+                    {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                   break;
     case S32BIT : for (i=0; i<dim; i++)
-                    fscanf(file, "%ld",(long*)&vecptr[i]);
+                    if ( fscanf(file, "%ld",(long*)&vecptr[i]) != 1 )
+                    {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                   break;
     case VFLOAT : for (i=0; i<dim; i++)
-                    fscanf(file, "%f",(float*)&vecptr[i]);
+                    if ( fscanf(file, "%f",(float*)&vecptr[i]) != 1 )
+                    {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                  break;
     case VDOUBLE : for (i=0; i<dim; i++)
-                     fscanf(file, "%lf",(double*)&vecptr[i]);
+                     if ( fscanf(file, "%lf",(double*)&vecptr[i]) != 1 )
+                     {
+                     VipPrintfError("Error while reading vector item");
+                     VipPrintfExit("(Vip_vector.c)VipReadVector");
+                     fclose(file);
+                     return((VipVector_GENSTRING *)NULL);
+                   }
                   break;
   }
 
