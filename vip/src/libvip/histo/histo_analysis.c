@@ -237,8 +237,6 @@ int VipWriteT1HistoAnalysis(VipT1HistoAnalysis *ana, char *name)
 
     VipFree( filename );
 
-    VipFree( filename );
-
     if (ana->sequence==MRI_T1_SPGR) fprintf(f,"sequence: standard T1-weighted SPGR\n");
     else if (ana->sequence==MRI_T1_IR) fprintf(f,"sequence: inversion recovery\n");
     else if (ana->sequence==MODES_2) fprintf(f,"sequence: 2 modes\n");
