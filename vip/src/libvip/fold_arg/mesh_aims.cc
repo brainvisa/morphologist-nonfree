@@ -28,6 +28,7 @@
 #include <aims/io/writer.h>
 
 using namespace aims;
+using namespace carto;
 using namespace std;
 
 void meshAims( ::Volume* vol, const char* outfname )
@@ -37,13 +38,8 @@ void meshAims( ::Volume* vol, const char* outfname )
   mesher.setDecimation( 100.0, 5, 3, 180.0 );
   mesher.setMinFacetNumber( 50 );
   AimsSurfaceTriangle surface;
-  AimsData<int16_t>	data( vip::volumeFromVip<int16_t>( vol ) );
-  /*
-  cout << "data dim: " << data.dimX() << ", " << data.dimY() << "," 
-       << data.dimZ() << ", "  << data.dimT() << ", border: " 
-       << data.borderWidth() << endl;
-  */
-  data.fillBorder( -1 );
+  rc_ptr<carto::Volume<int16_t> > data = vip::volumeFromVip<int16_t>( vol );
+  data->fillBorder( -1 );
   mesher.getBrain( data, surface );
   Writer<AimsSurfaceTriangle>	w( outfname );
   w.write( surface );
