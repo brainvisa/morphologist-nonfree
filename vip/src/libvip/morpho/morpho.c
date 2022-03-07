@@ -251,18 +251,22 @@ int VipConnectivityChamferDilation (
       VipPrintfExit("(morpho)VipConnectivityChamferDilation");
       return(PB);
     }
- if(Check2DMorphoSizeConsistence(vol,size)==PB)
+  if(Check2DMorphoSizeConsistence(vol,size)==PB)
    {
       VipPrintfExit("(morpho)VipConnectivityChamferDilation");
       return(PB);
    }
-  
- if(mode==CHAMFER_TRANSFORMATION)
+   
+  // To avoid issues in VipComputeFrontPropagationConnectivityDistanceMap when size is lower than 1
+  if (size < 1.)
+    size = 1.;
+ 
+  if(mode==CHAMFER_TRANSFORMATION)
    {
      if (VipComputeConnectivityChamferDistanceMap (vol,connectivity)==PB)
        return(PB);
    }
- else
+  else
    {
      VipComputeFrontPropagationConnectivityDistanceMap (vol,0,60000,VIP_DO_NOTHING,size,connectivity);
    }
@@ -408,6 +412,8 @@ int VipConnectivityChamferErosion (
 
   if(VipInvertBinaryVolume(vol)==PB) return(PB);
 
+  // To avoid issues in VipComputeFrontPropagationConnectivityDistanceMap when size is lower than 1
+  if (size < 1.) size = 1.;
 
   if(mode==CHAMFER_TRANSFORMATION)
     {
@@ -576,6 +582,9 @@ int VipConnectivityChamferClosing (
       VipPrintfExit("(morpho)VipCustomizedChamferClosing");
       return(PB);
     }
+    
+  // To avoid issues in VipComputeFrontPropagationConnectivityDistanceMap when size is lower than 1
+  if (size < 1.) size = 1.;
 
   if(mode==CHAMFER_TRANSFORMATION)
     {
@@ -761,6 +770,9 @@ int VipConnectivityChamferOpening (
 
   if(VipInvertBinaryVolume(vol)==PB) return(PB);
 
+  // To avoid issues in VipComputeFrontPropagationConnectivityDistanceMap when size is lower than 1
+  if (size < 1.) size = 1.;
+  
   if(mode==CHAMFER_TRANSFORMATION)
     {
       if (VipComputeConnectivityChamferDistanceMap (vol,connectivity)==PB)
