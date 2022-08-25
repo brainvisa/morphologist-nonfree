@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(gradient);
   VIP_DEC_VOLUME(extrema);
   VIP_DEC_VOLUME(variance);
+  VIP_DEC_VOLUME(distmap);
   /*VIP_DEC_VOLUME(classif);*/
   /*VIP_DEC_VOLUME(copyvol);*/
   /*VIP_DEC_VOLUME(copyvol2);*/
@@ -221,6 +222,12 @@ int main(int argc, char *argv[])
   int mcthresholdset = VFALSE;
   int mcmethod = VIP_BIAS_T1_MCMETH;
   int mcmesthodset = VFALSE;
+  VipOffsetStruct *vos;
+  int ix, iy, iz, xc, yc, zc, n, p;
+  // float maxdist = 0;
+  float d;
+  short *ptr;
+
 // < extend cases
   
   readlib = ANY_FORMAT;
@@ -803,7 +810,7 @@ int main(int argc, char *argv[])
        *background thresholding. NEW 2016: the border can be at an other
        *intensity than zero or the min intensity of the image. */
 //       variance_brute = VipComputeVarianceVolume(vol);
-//       if (variance_brute==PB) return(VIP_CL_ERROR); 
+//       if (variance_brute==PB) return(VIP_CL_ERROR);
       min_volume = VipGetVolumeMin(vol);
       printf("min_volume=%f\n", min_volume), fflush(stdout);
       masked = VipCopyVolume(vol, "voxel_zero");
@@ -811,8 +818,122 @@ int main(int argc, char *argv[])
       if (VipSingleThreshold(masked, LOWER_OR_EQUAL_TO, min_volume+1, BINARY_RESULT)==PB) return(VIP_CL_ERROR);
       VipConnectivityChamferErosion(masked, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
       if (VipConnexVolumeFilter(masked, CONNECTIVITY_6, -1, CONNEX_BINARY)==PB) return(PB); //Ne pas garder la plus grande composante connexe mais virer les plus petites cc avec un hystersis?
+
       VipConnectivityChamferDilation(masked, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol))+0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
-      VipSetBorderLevel( masked,255);
+
+      /* Denis 2022/08/25
+         Now the other problem is: if the image has been thresholded, and not
+         padded with a border, then the mask gets too close to the brain. We
+         need to detect this, and if such, erode, or even completely cancel,
+         the mask to avoid ending up with a too high background/tissue
+         threshold.
+         How to detect this case ? I didn't find a very obvious answer.
+         - if the max distance from the center of the mask is too low (no
+           square corners) ? -> not very robust, the mask inverse (tissue) may
+           extend quite far (nose, neck)
+         - if the proportion of background mask voxels under a certain distance
+           from the center (say, 120mm) is high, then it is bound to be a
+           thresholded background. Otherwise it will be a padding.
+           Let's use this criterion for now.
+           TODO: adapt this 120mm distance, since it is OK for adult humans,
+           but will probably not be OK for babies, monkeys, or other species.
+      */
+      distmap = VipCopyVolume( masked, "distmap" );
+      /* dilate the mask to fill holes and restrain it a bit */
+      VipConnectivityChamferDilation( distmap, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol)) * 5 +0.1, CONNECTIVITY_26, FRONT_PROPAGATION );
+      vos = VipGetOffsetStructure( distmap );
+
+      /* find the center of the mask */
+      xc = 0;
+      yc = 0;
+      zc = 0;
+      n = 0;
+      ptr = VipGetDataPtr_S16BIT( distmap ) + vos->oFirstPoint;
+      for( iz=0; iz<mVipVolSizeZ( distmap ); iz++ )
+      {
+        for( iy=0; iy<mVipVolSizeY( distmap ); iy++ )
+        {
+          for( ix=0; ix<mVipVolSizeX( distmap ); ix++ )
+          {
+            if( *ptr == 0 )
+            {
+              xc += ix;
+              yc += iy;
+              zc += iz;
+              n ++;
+            }
+
+            ++ptr;
+          }
+          ptr += vos->oPointBetweenLine;
+        }
+        ptr += vos->oLineBetweenSlice;
+      }
+      xc /= n;
+      yc /= n;
+      zc /= n;
+      printf("mask center: %d, %d, %d\n", xc, yc, zc);
+
+      // VipWriteVolume(distmap, "/tmp/distmap_seed.nii.gz");
+      /* count voxels in the mask under 120mm from the center */
+      // maxdist = 0;
+      ptr = VipGetDataPtr_S16BIT( distmap ) + vos->oFirstPoint;
+      n = 0;
+      p = 0;
+      for( iz=0; iz<mVipVolSizeZ( distmap ); iz++ )
+      {
+        for( iy=0; iy<mVipVolSizeY( distmap ); iy++ )
+        {
+          for( ix=0; ix<mVipVolSizeX( distmap ); ix++ )
+          {
+            d = (xc - ix) * (xc - ix)
+                * mVipVolVoxSizeX( distmap ) * mVipVolVoxSizeX( distmap )
+              + (yc - iy) * (yc - iy)
+                * mVipVolVoxSizeY( distmap ) * mVipVolVoxSizeY( distmap )
+              + (zc - iz) * (zc - iz)
+                * mVipVolVoxSizeZ( distmap ) * mVipVolVoxSizeZ( distmap );
+            /*
+            if( *ptr == 0 )
+            {
+              if( d > maxdist )
+              {
+                // printf("max at %d, %d, %d: %d %d\n", ix, iy, iz, maxdist, d);
+                maxdist = d;
+              }
+            }
+            */
+            if( d < 120*120 )
+            {
+              if( *ptr != 0 )
+              {
+                p++;
+              }
+              n++;
+            }
+
+            ++ptr;
+          }
+          ptr += vos->oPointBetweenLine;
+        }
+        ptr += vos->oLineBetweenSlice;
+      }
+      printf( "proportion  of mask under 120mm: %f\n", ((float) p) / n );
+      VipFreeVolume( distmap );
+
+      if( ((float) p) / n >= 0.5 )
+      {
+        /* thresholded image situation */
+        printf( "the image seems to be thresholded.\n" );
+//           VipConnectivityChamferErosion(masked, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol)) * 10 +0.1, CONNECTIVITY_26, FRONT_PROPAGATION);
+        /* after all, just forget the mask: it's simpler and works better */
+        VipSetVolumeLevel( masked, 0 );
+      }
+//       else
+//       {
+//         /* border situation */
+//       }
+
+      VipSetBorderLevel( masked, 255 );
       VipResizeBorder( masked, 0 );
       /*merge the voxel_zero mask with the corner mask to not take into account
         the zero voxel in the background mean intensity*/
@@ -820,7 +941,7 @@ int main(int argc, char *argv[])
       printf("Corner background stats: mean: %f; sigma: %f\n", mean, sigma);
       thbackground = (mean+1.*sigma+0.5);
       printf("thbackground=%f\n", thbackground), fflush(stdout);
-      if (thbackground>0) 
+      if (thbackground>0)
       {
           printf("merge\n");
           VipMerge( thresholdedvol, masked, VIP_MERGE_ONE_TO_ONE, 255, 0 );
@@ -971,7 +1092,8 @@ int main(int argc, char *argv[])
       ratio = 0;
       /* discard potential modes higher than white matter*/
       comphisto = VipGetPropUndersampledHisto( histo, 95, &ratio, &compression, thresholdlow, 100 );
-      printf("%d\n", ratio);
+      printf("ratio: %d\n", ratio);
+      printf("thresholdlow: %d\n", thresholdlow);
       VipFreeHisto(comphisto);
       VipFreeHisto(histo);
   }
@@ -998,6 +1120,8 @@ int main(int argc, char *argv[])
       thresholdhigh = thresholdhigh >> compression ;
   printf("Low threshold: %d, High threshold: %d (after compression)\n", thresholdlow, thresholdhigh);
   VipDoubleThreshold(compressed,VIP_BETWEEN,thresholdlow,thresholdhigh,GREYLEVEL_RESULT);
+  VipWriteVolume(compressed, "/tmp/comp_th.nii.gz");
+
   
   if(readridges==VFALSE)
     {
