@@ -1120,7 +1120,6 @@ int main(int argc, char *argv[])
       thresholdhigh = thresholdhigh >> compression ;
   printf("Low threshold: %d, High threshold: %d (after compression)\n", thresholdlow, thresholdhigh);
   VipDoubleThreshold(compressed,VIP_BETWEEN,thresholdlow,thresholdhigh,GREYLEVEL_RESULT);
-  VipWriteVolume(compressed, "/tmp/comp_th.nii.gz");
 
   
   if(readridges==VFALSE)
