@@ -106,6 +106,248 @@ extern Volume *VipComputeCompressedVolume(Volume *vol, int compression);
 extern Volume *VipComputeCrestGrad(Volume *crest, Volume *vol);
 /*---------------------------------------------------------------------------*/
 
+int checkThresholdedBackground( Volume *vol, Volume *masked )
+{
+  VIP_DEC_VOLUME(distmap);
+
+  VipOffsetStruct *vos, *vvos;
+  int ix, iy, iz, xc, yc, zc, p, bins, ps;
+  long n, q, vn;
+  float d, dmax, vx2, vy2, vz2, criterion;
+  short *ptr, *vptr;
+  long *histo, *vhisto, *chisto;
+
+  /* Denis 2022/08/25
+     The problem is: if the image has been thresholded, and not
+     padded with a border, then the mask gets too close to the brain. We
+     need to detect this, and if such, erode, or even completely cancel,
+     the mask to avoid ending up with a too high background/tissue
+     threshold.
+     How to detect this case ? I didn't find a very obvious answer.
+     - if the max distance from the center of the mask is too low (no
+       square corners) ? -> not very robust, the mask inverse (tissue) may
+       extend quite far (nose, neck)
+     - if the proportion of background mask voxels under a certain distance
+       from the center (say, 120mm) is high, then it is bound to be a
+       thresholded background. Otherwise it will be a padding.
+       Let's use this criterion for now.
+    - this can be refined using a distance-based histograph from the center: in
+      a thesholded image, masked voxels will appear sooner and more massively
+      than in a padded image, where voxels will appear progressively.
+      Actually this is not very very clear, but it actually exists. We had to
+      perform a more complex test: average the ratio of mask and "matter"
+      within a growing distance of the mask center, and look for a relatively
+      high value.
+  */
+  distmap = VipCopyVolume( masked, "distmap" );
+  /* dilate the mask to fill holes and restrain it a bit */
+  VipConnectivityChamferDilation(
+    distmap,
+    mVipMax(mVipVolVoxSizeX(distmap), mVipVolVoxSizeY(distmap)) * 5 + 0.1, CONNECTIVITY_26, FRONT_PROPAGATION );
+  vos = VipGetOffsetStructure( distmap );
+  vvos = VipGetOffsetStructure( vol );
+
+  /* find the center of the mask */
+  xc = 0;
+  yc = 0;
+  zc = 0;
+  n = 0;
+  ptr = VipGetDataPtr_S16BIT( distmap ) + vos->oFirstPoint;
+  for( iz=0; iz<mVipVolSizeZ( distmap ); iz++ )
+  {
+    for( iy=0; iy<mVipVolSizeY( distmap ); iy++ )
+    {
+      for( ix=0; ix<mVipVolSizeX( distmap ); ix++ )
+      {
+        if( *ptr == 0 )
+        {
+          xc += ix;
+          yc += iy;
+          zc += iz;
+          n ++;
+        }
+
+        ++ptr;
+      }
+      ptr += vos->oPointBetweenLine;
+    }
+    ptr += vos->oLineBetweenSlice;
+  }
+  xc /= n;
+  yc /= n;
+  zc /= n;
+  printf("mask center: %d, %d, %d\n", xc, yc, zc);
+
+  /* find the max distance (center to corners) */
+  vx2 = mVipVolVoxSizeX( distmap ) * mVipVolVoxSizeX( distmap );
+  vy2 = mVipVolVoxSizeY( distmap ) * mVipVolVoxSizeY( distmap );
+  vz2 = mVipVolVoxSizeZ( distmap ) * mVipVolVoxSizeZ( distmap );
+  dmax = xc * xc * vx2 + yc * yc * vy2 + zc * zc * vz2;
+  d = (xc - mVipVolSizeX( distmap ) - 1) * (xc - mVipVolSizeX( distmap ) - 1)
+      * vx2
+    + yc * yc * vy2 + zc * zc * vz2;
+  if( d > dmax )
+    dmax = d;
+  d = xc * xc * vx2
+    + (yc - mVipVolSizeY( distmap ) - 1) * (yc - mVipVolSizeY( distmap ) - 1)
+      * vy2
+    + zc * zc * vz2;
+  if( d > dmax )
+    dmax = d;
+  d = xc * xc * vx2 + yc * yc * vy2
+    + (zc - mVipVolSizeZ( distmap ) - 1) * (zc - mVipVolSizeZ( distmap ) - 1)
+      * vz2;
+  if( d > dmax )
+    dmax = d;
+  d = (xc - mVipVolSizeX( distmap ) - 1) * (xc - mVipVolSizeX( distmap ) - 1)
+      * vx2
+    + (yc - mVipVolSizeY( distmap ) - 1) * (yc - mVipVolSizeY( distmap ) - 1)
+      * vy2
+    + zc * zc * vz2;
+  if( d > dmax )
+    dmax = d;
+  d = (xc - mVipVolSizeX( distmap ) - 1) * (xc - mVipVolSizeX( distmap ) - 1)
+      * vx2
+    + yc * yc * vy2
+    + (zc - mVipVolSizeZ( distmap ) - 1) * (zc - mVipVolSizeZ( distmap ) - 1)
+      * vz2;
+  if( d > dmax )
+    dmax = d;
+  d = xc * xc * vx2
+    + (yc - mVipVolSizeY( distmap ) - 1) * (yc - mVipVolSizeY( distmap ) - 1)
+      * vy2
+    + (zc - mVipVolSizeZ( distmap ) - 1) * (zc - mVipVolSizeZ( distmap ) - 1)
+      * vz2;
+  if( d > dmax )
+    dmax = d;
+  d = (xc - mVipVolSizeX( distmap ) - 1) * (xc - mVipVolSizeX( distmap ) - 1)
+      * vx2
+    + (yc - mVipVolSizeY( distmap ) - 1) * (yc - mVipVolSizeY( distmap ) - 1)
+      * vy2
+    + (zc - mVipVolSizeZ( distmap ) - 1) * (zc - mVipVolSizeZ( distmap ) - 1)
+      * vz2;
+  if( d > dmax )
+    dmax = d;
+
+  dmax = sqrt( dmax );
+  bins = 100;
+//   printf( "dmax: %f, bin size: %f\n", dmax, dmax / bins );
+
+  /* fill the distance hisogram */
+  histo = malloc( bins * sizeof( long ) );
+  vhisto = malloc( bins * sizeof( long ) );
+  chisto = malloc( bins * sizeof( long ) );
+  for( p=0; p<bins; p++ )
+  {
+    histo[p] = 0;
+    vhisto[p] = 0;
+    chisto[p] = 0;
+  }
+
+  // VipWriteVolume(distmap, "/tmp/distmap_seed.nii.gz");
+  ptr = VipGetDataPtr_S16BIT( distmap ) + vos->oFirstPoint;
+  /* (take masked border offset into account inside vol) */
+  vptr = VipGetDataPtr_S16BIT( vol ) + vvos->oFirstPoint
+    + mVipVolSizeX( vol ) * mVipVolSizeY( vol ) * masked->borderWidth
+    + mVipVolSizeX( vol ) * masked->borderWidth
+    + masked->borderWidth;
+  n = 0;
+  vn = 0;
+  for( iz=0; iz<mVipVolSizeZ( distmap ); iz++ )
+  {
+    for( iy=0; iy<mVipVolSizeY( distmap ); iy++ )
+    {
+      for( ix=0; ix<mVipVolSizeX( distmap ); ix++ )
+      {
+        d = sqrt( (xc - ix) * (xc - ix) * vx2
+                  + (yc - iy) * (yc - iy) * vy2
+                  + (zc - iz) * (zc - iz) * vz2 );
+        p = (int) ( d / dmax * bins );
+        if( p == bins )
+          p = bins - 1;
+
+        if( *ptr != 0 ) /* in mask */
+        {
+          histo[ p ]++;
+          n++;
+        }
+
+        vhisto[ p ] += *vptr;
+        vn += *vptr;
+
+        ++ptr;
+        ++vptr;
+      }
+      ptr += vos->oPointBetweenLine;
+      vptr += vvos->oPointBetweenLine + masked->borderWidth * 2;
+    }
+    ptr += vos->oLineBetweenSlice;
+    vptr += vvos->oLineBetweenSlice
+      + masked->borderWidth * 2 * mVipVolSizeX( vol );
+  }
+
+//   printf( "n: %ld, vn,: %ld\n", n, vn );
+//   printf( "dist histo:\n" );
+  q = 0;
+  for( p=0; p<bins; p++ )
+  {
+//     printf( "%f, ", ((float) histo[p]) / n / dmax * bins );
+    q += histo[p];
+    chisto[p] = q;
+  }
+//   printf( "\ncum histo:\n" );
+//   for( p=0; p<bins; p++ )
+//   {
+//     printf( "%f, ", ((float) chisto[p]) / n );
+//   }
+//   printf( "\nvol histo:\n" );
+//
+//   for( p=0; p<bins; p++ )
+//   {
+//     printf( "%f, ", ((float) vhisto[p]) / vn / dmax * bins );
+//   }
+//
+//   printf( "\ncum vol histo:\n" );
+
+  /* the criterion is the average over the series of first values of the ratio
+     between the cummulatiuve histo of the mask and the cum. histo of the
+     brain voxels values. This series stops when we reach the distance of 80%
+     of the image "matter", in order to get data "close" to the head. For a
+     thresholded background, this value will still be small, but grows much
+     faster than for a padded image.
+  */
+  q = 0;
+  criterion = 0;
+  ps = -1;
+//   printf( "\nchisto ratio:\n" );
+  for( p=0; p<bins; p++ )
+  {
+    q += vhisto[p];
+//     printf( "%f, ", ((float) q) / vn );
+    if( ((float) q) / vn > 0.8 && ps < 0 )
+    {
+      ps = p;
+      break; /* unless we print the full histo */
+    }
+//     printf( "%f, ", ((float) chisto[p]) / n * vn / ((float) q) );
+//     if( p <= ps )
+    criterion += ((float) chisto[p]) / n * vn / ((float) q);
+  }
+  criterion /= ps; /* average ratio */
+
+//   printf( "\nps: %d: %f mm\n", ps, dmax * ps / bins );
+//   printf( "chisto at ps: %f\n", ((float) chisto[ps]) / n );
+  printf( "thresholded backgound detection criterion: %f\n", criterion );
+
+  VipFreeVolume( distmap );
+  free( histo );
+
+  /* the criterion value is about 1% for a thresholded image, and about 1-5e-4
+     for a padded image. */
+  return criterion > 0.005;
+}
+
+
 int main(int argc, char *argv[])
 {
   /*declarations and initializations*/
@@ -129,7 +371,6 @@ int main(int argc, char *argv[])
   VIP_DEC_VOLUME(gradient);
   VIP_DEC_VOLUME(extrema);
   VIP_DEC_VOLUME(variance);
-  VIP_DEC_VOLUME(distmap);
   /*VIP_DEC_VOLUME(classif);*/
   /*VIP_DEC_VOLUME(copyvol);*/
   /*VIP_DEC_VOLUME(copyvol2);*/
@@ -222,11 +463,6 @@ int main(int argc, char *argv[])
   int mcthresholdset = VFALSE;
   int mcmethod = VIP_BIAS_T1_MCMETH;
   int mcmesthodset = VFALSE;
-  VipOffsetStruct *vos;
-  int ix, iy, iz, xc, yc, zc, n, p;
-  // float maxdist = 0;
-  float d;
-  short *ptr;
 
 // < extend cases
   
@@ -827,100 +1063,8 @@ int main(int argc, char *argv[])
          need to detect this, and if such, erode, or even completely cancel,
          the mask to avoid ending up with a too high background/tissue
          threshold.
-         How to detect this case ? I didn't find a very obvious answer.
-         - if the max distance from the center of the mask is too low (no
-           square corners) ? -> not very robust, the mask inverse (tissue) may
-           extend quite far (nose, neck)
-         - if the proportion of background mask voxels under a certain distance
-           from the center (say, 120mm) is high, then it is bound to be a
-           thresholded background. Otherwise it will be a padding.
-           Let's use this criterion for now.
-           TODO: adapt this 120mm distance, since it is OK for adult humans,
-           but will probably not be OK for babies, monkeys, or other species.
       */
-      distmap = VipCopyVolume( masked, "distmap" );
-      /* dilate the mask to fill holes and restrain it a bit */
-      VipConnectivityChamferDilation( distmap, mVipMax(mVipVolVoxSizeX(vol), mVipVolVoxSizeY(vol)) * 5 +0.1, CONNECTIVITY_26, FRONT_PROPAGATION );
-      vos = VipGetOffsetStructure( distmap );
-
-      /* find the center of the mask */
-      xc = 0;
-      yc = 0;
-      zc = 0;
-      n = 0;
-      ptr = VipGetDataPtr_S16BIT( distmap ) + vos->oFirstPoint;
-      for( iz=0; iz<mVipVolSizeZ( distmap ); iz++ )
-      {
-        for( iy=0; iy<mVipVolSizeY( distmap ); iy++ )
-        {
-          for( ix=0; ix<mVipVolSizeX( distmap ); ix++ )
-          {
-            if( *ptr == 0 )
-            {
-              xc += ix;
-              yc += iy;
-              zc += iz;
-              n ++;
-            }
-
-            ++ptr;
-          }
-          ptr += vos->oPointBetweenLine;
-        }
-        ptr += vos->oLineBetweenSlice;
-      }
-      xc /= n;
-      yc /= n;
-      zc /= n;
-      printf("mask center: %d, %d, %d\n", xc, yc, zc);
-
-      // VipWriteVolume(distmap, "/tmp/distmap_seed.nii.gz");
-      /* count voxels in the mask under 120mm from the center */
-      // maxdist = 0;
-      ptr = VipGetDataPtr_S16BIT( distmap ) + vos->oFirstPoint;
-      n = 0;
-      p = 0;
-      for( iz=0; iz<mVipVolSizeZ( distmap ); iz++ )
-      {
-        for( iy=0; iy<mVipVolSizeY( distmap ); iy++ )
-        {
-          for( ix=0; ix<mVipVolSizeX( distmap ); ix++ )
-          {
-            d = (xc - ix) * (xc - ix)
-                * mVipVolVoxSizeX( distmap ) * mVipVolVoxSizeX( distmap )
-              + (yc - iy) * (yc - iy)
-                * mVipVolVoxSizeY( distmap ) * mVipVolVoxSizeY( distmap )
-              + (zc - iz) * (zc - iz)
-                * mVipVolVoxSizeZ( distmap ) * mVipVolVoxSizeZ( distmap );
-            /*
-            if( *ptr == 0 )
-            {
-              if( d > maxdist )
-              {
-                // printf("max at %d, %d, %d: %d %d\n", ix, iy, iz, maxdist, d);
-                maxdist = d;
-              }
-            }
-            */
-            if( d < 120*120 )
-            {
-              if( *ptr != 0 )
-              {
-                p++;
-              }
-              n++;
-            }
-
-            ++ptr;
-          }
-          ptr += vos->oPointBetweenLine;
-        }
-        ptr += vos->oLineBetweenSlice;
-      }
-      printf( "proportion  of mask under 120mm: %f\n", ((float) p) / n );
-      VipFreeVolume( distmap );
-
-      if( ((float) p) / n >= 0.5 )
+      if( checkThresholdedBackground( vol, masked ) )
       {
         /* thresholded image situation */
         printf( "the image seems to be thresholded.\n" );
