@@ -308,10 +308,16 @@ int checkThresholdedBackground( Volume *vol, Volume *masked )
 //   }
 //
 //   printf( "\ncum vol histo:\n" );
+//   q = 0;
+//   for( p=0; p<bins; p++ )
+//   {
+//     q += vhisto[p];
+//     printf( "%f, ", ((float) q) / vn );
+//   }
 
   /* the criterion is the average over the series of first values of the ratio
-     between the cummulatiuve histo of the mask and the cum. histo of the
-     brain voxels values. This series stops when we reach the distance of 80%
+     between the cummulative histo of the mask and the cum. histo of the
+     brain voxels values. This series stops when we reach the distance of 40%
      of the image "matter", in order to get data "close" to the head. For a
      thresholded background, this value will still be small, but grows much
      faster than for a padded image.
@@ -320,17 +326,16 @@ int checkThresholdedBackground( Volume *vol, Volume *masked )
   criterion = 0;
   ps = -1;
 //   printf( "\nchisto ratio:\n" );
-  for( p=0; p<bins; p++ )
+  for( p=0; p<bins && ps < 0; p++ )
   {
     q += vhisto[p];
-//     printf( "%f, ", ((float) q) / vn );
-    if( ((float) q) / vn > 0.8 && ps < 0 )
-    {
+    if( ((float) q) / vn > 0.4 && ps < 0 )
+//     {
       ps = p;
-      break; /* unless we print the full histo */
-    }
+//       break; /* unless we print the full histo */
+//     }
 //     printf( "%f, ", ((float) chisto[p]) / n * vn / ((float) q) );
-//     if( p <= ps )
+//     if( ps < 0 || p <= ps )
     criterion += ((float) chisto[p]) / n * vn / ((float) q);
   }
   criterion /= ps; /* average ratio */
@@ -342,9 +347,9 @@ int checkThresholdedBackground( Volume *vol, Volume *masked )
   VipFreeVolume( distmap );
   free( histo );
 
-  /* the criterion value is about 1% for a thresholded image, and about 1-5e-4
-     for a padded image. */
-  return criterion > 0.005;
+  /* the criterion value is about 0.002 for a thresholded image, and between
+     0 and 5e-4 for a padded image. */
+  return criterion > 0.001;
 }
 
 
