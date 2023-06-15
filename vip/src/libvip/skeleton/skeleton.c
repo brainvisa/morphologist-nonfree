@@ -489,7 +489,8 @@ int VipWatershedHomotopicSkeleton( Volume *vol, Volume *altitude, int immortal_e
 /*Points become immortals according to immortal_elixir*/
 /*The front is managed according to front_mode*/
 
-int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mode )
+int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mode,
+                          int keep_immortals )
 {
   VipIntBucket *buck, *nextbuck;
   Topology26Neighborhood *topo26;
@@ -500,6 +501,8 @@ int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mode )
   int *buckptr, *dirptr, diroffset;
   int Cbar, Cstar;
   int i;
+  VipOffsetStruct *vos;
+  int ix, iy, iz;
 
   if((immortal_elixir!=NON_SIMPLE_AND_NON_VOLUME_BECOME_IMMORTAL)
      &&(immortal_elixir!=SURFACES_BECOME_IMMORTAL)
@@ -538,9 +541,31 @@ int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mode )
 
   VipSetBorderLevel( vol, 0 ); /* already done before but security */
 
+  if( keep_immortals )
+  {
+    /* keep 0 (backgound) and -103 (input immortals) and binarize the rest to
+       255 */
+    vos = VipGetOffsetStructure(vol);
+    ptr = VipGetDataPtr_S16BIT( vol ) + vos->oFirstPoint;
 
-  VipSingleThreshold( vol, NOT_EQUAL_TO, 0, BINARY_RESULT ); /* put object (including potential VIP_IMMORTAL)
-								label  to 255 */
+    for ( iz = mVipVolSizeZ(vol); iz-- ; )        /* loop on slices */
+      {
+        for ( iy = mVipVolSizeY(vol); iy-- ; )    /* loop on lines */
+          {
+            for ( ix = mVipVolSizeX(vol); ix-- ; )
+              {
+                if( *ptr != VIP_IMMORTAL && *ptr != 0 )
+                  *ptr = 255;
+                ptr++;
+              }
+          }
+      }
+  }
+  else
+    /* put object (including potential VIP_IMMORTAL)
+       label  to 255   */
+    VipSingleThreshold( vol, NOT_EQUAL_TO, 0, BINARY_RESULT );
+
   buck = VipCreateFrontIntBucket( vol, CONNECTIVITY_6, VIP_FRONT);
   if(buck==PB) return(PB);
   nextbuck = VipAllocIntBucket(mVipMax(VIP_INITIAL_FRONT_SIZE,buck->n_points));
@@ -713,7 +738,8 @@ VipIntBucket *VipCreateFrontIntBucket( Volume *vol, int connectivity, int front_
 		      if(VipIncreaseIntBucket(buck,VIP_FRONT_SIZE_INCREMENT)==PB) return(PB);
 		    }
 		  buck->data[buck->n_points++] = i;
-		  *ptr = front_value;
+                  if( *ptr != VIP_IMMORTAL )
+                    *ptr = front_value;
 		  break;
 		}
 	    } 	  
@@ -1042,7 +1068,7 @@ int VipCleanUpFrontFromImmortals(
   for(i=buck->n_points;i--;) /*Mark all initial immortals and dwindle the front*/
     {
       ptr = first_vol_point + *buckptr;
-      if( VipWillBecomeImmortalForLabelComplement_S16BIT(topo26,immortal_elixir,ptr,0,&Cbar,&Cstar)==VTRUE)	
+      if( *ptr == VIP_IMMORTAL || VipWillBecomeImmortalForLabelComplement_S16BIT(topo26,immortal_elixir,ptr,0,&Cbar,&Cstar)==VTRUE)
 	{
 	  *ptr = VIP_IMMORTAL; 
 	  (*immortals)++;

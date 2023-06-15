@@ -84,6 +84,7 @@ int main(int argc, char *argv[])
   char version = '2';
   int random_seed = time(NULL);
   float meanVolVoxSize;
+  int keep_immortals = 0;
 //   VipT1HistoAnalysis *hana = NULL;
 //   char *hananame = NULL;
 
@@ -199,7 +200,8 @@ int main(int argc, char *argv[])
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
 	  if(argv[i][0]=='w') watershed = VTRUE;
-	  else if(argv[i][0]=='s') watershed = VFALSE;
+	  else if(argv[i][0]=='s')
+            watershed = VFALSE;
 	  else if(argv[i][0]=='0')
 	    {
 	      skeletonization = VFALSE;
@@ -210,7 +212,7 @@ int main(int argc, char *argv[])
 	      VipPrintfError("Please answer w, s or 0 to flag -sk");
 	      return(Usage());
 	    }
-	}
+	 }
       else if (!strncmp (argv[i], "-fvoronoi", 3)) 
 	{
 	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -269,6 +271,10 @@ int main(int argc, char *argv[])
 	      return(VIP_CL_ERROR);
 	    }
 	}    
+      else if (!strncmp (argv[i], "-keep_immortals", 2))
+	{
+          keep_immortals = 1;
+        }
       else if (!strncmp(argv[i], "-help",2)) return(Help());
       else return(Usage());
     }
@@ -290,7 +296,7 @@ int main(int argc, char *argv[])
       {
 	  if(geometry==NULL)
 	      {
-		  VipPrintfError("geometry arg is required by the -sk w and -v y flags");
+		  VipPrintfError("geometry arg is required by the -sk w and -fv y flags");
 		  return(Usage());
 	      }
 	  if (VipTestImageFileExist(geometry)==PB)
@@ -428,8 +434,10 @@ int main(int argc, char *argv[])
 	printf("===============\n");
 
 	  if(immortal_flag!=PB)
-	      if (VipHomotopicSkeleton (vol, immortal_flag, FRONT_6CONNECTIVITY_DIRECTION)==PB)
-		  return(VIP_CL_ERROR);
+            if( VipHomotopicSkeleton( vol, immortal_flag,
+                                      FRONT_6CONNECTIVITY_DIRECTION,
+                                      keep_immortals ) == PB )
+              return(VIP_CL_ERROR);
       }
 
   if(!strcmp(prune,"c") || !strcmp(prune,"co"))
@@ -543,7 +551,8 @@ static int Usage()
   (void)fprintf(stderr,"        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-w[riteformat] {char: v or t (default:v)}]\n");
   (void)fprintf(stderr,"        [-srand {int (default: time}]\n");
-  (void)fprintf(stderr,"        [-h[elp]\n");
+  (void)fprintf(stderr,"        [-k[eep_immortals]]\n");
+  (void)fprintf(stderr,"        [-h[elp]]\n");
   return(VIP_CL_ERROR);
 
 }
@@ -614,9 +623,12 @@ static int Help()
   (void)printf("        [-ve[rsion] {int, version depending on the hemi_cortex version, 1 or 2 (default: 2)}]\n");
   (void)printf("        [-r[eadformat] {char: v or t (default:v)}]\n");
   (void)printf("        [-w[riteformat] {char: v or t (default:v)}]\n");
-  (void)printf("       [-srand {int (default: time}]\n");
+  (void)printf("        [-srand {int (default: time}]\n");
   (void)printf("Initialization of the random seed, useful to get reproducible results\n");
-  (void)printf("        [-h[elp]\n");
+  (void)printf("        [-k[eep_immortals]]\n");
+  printf("Preserve input volume value -103 (arbitrary) to be immortal points "
+         "in the skeletonization - only in non-watershed mode.\n");
+  (void)printf("        [-h[elp]]\n");
   return(VIP_CL_ERROR);
 
 }

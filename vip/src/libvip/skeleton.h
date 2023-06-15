@@ -123,7 +123,8 @@ extern int VipHomotopicCurvePruning( Volume *vol, int inside, int outside );
 /*--------------------------------------------------------------------*/
 /*Points become immortals according to immortal_elixir*/
 /*The front is managed according to front_mode*/
-extern int VipHomotopicSkeleton( Volume *vol, int immortal_elixir, int front_mode );
+extern int VipHomotopicSkeleton( Volume *vol, int immortal_elixir,
+                                 int front_mode, int keep_immortals );
 
 /*--------------------------------------------------------------------*/
 extern int VipWatershedHomotopicSkeleton( Volume *vol, Volume *altitude, int immortal_elixir, int inside, int outside);
