@@ -4,7 +4,7 @@ package:
 soma-dev:
   components:
     morphologist-gpl: ["https://github.com/brainvisa/morphologist-gpl.git", "master"]
-    morphologist-ui: ["https://github.com/brainvisa/morphologist-ui.git", "master"]
+    morphologist-ui: ["https://github.com/brainvisa/morphologist.git", "master"]
     sulci-nonfree: ["https://github.com/brainvisa/sulci-nonfree.git", "master"]
     morpho-deepsulci:  ["https://github.com/brainvisa/morpho-deepsulci.git", "master"]
 
