@@ -1,0 +1,34 @@
+package:
+  name: morphologist
+
+soma-dev:
+  components:
+    morphologist-gpl: ["https://github.com/brainvisa/morphologist-gpl.git", "master"]
+    morphologist-ui: ["https://github.com/brainvisa/morphologist-ui.git", "master"]
+    sulci-nonfree: ["https://github.com/brainvisa/sulci-nonfree.git", "master"]
+    morpho-deepsulci:  ["https://github.com/brainvisa/morpho-deepsulci.git", "master"]
+
+  internal-dependencies:
+    - soma
+    - anatomist
+    - soma-spm
+    - capsul
+
+  type: compiled
+
+
+requirements:
+  run:
+    - pytorch
+    - torchvision
+    # dependencies found in deepsulci
+    - scikit-learn
+    - pcl
+    # Following dependencies are required to run "morphologist"
+    - configobj
+    - pyqtwebkit
+    - scipy
+    - traits
+    - spm12
+    - reportlab
+    - libsvm
