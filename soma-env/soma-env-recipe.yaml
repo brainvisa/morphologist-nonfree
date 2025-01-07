@@ -1,7 +1,7 @@
 package:
   name: morphologist
 
-soma-dev:
+soma-env:
   components:
     morphologist-gpl: ["https://github.com/brainvisa/morphologist-gpl.git", "master"]
     morphologist-ui: ["https://github.com/brainvisa/morphologist.git", "master"]
