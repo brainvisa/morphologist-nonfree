@@ -2,6 +2,7 @@ package:
   name: morphologist
 
 soma-env:
+  publication: neuro-forge
   components:
     morphologist-gpl: ["https://github.com/brainvisa/morphologist-gpl.git", "master"]
     morphologist-ui: ["https://github.com/brainvisa/morphologist.git", "master"]
