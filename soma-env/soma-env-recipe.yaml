@@ -4,10 +4,11 @@ package:
 soma-env:
   publication: neuro-forge
   components:
-    morphologist-gpl: ["https://github.com/brainvisa/morphologist-gpl.git", "master"]
-    morphologist-ui: ["https://github.com/brainvisa/morphologist.git", "master"]
-    sulci-nonfree: ["https://github.com/brainvisa/sulci-nonfree.git", "master"]
-    morpho-deepsulci:  ["https://github.com/brainvisa/morpho-deepsulci.git", "master"]
+    - morphologist-nonfree
+    - morphologist-gpl
+    - morphologist-ui
+    - sulci-nonfree
+    - morpho-deepsulci
 
   internal-dependencies:
     - soma
