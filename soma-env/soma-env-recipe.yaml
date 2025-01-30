@@ -30,7 +30,7 @@ requirements:
     - configobj
     - pyqtwebkit
     - scipy
-    - traits
+    - traits<7
     - spm12
     - reportlab
     - libsvm
