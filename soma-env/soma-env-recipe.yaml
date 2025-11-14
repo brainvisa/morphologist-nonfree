@@ -34,3 +34,5 @@ requirements:
     - spm12
     - reportlab
     - libsvm
+    - wkhtmltopdf
+    - filelock
