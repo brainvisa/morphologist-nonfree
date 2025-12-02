@@ -157,76 +157,76 @@ int main(int argc, char *argv[])
   for(i=1;i<argc;i++)
     {
       if (!strncmp (argv[i], "-input", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  input = argv[i];
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          input = argv[i];
+        }
      else if (!strncmp (argv[i], "-hname", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  strcpy(histo_name,argv[i]);
-	} 
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          strcpy(histo_name,argv[i]);
+        }
       else if (!strncmp (argv[i], "-template", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  strcpy(template_name,argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          strcpy(template_name,argv[i]);
+        }
       else if (!strncmp (argv[i], "-Ridge", 2)) 
        {
          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
          ridgename = argv[i];
        }
       else if (!strncmp (argv[i], "-brain", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  strcpy(brainname,argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          strcpy(brainname,argv[i]);
+        }
       else if (!strncmp (argv[i], "-output", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  strcpy(output,argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          strcpy(output,argv[i]);
+        }
       else if (!strncmp (argv[i], "-wthreshold", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  wthreshold = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          wthreshold = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-wseed", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  if(argv[i][0]=='y') write_seed = VTRUE;
-	  else if(argv[i][0]=='n') write_seed = VFALSE;
-	  else
-	    {
-	      VipPrintfError("wseed: y/n choice!");
-	      VipPrintfExit("(commandline)VipSplitBrain");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          if(argv[i][0]=='y') write_seed = VTRUE;
+          else if(argv[i][0]=='n') write_seed = VFALSE;
+          else
+            {
+              VipPrintfError("wseed: y/n choice!");
+              VipPrintfExit("(commandline)VipSplitBrain");
+              return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-walgo", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  walgo = argv[i][0];
-	  if(walgo!='c' && walgo!='r' && walgo!='b' && walgo!='t') 
-	    {
-	      VipPrintfError("wseed: r/c/b/t choice!");
-	      VipPrintfExit("(commandline)VipSplitBrain");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          walgo = argv[i][0];
+          if(walgo!='c' && walgo!='r' && walgo!='b' && walgo!='t')
+            {
+              VipPrintfError("wseed: r/c/b/t choice!");
+              VipPrintfExit("(commandline)VipSplitBrain");
+              return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-analyse", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  if(argv[i][0]=='n') analyse = 'n';
-	  else if(argv[i][0]=='y') analyse = 'y';
-	  else if(argv[i][0]=='r') analyse = 'r';
-	  else
-	    {
-	      VipPrintfError("analyse option is a y/n/r switch");
-	      VipPrintfExit("(commandline)VipSplitBrain");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          if(argv[i][0]=='n') analyse = 'n';
+          else if(argv[i][0]=='y') analyse = 'y';
+          else if(argv[i][0]=='r') analyse = 'r';
+          else
+            {
+              VipPrintfError("analyse option is a y/n/r switch");
+              VipPrintfExit("(commandline)VipSplitBrain");
+              return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-mode", 2)) 
         {
             if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
@@ -240,138 +240,138 @@ int main(int argc, char *argv[])
             }
         }
       else if (!strncmp (argv[i], "-TemplateUse", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  if(argv[i][0]=='y') TemplateUse = VTRUE;
-	  else if(argv[i][0]=='n') TemplateUse = VFALSE;
-	  else
-	    {
-	      VipPrintfError("TemplateUse: y/n choice!");
-	      VipPrintfExit("(commandline)VipSplitBrain");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          if(argv[i][0]=='y') TemplateUse = VTRUE;
+          else if(argv[i][0]=='n') TemplateUse = VFALSE;
+          else
+            {
+              VipPrintfError("TemplateUse: y/n choice!");
+              VipPrintfExit("(commandline)VipSplitBrain");
+              return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-ccsize", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  ccsize = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          ccsize = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-Points", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  strcpy(point_filename,argv[i]);
-	}   
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          strcpy(point_filename,argv[i]);
+        }
       else if (!strncmp (argv[i], "-xA", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  xCA = atoi(argv[i]);
-	  talset = VTRUE;
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          xCA = atoi(argv[i]);
+          talset = VTRUE;
+        }
       else if (!strncmp (argv[i], "-yA", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  yCA = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          yCA = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-zA", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  zCA = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          zCA = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-xP", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  xCP = atoi(argv[i]);
-	  talset = VTRUE;
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          xCP = atoi(argv[i]);
+          talset = VTRUE;
+        }
       else if (!strncmp (argv[i], "-yP", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  yCP = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          yCP = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-zP", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  zCP = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          zCP = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-xI", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  xP = atoi(argv[i]);
-	  talset = VTRUE;
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          xP = atoi(argv[i]);
+          talset = VTRUE;
+        }
       else if (!strncmp (argv[i], "-yI", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  yP = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          yP = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-zI", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  zP = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          zP = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-Zover", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  Zover = atoi(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          Zover = atoi(argv[i]);
+        }
       else if (!strncmp (argv[i], "-Coef", 3)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  wtcoef = atof(argv[i]);
-	  Coefset = VTRUE;
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          wtcoef = atof(argv[i]);
+          Coefset = VTRUE;
+        }
      else if (!strncmp (argv[i], "-CutUse", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  if(argv[i][0]=='y') CutUse = VTRUE;
-	  else if(argv[i][0]=='n') CutUse = VFALSE;
-	  else
-	    {
-	      VipPrintfError("CutUse: y/n choice!");
-	      VipPrintfExit("(commandline)VipSplitBrain");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          if(argv[i][0]=='y') CutUse = VTRUE;
+          else if(argv[i][0]=='n') CutUse = VFALSE;
+          else
+            {
+              VipPrintfError("CutUse: y/n choice!");
+              VipPrintfExit("(commandline)VipSplitBrain");
+              return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-Bary", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  bary = atof(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          bary = atof(argv[i]);
+        }
       else if (!strncmp (argv[i], "-erosion", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  erosion_size = atof(argv[i]);
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          erosion_size = atof(argv[i]);
+        }
       else if (!strncmp (argv[i], "-readformat", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  if(argv[i][0]=='t') readlib = TIVOLI;
-	  else if(argv[i][0]=='s') readlib = SPM;
-	  else if(argv[i][0]=='a') readlib = ANY_FORMAT;
-	  else if(argv[i][0]=='v') readlib = VIDA;
-	  else
-	    {
-	      VipPrintfError("This format is not implemented for reading");
-	      VipPrintfExit("(commandline)VipGetHead");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          if(argv[i][0]=='t') readlib = TIVOLI;
+          else if(argv[i][0]=='s') readlib = SPM;
+          else if(argv[i][0]=='a') readlib = ANY_FORMAT;
+          else if(argv[i][0]=='v') readlib = VIDA;
+          else
+            {
+              VipPrintfError("This format is not implemented for reading");
+              VipPrintfExit("(commandline)VipGetHead");
+              return(VIP_CL_ERROR);
+            }
+        }
       else if (!strncmp (argv[i], "-writeformat", 2)) 
-	{
-	  if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-	  if(argv[i][0]=='t') writelib = TIVOLI;
-	  else if(argv[i][0]=='s') writelib = SPM;
-	  else if(argv[i][0]=='v') writelib = VIDA;
-	  else
-	    {
-	      VipPrintfError("This format is not implemented for writing");
-	      VipPrintfExit("(commandline)VipSplitBrain");
-	      return(VIP_CL_ERROR);
-	    }
-	}
+        {
+          if(++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+          if(argv[i][0]=='t') writelib = TIVOLI;
+          else if(argv[i][0]=='s') writelib = SPM;
+          else if(argv[i][0]=='v') writelib = VIDA;
+          else
+            {
+              VipPrintfError("This format is not implemented for writing");
+              VipPrintfExit("(commandline)VipSplitBrain");
+              return(VIP_CL_ERROR);
+            }
+        }
     else if (!strncmp(argv[i], "-srand", 6)){
-      	    	  if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
-      	    	  random_seed = atoi(argv[i]);
+                            if (++i >= argc || !strncmp(argv[i],"-",1)) return(Usage());
+                            random_seed = atoi(argv[i]);
     }
       else if (!strncmp(argv[i], "-help",2)) return(Help());
       else return(Usage());
@@ -454,43 +454,43 @@ int main(int argc, char *argv[])
     {
       ana = VipGetT1HistoAnalysisCustomized(vol,5,0.5);
       if(ana==PB)
-	{
-	  printf("Histogram analysis problem, sorry...\n");
-	  return(VIP_CL_ERROR);
-	}
+        {
+          printf("Histogram analysis problem, sorry...\n");
+          return(VIP_CL_ERROR);
+        }
     }
   else if(analyse=='r')
     {
       if(!strcmp(histo_name,""))
-	 strcpy(histo_name,input);
+         strcpy(histo_name,input);
       printf("Reading histogram analysis: %s\n", histo_name);
       ana = VipReadT1HistoAnalysis( histo_name);
       if(ana==PB)
-	{
-	  printf("Histogram analysis read problem (file %s), sorry...\n",
-		 histo_name);
-	  return(VIP_CL_ERROR);
-	}
+        {
+          printf("Histogram analysis read problem (file %s), sorry...\n",
+                 histo_name);
+          return(VIP_CL_ERROR);
+        }
     }
   if(wthreshold==-1)
     {
       if(ana==NULL)
-	{
-	  VipPrintfError("I need either white threshold or histogram analysis!");
-	  return(VIP_CL_ERROR);
-	}
+        {
+          VipPrintfError("I need either white threshold or histogram analysis!");
+          return(VIP_CL_ERROR);
+        }
       if (Coefset!=VTRUE && walgo=='b')
-	{
-	  wthreshold = (int)((1-bary) * ana->gray->mean + bary *ana->white->mean);
-	  printf("Bary average between (%d-%f-%d)\n",
-		 ana->gray->mean, bary, ana->white->mean );
-	}
+        {
+          wthreshold = (int)((1-bary) * ana->gray->mean + bary *ana->white->mean);
+          printf("Bary average between (%d-%f-%d)\n",
+                 ana->gray->mean, bary, ana->white->mean );
+        }
       else if (walgo=='c')
-	{
-	  wthreshold = ana->white->mean - wtcoef * ana->white->sigma;
-	  printf("white matter mean: %d - %f * standard deviation: %d\n",ana->white->mean,
-		 wtcoef, ana->white->sigma);
-	}
+        {
+          wthreshold = ana->white->mean - wtcoef * ana->white->sigma;
+          printf("white matter mean: %d - %f * standard deviation: %d\n",ana->white->mean,
+                 wtcoef, ana->white->sigma);
+        }
     }
   if (walgo!='r')
     {
@@ -520,17 +520,17 @@ int main(int argc, char *argv[])
     {
       printf("Regularized classification\n");
       /*fucking stupid way I deal with .han file, I should modify the lib,
-	but I wan that to work in Marseille NOW*/
+        but I wan that to work in Marseille NOW*/
       if(ana->gray)
-	{
-	  ana->gray->left_sigma = ana->gray->sigma;
-	  ana->gray->right_sigma = ana->gray->sigma;
-	}
+        {
+          ana->gray->left_sigma = ana->gray->sigma;
+          ana->gray->right_sigma = ana->gray->sigma;
+        }
       if(ana->white)
-	{
-	  ana->white->left_sigma = ana->white->sigma;
-	  ana->white->right_sigma = ana->white->sigma;
-	}
+        {
+          ana->white->left_sigma = ana->white->sigma;
+          ana->white->right_sigma = ana->white->sigma;
+        }
       classif = VipGrayWhiteClassificationRegularisationForRobust( vol, ana, VTRUE);
       if(classif==PB) return(VIP_CL_ERROR);
       VipSetVolumeLevel(vol,0);
@@ -586,9 +586,9 @@ int main(int argc, char *argv[])
   while(seedOK==VFALSE && (erosion_size>=2) && (erosion_size<10))
     {
       if(erosion_size<2)
-	{
-	  VipPrintfError("too small erosion");
-	}
+        {
+          VipPrintfError("too small erosion");
+        }
       if((seed = VipCopyVolume(vol,"seed")) ==PB) return(VIP_CL_ERROR);
 
       printf("erosion of size %f mm\n",erosion_size);
@@ -598,180 +598,180 @@ int main(int argc, char *argv[])
       ccptr = cclist;
       ncc = 0;
       while(ccptr!=NULL)
-	{
-	  printf("cc(%d) highest point: x:%d, y:%d, z:%d\n",ccptr->size,ccptr->data[0].x,ccptr->data[0].y,ccptr->data[0].z);
-	  ncc++;
-	  ccptr = ccptr->next;
-	}
+        {
+          printf("cc(%d) highest point: x:%d, y:%d, z:%d\n",ccptr->size,ccptr->data[0].x,ccptr->data[0].y,ccptr->data[0].z);
+          ncc++;
+          ccptr = ccptr->next;
+        }
 
       if(ncc<3)
-	{
-	  printf("Not enough cc\n");
-	  printf("-------------\n");
-	  erosion_size += 0.5;
-	}
+        {
+          printf("Not enough cc\n");
+          printf("-------------\n");
+          erosion_size += 0.5;
+        }
       else
-	{	  
-	  if(template_filled == VTRUE)
-	    {
-	      ccptr = cclist;
-	      cc = 0;
-	      select_seed = 0;
-	      total_cc = 0;
-	      while(ccptr!=NULL)
-		{
-		  VipGetLabelsFromTemplate(ccptr,seed,template,labels,&tal);
-		  printf("cc: %d points, back: %d%%, right: %d%%, left: %d%%, cereb: %d%%\n",ccptr->n_points,
-			 (int)(100*mVipHistoVal(labels,0))/ccptr->n_points,
-			 (int)(100*mVipHistoVal(labels,1))/ccptr->n_points,
-			 (int)(100*mVipHistoVal(labels,2))/ccptr->n_points,
-			 (int)(100*mVipHistoVal(labels,3))/ccptr->n_points);
-		  labelmax = 0;
-		  for(i=0;i<=mVipHistoRangeMax(labels);i++)
-		    {
-		      if (mVipHistoVal(labels,i)>mVipHistoVal(labels,labelmax)) labelmax=i;
-		    }
-		  if ( (((100*mVipHistoVal(labels,labelmax))/ccptr->n_points)>95) ||
-			( ((100*mVipHistoVal(labels,1))/ccptr->n_points+(100*mVipHistoVal(labels,2))/ccptr->n_points)<5 && (labelmax==3 || (labelmax==0 && ((100*mVipHistoVal(labels,3))/ccptr->n_points)>20)) ) )
-		    {
-		      if (labelmax!=0) write_label[cc] = labelmax;
-		      else write_label[cc]=3;
-		      select_seed += ccptr->n_points;
-		    }
-		  else write_label[cc] = 0;
-		  total_cc += ccptr->n_points;
-		  ccptr=ccptr->next;
-		  cc++;
-		}
-	      
-	      for (i=0;i<=mVipHistoRangeMax(labels);i++)
-		{
-		  mVipHistoVal(labels,i) = 0;
-		}
-	      printf("color choice (R=1,L=2,C=3) : ");
-	      for(cc=0;cc<ncc;cc++)
-		{
-		  mVipHistoVal(labels,write_label[cc]) = 1;
-		  printf("%d ",write_label[cc]);
-		}
-	      printf("\n");
-	      itsOK = 1;
-	      for(i=1;i<=mVipHistoRangeMax(labels);i++) itsOK *=mVipHistoVal(labels,i);
-	      if(itsOK == 1 && ((float)select_seed/(float)total_cc)>0.9)
-		{
-		  seedOK = VTRUE;
-		}
-	      else
-		{
-		  printf("--------------------Bad split-------------------\n");
-		  printf("Perhaps CA, CP and InterHemispheric point are bad?\n (if you have not set it)\n");
-		  printf("As an alternative, you can disable\n the use of the voronoi template (-T n)\n");
-		  printf("-----Perhaps you can wait for the next one------\n");
-		}
-	      if(write_seed==VTRUE && TemplateUse==VTRUE)
-		{
-		  ccptr = cclist;
-		  cc = 0;
-		  while(ccptr!=NULL)
-		    {
-		      VipWriteCoordInTemplate(ccptr,brain,
-					      template,
-					      write_label[cc]*10,&tal);
+        {
+          if(template_filled == VTRUE)
+            {
+              ccptr = cclist;
+              cc = 0;
+              select_seed = 0;
+              total_cc = 0;
+              while(ccptr!=NULL)
+                {
+                  VipGetLabelsFromTemplate(ccptr,seed,template,labels,&tal);
+                  printf("cc: %d points, back: %d%%, right: %d%%, left: %d%%, cereb: %d%%\n",ccptr->n_points,
+                         (int)(100*mVipHistoVal(labels,0))/ccptr->n_points,
+                         (int)(100*mVipHistoVal(labels,1))/ccptr->n_points,
+                         (int)(100*mVipHistoVal(labels,2))/ccptr->n_points,
+                         (int)(100*mVipHistoVal(labels,3))/ccptr->n_points);
+                  labelmax = 0;
+                  for(i=0;i<=mVipHistoRangeMax(labels);i++)
+                    {
+                      if (mVipHistoVal(labels,i)>mVipHistoVal(labels,labelmax)) labelmax=i;
+                    }
+                  if ( (((100*mVipHistoVal(labels,labelmax))/ccptr->n_points)>95) ||
+                        ( ((100*mVipHistoVal(labels,1))/ccptr->n_points+(100*mVipHistoVal(labels,2))/ccptr->n_points)<5 && (labelmax==3 || (labelmax==0 && ((100*mVipHistoVal(labels,3))/ccptr->n_points)>20)) ) )
+                    {
+                      if (labelmax!=0) write_label[cc] = labelmax;
+                      else write_label[cc]=3;
+                      select_seed += ccptr->n_points;
+                    }
+                  else write_label[cc] = 0;
+                  total_cc += ccptr->n_points;
+                  ccptr=ccptr->next;
+                  cc++;
+                }
 
-		      ccptr = ccptr->next;
-		      cc++;
-		    }
-		  strcat(seedname,"+");
-		  VipWriteTivoliVolume(template,seedname);
-		  printf("Reading voronoi template again %s...\n",template_name);
-		  VipFreeVolume(template);
-		  template = VipReadVolume(template_name);
+              for (i=0;i<=mVipHistoRangeMax(labels);i++)
+                {
+                  mVipHistoVal(labels,i) = 0;
+                }
+              printf("color choice (R=1,L=2,C=3) : ");
+              for(cc=0;cc<ncc;cc++)
+                {
+                  mVipHistoVal(labels,write_label[cc]) = 1;
+                  printf("%d ",write_label[cc]);
+                }
+              printf("\n");
+              itsOK = 1;
+              for(i=1;i<=mVipHistoRangeMax(labels);i++) itsOK *=mVipHistoVal(labels,i);
+              if(itsOK == 1 && ((float)select_seed/(float)total_cc)>0.9)
+                {
+                  seedOK = VTRUE;
+                }
+              else
+                {
+                  printf("--------------------Bad split-------------------\n");
+                  printf("Perhaps CA, CP and InterHemispheric point are bad?\n (if you have not set it)\n");
+                  printf("As an alternative, you can disable\n the use of the voronoi template (-T n)\n");
+                  printf("-----Perhaps you can wait for the next one------\n");
+                }
+              if(write_seed==VTRUE && TemplateUse==VTRUE)
+                {
+                  ccptr = cclist;
+                  cc = 0;
+                  while(ccptr!=NULL)
+                    {
+                      VipWriteCoordInTemplate(ccptr,brain,
+                                              template,
+                                              write_label[cc]*10,&tal);
 
-		}
-	    }
-	  else
-	    {
-	      largest1 = VipGetNthBiggest3DBucket_S16BIT(cclist,1);
-	      largest2 = VipGetNthBiggest3DBucket_S16BIT(cclist,2);
-	      largest3 = VipGetNthBiggest3DBucket_S16BIT(cclist,3);
-	      if(largest1->data[0].z>=largest2->data[0].z && largest1->data[0].z>=largest3->data[0].z)
-		{
-		  cereb = largest1;
-		  largest1 = largest3;
-		  largest3 = cereb;
-		}
-	      if(largest2->data[0].z>=largest1->data[0].z && largest2->data[0].z>=largest3->data[0].z)
-		{
-		  cereb = largest2;
-		  largest2 = largest3;
-		  largest3 = cereb;
-		}
-	      if(largest3->data[0].z>=largest2->data[0].z && largest3->data[0].z>=largest1->data[0].z)
-		{
-		  cereb = largest3;
-		}
-	      
-	      if(ncc>3)
-		{
-		  largest4 = VipGetNthBiggest3DBucket_S16BIT(cclist,4);
-		}
-	      if(largest4!=NULL && largest4->data[0].z>largest3->data[0].z)
-		{
-		  cereb=largest4;
-		}
-	      if(ncc>4)
-		largest5 = VipGetNthBiggest3DBucket_S16BIT(cclist,5);
-	      if(largest5!=NULL && largest5->data[0].z>largest3->data[0].z)
-		{
-		  cereb=largest5;
-		}
+                      ccptr = ccptr->next;
+                      cc++;
+                    }
+                  strcat(seedname,"+");
+                  VipWriteTivoliVolume(template,seedname);
+                  printf("Reading voronoi template again %s...\n",template_name);
+                  VipFreeVolume(template);
+                  template = VipReadVolume(template_name);
 
-	      if(((abs(largest1->size-largest2->size)/largest1->size)<0.15)
-		 && largest1->data[0].z<(zCA-10)
-		 && largest2->data[0].z<(zCA-10)
-		 && (largest1->data[0].z-largest2->data[0].z)<10
-		 )
-		{
-		  if ((largest1->data[0].x<(xCA-10))
-		      && (largest2->data[0].x>(xCA+10)))
-		    {
-		      lhemi = largest2;
-		      rhemi = largest1;
-		      seedOK = VTRUE;
-		    }
-		  else if ((largest2->data[0].x<(xCA-10))
-			   && (largest1->data[0].x>(xCA+10)))
-		    {
-		      rhemi = largest2;
-		      lhemi = largest1;
-		      seedOK = VTRUE;
-		    }
-		  else
-		    {
-		      VipPrintfWarning("Hemisphere seeds are not symetric relative to xCA\n");
-		      printf("Perhaps you have not set xCA (currently: %d) and all is OK, I go on...\n",xCA);
-		      if ((largest1->data[0].x)<(largest2->data[0].x))
-			{
-			  lhemi = largest2;
-			  rhemi = largest1;
-			  seedOK = VTRUE;
-			}
-		      else 
-			{
-			  rhemi = largest2;
-			  lhemi = largest1;
-			  seedOK = VTRUE;
-			}
-		    }
-		}
-	    }
-	  if(seedOK==VFALSE)
-	    {
-	      printf("Can not find hemisphere seeds\n\n");
-	      erosion_size += 0.5;
-	      VipFreeVolume(seed);
-	    }
-	}
+                }
+            }
+          else
+            {
+              largest1 = VipGetNthBiggest3DBucket_S16BIT(cclist,1);
+              largest2 = VipGetNthBiggest3DBucket_S16BIT(cclist,2);
+              largest3 = VipGetNthBiggest3DBucket_S16BIT(cclist,3);
+              if(largest1->data[0].z>=largest2->data[0].z && largest1->data[0].z>=largest3->data[0].z)
+                {
+                  cereb = largest1;
+                  largest1 = largest3;
+                  largest3 = cereb;
+                }
+              if(largest2->data[0].z>=largest1->data[0].z && largest2->data[0].z>=largest3->data[0].z)
+                {
+                  cereb = largest2;
+                  largest2 = largest3;
+                  largest3 = cereb;
+                }
+              if(largest3->data[0].z>=largest2->data[0].z && largest3->data[0].z>=largest1->data[0].z)
+                {
+                  cereb = largest3;
+                }
+
+              if(ncc>3)
+                {
+                  largest4 = VipGetNthBiggest3DBucket_S16BIT(cclist,4);
+                }
+              if(largest4!=NULL && largest4->data[0].z>largest3->data[0].z)
+                {
+                  cereb=largest4;
+                }
+              if(ncc>4)
+                largest5 = VipGetNthBiggest3DBucket_S16BIT(cclist,5);
+              if(largest5!=NULL && largest5->data[0].z>largest3->data[0].z)
+                {
+                  cereb=largest5;
+                }
+
+              if(((abs(largest1->size-largest2->size)/largest1->size)<0.15)
+                 && largest1->data[0].z<(zCA-10)
+                 && largest2->data[0].z<(zCA-10)
+                 && (largest1->data[0].z-largest2->data[0].z)<10
+                 )
+                {
+                  if ((largest1->data[0].x<(xCA-10))
+                      && (largest2->data[0].x>(xCA+10)))
+                    {
+                      lhemi = largest2;
+                      rhemi = largest1;
+                      seedOK = VTRUE;
+                    }
+                  else if ((largest2->data[0].x<(xCA-10))
+                           && (largest1->data[0].x>(xCA+10)))
+                    {
+                      rhemi = largest2;
+                      lhemi = largest1;
+                      seedOK = VTRUE;
+                    }
+                  else
+                    {
+                      VipPrintfWarning("Hemisphere seeds are not symetric relative to xCA\n");
+                      printf("Perhaps you have not set xCA (currently: %d) and all is OK, I go on...\n",xCA);
+                      if ((largest1->data[0].x)<(largest2->data[0].x))
+                        {
+                          lhemi = largest2;
+                          rhemi = largest1;
+                          seedOK = VTRUE;
+                        }
+                      else
+                        {
+                          rhemi = largest2;
+                          lhemi = largest1;
+                          seedOK = VTRUE;
+                        }
+                    }
+                }
+            }
+          if(seedOK==VFALSE)
+            {
+              printf("Can not find hemisphere seeds\n\n");
+              erosion_size += 0.5;
+              VipFreeVolume(seed);
+            }
+        }
     }
 
   if(seedOK==VFALSE)
@@ -784,19 +784,19 @@ int main(int argc, char *argv[])
   if(template_filled != VTRUE)
     {
       if(lhemi!=NULL)
-	{
-	  VipWriteCoordBucketInVolume(lhemi,seed,2);
-	}
+        {
+          VipWriteCoordBucketInVolume(lhemi,seed,2);
+        }
       if(rhemi!=NULL) 
-	{
-	  VipWriteCoordBucketInVolume(rhemi,seed,1);
-	}
+        {
+          VipWriteCoordBucketInVolume(rhemi,seed,1);
+        }
       if(cereb!=NULL)
-	{
-	  if(Zover==-1)
+        {
+          if(Zover==-1)
               VipWriteCoordOverZBucketInVolume_S16BIT(cereb,seed,3,Zover);
-	  else VipWriteCoordBucketInVolume(cereb,seed,3);
-	}
+          else VipWriteCoordBucketInVolume(cereb,seed,3);
+        }
       /*VipWriteTivoliVolume(seed,"toto");*/
     }
   else
@@ -804,12 +804,12 @@ int main(int argc, char *argv[])
       ccptr = cclist;
       cc = 0;
       while(ccptr!=NULL)
-	{
-	  VipWriteCoordBucketInVolume(ccptr,seed,write_label[cc]);
-	  if(write_seed==VTRUE  && TemplateUse==VTRUE) VipWriteCoordInTemplate(ccptr,brain,template,write_label[cc]*10,&tal);
-	  ccptr = ccptr->next;
-	  cc++;
-	}
+        {
+          VipWriteCoordBucketInVolume(ccptr,seed,write_label[cc]);
+          if(write_seed==VTRUE  && TemplateUse==VTRUE) VipWriteCoordInTemplate(ccptr,brain,template,write_label[cc]*10,&tal);
+          ccptr = ccptr->next;
+          cc++;
+        }
     }
   if(write_seed==VTRUE  && TemplateUse==VTRUE) VipWriteTivoliVolume(template,"temp+seed-final");
 
@@ -1279,29 +1279,29 @@ static int GetCutAlongTheLineBucket(
   for (y=-50;y<50;y+=3)
     for (z=-50;z<23;z+=3)
       {
-	input_point[0] = x;
-	input_point[1] = y;
-	input_point[2] = z;
-	fflush(stdout);
-	VipTalairachInverseTransformation(input_point,tal,output_point);
-	ox = (int)(output_point[0]/mVipVolVoxSizeX(vol)+0.5);
-	oy = (int)(output_point[1]/mVipVolVoxSizeY(vol)+0.5);
-	oz = (int)(output_point[2]/mVipVolVoxSizeZ(vol)+0.5);
-	fflush(stdout);
-	if((ox>=0)&&(ox<mVipVolSizeX(vol))
-	   &&(oy>=0)&&(oy<mVipVolSizeY(vol))
-	   &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))	  
-	  {
-	    if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
-	      {
-		(*buck)->data[(*buck)->n_points].x = ox;
-		(*buck)->data[(*buck)->n_points].y = oy;
-		(*buck)->data[(*buck)->n_points].z = oz;
-		(*buck)->n_points++;
-// 		printf("%d, %d, %d",ox,oy,oz);
-	      }
-	  }
-	
+        input_point[0] = x;
+        input_point[1] = y;
+        input_point[2] = z;
+        fflush(stdout);
+        VipTalairachInverseTransformation(input_point,tal,output_point);
+        ox = (int)(output_point[0]/mVipVolVoxSizeX(vol)+0.5);
+        oy = (int)(output_point[1]/mVipVolVoxSizeY(vol)+0.5);
+        oz = (int)(output_point[2]/mVipVolVoxSizeZ(vol)+0.5);
+        fflush(stdout);
+        if((ox>=0)&&(ox<mVipVolSizeX(vol))
+           &&(oy>=0)&&(oy<mVipVolSizeY(vol))
+           &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))
+          {
+            if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
+              {
+                (*buck)->data[(*buck)->n_points].x = ox;
+                (*buck)->data[(*buck)->n_points].y = oy;
+                (*buck)->data[(*buck)->n_points].z = oz;
+                (*buck)->n_points++;
+//                 printf("%d, %d, %d",ox,oy,oz);
+              }
+          }
+
       }
 
   /*pons*/
@@ -1310,28 +1310,28 @@ static int GetCutAlongTheLineBucket(
   for (y=10;y<45;y+=3)
     for (z=10;z<23;z+=3)
       {
-	input_point[0] = x;
-	input_point[1] = y;
-	input_point[2] = z;
-	fflush(stdout);
-	VipTalairachInverseTransformation(input_point,tal,output_point);
-	ox = (int)(output_point[0]/mVipVolVoxSizeX(vol)+0.5);
-	oy = (int)(output_point[1]/mVipVolVoxSizeY(vol)+0.5);
-	oz = (int)(output_point[2]/mVipVolVoxSizeZ(vol)+0.5);
-	fflush(stdout);
-	if((ox>=0)&&(ox<mVipVolSizeX(vol))
-	   &&(oy>=0)&&(oy<mVipVolSizeY(vol))
-	   &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))
-	  {
-	    if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
-	      {
-		(*buck)->data[(*buck)->n_points].x = ox;
-		(*buck)->data[(*buck)->n_points].y = oy;
-		(*buck)->data[(*buck)->n_points].z = oz;
-		(*buck)->n_points++;
-	      }
-	  }
-	
+        input_point[0] = x;
+        input_point[1] = y;
+        input_point[2] = z;
+        fflush(stdout);
+        VipTalairachInverseTransformation(input_point,tal,output_point);
+        ox = (int)(output_point[0]/mVipVolVoxSizeX(vol)+0.5);
+        oy = (int)(output_point[1]/mVipVolVoxSizeY(vol)+0.5);
+        oz = (int)(output_point[2]/mVipVolVoxSizeZ(vol)+0.5);
+        fflush(stdout);
+        if((ox>=0)&&(ox<mVipVolSizeX(vol))
+           &&(oy>=0)&&(oy<mVipVolSizeY(vol))
+           &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))
+          {
+            if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
+              {
+                (*buck)->data[(*buck)->n_points].x = ox;
+                (*buck)->data[(*buck)->n_points].y = oy;
+                (*buck)->data[(*buck)->n_points].z = oz;
+                (*buck)->n_points++;
+              }
+          }
+
       }
 
   if(mode=='V')
@@ -1351,7 +1351,7 @@ static int GetCutAlongTheLineBucket(
              fflush(stdout);
              if((ox>=0)&&(ox<mVipVolSizeX(vol))
                 &&(oy>=0)&&(oy<mVipVolSizeY(vol))
-                &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))	  
+                &&(oz>=0)&&(oz<mVipVolSizeZ(vol)))
                {
                  if( *(ptr + ox + (oy * vos->oLine) + oz * (vos->oSlice))>=wthreshold )
                    {
@@ -1479,12 +1479,12 @@ static int VipGetLabelsFromTemplate(
       y = (int)(output_point[1]/mVipVolVoxSizeX(template)+0.5);
       z = (int)(output_point[2]/mVipVolVoxSizeX(template)+0.5);
       if((x>=0)&&(x<mVipVolSizeX(template))
-	 &&(y>=0)&&(y<mVipVolSizeY(template))
-	 &&(z>=0)&&(z<mVipVolSizeZ(template)))	      
-	{
-	  value = *(ptr + x + (y * vos->oLine) + z * (vos->oSlice));
-	  mVipHistoVal(labels,value)++;
-	}
+         &&(y>=0)&&(y<mVipVolSizeY(template))
+         &&(z>=0)&&(z<mVipVolSizeZ(template)))
+        {
+          value = *(ptr + x + (y * vos->oLine) + z * (vos->oSlice));
+          mVipHistoVal(labels,value)++;
+        }
       ptr3d++;
     }
 
