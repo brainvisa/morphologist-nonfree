@@ -272,7 +272,7 @@ static int Usage()
 {
   (void)fprintf(stderr,"Usage: VipGeometry\n");
   (void)fprintf(stderr,"        -i[nput] {image name}\n");
-  (void)fprintf(stderr,"        [-m[ode] {mc/gc/mlvv/glvv/pc1/pc2/la  (default:mc)}]\n");
+  (void)fprintf(stderr,"        [-m[ode] {mc/gc/mlvv/glvv/pc1/pc2/la/nla  (default:mc)}]\n");
   (void)fprintf(stderr,"        [-s[igma] {float (mm)  (default:largest pixel size)}]\n");
   (void)fprintf(stderr,"        [-g[aussian] {y/n (default:y)}]\n");
   (void)fprintf(stderr,"        [-G[radient] {y/n (default:n)}]\n");
@@ -298,11 +298,11 @@ static int Help()
   (void)printf("\n");
   (void)printf("Usage: VipGeometry\n");
   (void)printf("        -i[nput] {image name}\n");
-  (void)printf("        [-m[ode] {mc/gc/mlvv/glvv/pc1/pc2  (default:mc)}]\n");
+  (void)printf("        [-m[ode] {mc/gc/mlvv/glvv/pc1/pc2/la/nla  (default:mc)}]\n");
   (void)printf("mc = isophote mean curvature, gc=isophote Gaussian curvature\n");
-  (void)printf("mlvv = isophote mean Lvv, gc=isophote Gaussian Lvv\n");
-  (void)printf("mc = isophote principal curvature 1, gc=isophote principal curvature 2 (pc1>pc2)\n");
-  (void)printf("la = Laplacian, nla = Normalized Laplacian\n");
+  (void)printf("mlvv = isophote mean Lvv, glvv=isophote Gaussian Lvv\n");
+  (void)printf("pc1 = isophote principal curvature 1, pc2=isophote principal curvature 2 (pc1>pc2)\n");
+  (void)printf("la = Laplacian, nla = Laplacian (Normalized Laplacian is not implemented)\n");
   (void)printf("        [-s[igma] {float (mm)  (default:largest pixel size)}]\n");
   (void)printf("Apply a smoothing (scale=sigma*sigma) to compute differentials in scale-space\n");
   (void)printf("        [-g[aussian] {y/n (default:y)}]\n");
