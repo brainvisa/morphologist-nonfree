@@ -1386,18 +1386,15 @@ static int VipWriteCoordInTemplate(
   int i;
   float input_point[3], output_point[3];
   int x, y, z;
-  float xtCA;
-  float ytCA;
-  float ztCA=87.;
+  float xtCA = 77.;
+  float ytCA = 72.;
+  float ztCA = 87.;
 
   if(!buck || !vol || !template || ! tal)
     {
       VipPrintfError("Empty arg in VipWriteCoordInTemplate");
       return(VIP_CL_ERROR);
     }
-
-  xtCA = mVipVolSizeX(template)*mVipVolVoxSizeX(template)/2.;
-  ytCA = mVipVolSizeY(template)*mVipVolVoxSizeY(template)/2.;
 
   vos = VipGetOffsetStructure(template);
   ptr = VipGetDataPtr_S16BIT( template ) + vos->oFirstPoint;
@@ -1414,8 +1411,8 @@ static int VipWriteCoordInTemplate(
        output_point[2] += ztCA;
 
        x = (int)(output_point[0]/mVipVolVoxSizeX(template)+0.5);
-       y = (int)(output_point[1]/mVipVolVoxSizeX(template)+0.5);
-       z = (int)(output_point[2]/mVipVolVoxSizeX(template)+0.5);
+       y = (int)(output_point[1]/mVipVolVoxSizeY(template)+0.5);
+       z = (int)(output_point[2]/mVipVolVoxSizeZ(template)+0.5);
        if((x>=0)&&(x<mVipVolSizeX(template))
          &&(y>=0)&&(y<mVipVolSizeY(template))
          &&(z>=0)&&(z<mVipVolSizeZ(template)))
