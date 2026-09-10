@@ -28,7 +28,7 @@ requirements:
     # - pcl
     # Following dependencies are required to run "morphologist"
     - configobj
-    - pyqtwebkit
+    # - pyqt6_webengine_qt6 [pypi]
     - scipy
     - traits<7
     - spm12
